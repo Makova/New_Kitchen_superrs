@@ -4822,15 +4822,15 @@ get_byname() {
 			banner
 			echo "How would you like to get your partition info?"
 			echo ""
-			echo "1) Detect by-name from your device"
-			echo "2) Detect by-name from the boot.img / kernel.elf"
+			echo "1) Detect by-name from boot/recovery images (recommended)"
+			echo "2) Detect by-name from your device"
 			echo "3) Enter by-name manually"
 			echo "4) Detect mmcblk partitions from recovery.img"
 			echo ""
 			read -n 1 -p "Please enter your choice:" choice
 		done
 		# START Detect by-name from your device
-		if [[ $choice = "1" ]]; then
+		if [[ $choice = "2" ]]; then
 			banner
 			echo "${bluet}** Enable usb debugging on your Android device in system settings"
 			echo "** Plug in your device$normal"
@@ -4885,7 +4885,7 @@ get_byname() {
 			fi
 		fi
 		# START Detect by-name from the boot.img
-		if [[ $choice = "2" ]]; then
+		if [[ $choice = "1" ]]; then
 			if [[ ! -f $romdir/boot.img && ! -f $romdir/kernel.elf && ! -f $romdir/recovery.img ]]; then
 				banner
 				echo "${redb}${yellowt}ERROR:$normal"
@@ -5596,6 +5596,46 @@ kitchen_update() {
 			echo "${greent}SuperR's Kitchen is already up to date$normal"
 			echo ""
 			read -p "Press ENTER to continue"
+		fi
+		if [[ -f $HOME/Desktop/SuperRs-Kitchen ]]; then
+			banner
+			echo "${bluet}Checking for Kitchen Launcher updates ...$normal"
+			dlurl="https://bitbucket.org/superr/superrs-kitchen/downloads"
+			newzip=$(wget -qO- $dlurl | cat | grep "SRK-Install-Launch" | grep -m 1 .zip | cut -d">" -f2 | cut -d"<" -f1)
+			srkil=$(cat $HOME/Desktop/SuperRs-Kitchen | head -n 3 | grep "#v" | sed 's/^#//')
+			newv=$(echo "$newzip" | cut -d"_" -f2 | sed 's/\.zip//')
+			upcheck=$(echo "$newv" | sed 's/v//; s/\.//g')
+			currentv=$(echo "$srkil" | sed 's/v//; s/\.//g')
+			if [[ "$currentv" -lt "$upcheck" || "$currentv" = "" ]]; then
+				banner
+				echo "${greenb}Launcher update available$normal"
+				echo ""
+				echo "${bluet}CURRENT VERSION: $redt$srkil"
+				echo "${bluet}NEW VERSION: $greent$newv$normal"
+				echo ""
+				read -n 1 -p "Would you like to update now? y/n  "
+				if [[ $REPLY = "y" ]]; then
+					banner
+					echo "${bluet}Updating ...$normal"
+					cd $HOME/Desktop
+					( wget $dlurl/$newzip 2>&1 ) >/dev/null
+					if [[ -f $newzip ]]; then
+						$p7z x -y $newzip 2>&1 >/dev/null
+						rm -rf $newzip
+						banner
+						echo "${greent}Installer/Launcher has been updated$normal"
+						echo ""
+						read -p "Press ENTER to continue"
+					else
+						banner
+						echo "${redb}${yellowt}${bold}ERROR:$normal"
+						echo "${redt}There was a problem downloading the update.$normal"
+						echo ""
+						read -p "Press ENTER to continue"
+					fi
+					cd $base
+				fi
+			fi
 		fi
 		export updatecheck="1"
 		if [[ ! -f $tools/updatecheck-yes && ! -f $tools/updatecheck-no ]]; then
@@ -6595,22 +6635,32 @@ update_project() {
 			sed 's/\\././g; s/(\/\.\*)?//g' file_contexts2 | gawk '{ print $1, $2 }' | sort > file_contexts3
 			mv file_contexts3 file_contexts2
 			line=""
+			line=""
 			for line in $(gawk '{ print $1 }' file_contexts2); do
-				if [[ $(grep -m 1 "^$line$" all_files.txt) = "$line" ]]; then
-					grep -m 1 "^$line " file_contexts2 >> pre_metadata
-				fi
+			        if [[ $(grep -m 1 "^$line$" all_files.txt) = "$line" ]]; then
+			                grep -m 1 "^$line " file_contexts2 >> pre_metadata
+			        elif [[ $(cat symlinks | cut -d'"' -f4 | grep -m 1 "^$line$" ) = "$line" ]]; then
+			                grep -m 1 "^$line " file_contexts2 >> pre_metadata
+			        fi
 			done
 			line=""
 			cat $tools/updater/set_metadata-data | while read line; do
-				line2=$(echo "$line" | gawk '{ print $1 }' | rev | cut -d'"' -f2 | rev)
-				if [[ $(gawk '{ print $1 }' pre_metadata | grep -m 1 "^$line2$") = "$line2" ]]; then
-					context=$(grep -m 1 "^$line2 " pre_metadata | gawk '{ print $2 }')
-					grep -m 1 "$line2" $tools/updater/set_metadata-data | sed "s/#CONTEXT/$context/" >> set_metadata
-				elif [[ $(grep -m 1 "^$line2$" all_files.txt) = "$line2" && ! $(echo $line | grep "#CONTEXT") = "" ]]; then
-					grep -m 1 "$line2" $tools/updater/set_metadata-data | sed "s/#CONTEXT/u:object_r:system_file:s0/" >> set_metadata
-				elif [[ $(grep -m 1 "^$line2$" all_files.txt) = "$line2" && $(echo $line | grep "#CONTEXT") = "" ]]; then
-					grep -m 1 "$line2" $tools/updater/set_metadata-data >> set_metadata
-				fi
+			        line2=$(echo "$line" | gawk '{ print $1 }' | rev | cut -d'"' -f2 | rev)
+			        if [[ $(gawk '{ print $1 }' pre_metadata | grep -m 1 "^$line2$") = "$line2" ]]; then
+			                context=$(grep -m 1 "^$line2 " pre_metadata | gawk '{ print $2 }')
+			                grep -m 1 "$line2" $tools/updater/set_metadata-data | sed "s/#CONTEXT/$context/" >> set_metadata
+			        elif [[ $(grep -m 1 "^$line2$" all_files.txt) = "$line2" && ! $(echo $line | grep "#CONTEXT") = "" ]]; then
+			                grep -m 1 "$line2" $tools/updater/set_metadata-data | sed "s/#CONTEXT/u:object_r:system_file:s0/" >> set_metadata
+			        elif [[ $(grep -m 1 "^$line2$" all_files.txt) = "$line2" && $(echo $line | grep "#CONTEXT") = "" ]]; then
+			                grep -m 1 "$line2" $tools/updater/set_metadata-data >> set_metadata
+			        fi
+			done
+			cat pre_metadata | while read line; do
+			        line2=$(echo "$line" | gawk '{ print $1 }')
+			        if [[ $(grep "$line2" set_metadata) = "" ]]; then
+			                xcontext=$(echo "$line" | gawk '{ print $2 }')
+			                echo "set_metadata(\"$line2\", \"selabel\", \"$xcontext\");" >> set_metadata
+			        fi
 			done
 			rm -rf pre_metadata
 		fi
