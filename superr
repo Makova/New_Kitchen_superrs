@@ -1440,9 +1440,9 @@ build_rom_zip() {
 		echo "${yellowt}This may take a while. Please be patient ...$normal"
 		echo ""
 		if [[ -f $prfiles/data-set_metadata ]]; then
-			$p7z a -mx7 $signature.zip install boot.img META-INF system.new.dat system.patch.dat system.transfer.list vendor.new.dat vendor.patch.dat vendor.transfer.list data supersu busybox $prfiles/file_contexts 2>/dev/null >> $logs/zip.log
+			$p7z a -mx7 $signature.zip install boot.img META-INF system.new.dat system.patch.dat system.transfer.list vendor.new.dat vendor.patch.dat vendor.transfer.list data supersu rootzip busybox $prfiles/file_contexts 2>/dev/null >> $logs/zip.log
 		else
-			$p7z a -mx7 $signature.zip install boot.img META-INF system.new.dat system.patch.dat system.transfer.list vendor.new.dat vendor.patch.dat vendor.transfer.list data.new.dat data.patch.dat data.transfer.list supersu busybox $prfiles/file_contexts 2>/dev/null >> $logs/zip.log
+			$p7z a -mx7 $signature.zip install boot.img META-INF system.new.dat system.patch.dat system.transfer.list vendor.new.dat vendor.patch.dat vendor.transfer.list data.new.dat data.patch.dat data.transfer.list supersu rootzip busybox $prfiles/file_contexts 2>/dev/null >> $logs/zip.log
 		fi
 		rm -rf vendor.new.dat vendor.transfer.list vendor.patch.dat data.new.dat data.patch.dat data.transfer.list system.new.dat system.transfer.list system.patch.dat
 	elif [[ $permtype = "raw_img" ]]; then
@@ -1495,15 +1495,15 @@ build_rom_zip() {
 		echo "${yellowt}This may take a while. Please be patient ...$normal"
 		echo ""
 		if [[ -f $prfiles/data-set_metadata ]]; then
-			$p7z a -mx7 $signature.zip boot.img META-INF system_new.img vendor_new.img data supersu busybox 2>/dev/null >> $logs/zip.log
+			$p7z a -mx7 $signature.zip boot.img META-INF system_new.img vendor_new.img data supersu rootzip busybox 2>/dev/null >> $logs/zip.log
 		else
-			$p7z a -mx7 $signature.zip boot.img META-INF system_new.img vendor_new.img data_new.img supersu busybox 2>/dev/null >> $logs/zip.log
+			$p7z a -mx7 $signature.zip boot.img META-INF system_new.img vendor_new.img data_new.img supersu rootzip busybox 2>/dev/null >> $logs/zip.log
 		fi
 		rm -rf system_new.img vendor_new.img data_new.img
 	else
 		banner
 		echo "${bluet}Building $signature.zip in $romname ...$normal"
-		$p7z a -mx7 $signature.zip boot.img META-INF system vendor data supersu busybox 2>/dev/null >> $logs/zip.log
+		$p7z a -mx7 $signature.zip boot.img META-INF system vendor data supersu rootzip busybox 2>/dev/null >> $logs/zip.log
 	fi
 	banner
 	if [[ -f $signature.zip ]]; then
@@ -1821,6 +1821,7 @@ change_permtype() {
 		echo "${bluet}Changing perm type ...$normal"
 		rm -rf $romdir/META-INF
 		cp -r $tools/updater/META-INF-DAT/META-INF $romdir/
+		cp $tools/updater/META-INF/com/google/android/update-binary $usdir/
 		cp -r $tools/updater/META-INF-DAT/install $romdir/
 		cd $prfiles
 		rm -rf permtype set_metadata set_perm
@@ -1845,7 +1846,7 @@ change_permtype() {
 	fi
 	update_project
 	if [[ -f $prfiles/root && ! -f $prfiles/root_existing ]]; then
-		if [[ -f $romdir/system/xbin/su || -d $romdir/SuperSU || -d $romdir/supersu ]]; then
+		if [[ -f $romdir/system/xbin/su || -d $romdir/SuperSU || -d $romdir/supersu || -d $romdir/rootzip ]]; then
 			rootrem
 			root
 		else
@@ -5485,7 +5486,7 @@ isodexstatus() {
 }
 isrootstatus() {
 	if [[ -d $romdir ]]; then
-		if [[ -f $romdir/system/xbin/su || -d $romdir/SuperSU || -d $romdir/supersu ]]; then
+		if [[ -f $romdir/system/xbin/su || -d $romdir/SuperSU || -d $romdir/supersu || -d $romdir/rootzip ]]; then
 			if [[ ! -f $prfiles/root ]]; then
 				touch $prfiles/root
 			fi
@@ -5659,7 +5660,7 @@ kitchen_update() {
 	return 1
 }
 moveoldfiles() {
-	if [[ -d $romdir/system || -d $romdir/META-INF || -d $romdir/supersu || -d $romdir/busybox || -d $romdir/data || -d $romdir/vendor ]]; then
+	if [[ -d $romdir/system || -d $romdir/META-INF || -d $romdir/supersu || -d $romdir/rootzip || -d $romdir/busybox || -d $romdir/data || -d $romdir/vendor ]]; then
 		echo $timestamp > $prfiles/temptime
 		temptime=$(cat $prfiles/temptime)
 		mkdir -p $prfiles/old_rom_files/$romname.$temptime
@@ -5672,6 +5673,9 @@ moveoldfiles() {
 	fi
 	if [[ -d $romdir/supersu ]]; then
 		mv $romdir/supersu $prfiles/old_rom_files/$romname.$temptime/
+	fi
+	if [[ -d $romdir/rootzip ]]; then
+		mv $romdir/rootzip $prfiles/old_rom_files/$romname.$temptime/
 	fi
 	if [[ -d $romdir/busybox ]]; then
 		mv $romdir/busybox $prfiles/old_rom_files/$romname.$temptime/
@@ -6112,7 +6116,31 @@ rom_tools() {
 	fi
 }
 root() {
-	if [[ $api -ge "23" ]] || [[ $androidversion = "5.1.1" && $(grep "ro.product.manufacturer" $romdir/system/build.prop | cut -d"=" -f2) = "samsung" ]]; then
+	rootzip=""
+	rootver=""
+	countroot=""
+	countroot=$(find $tools/root/root_zips -name *.zip | wc -l)
+	if [[ $countroot = "1" ]]; then
+		export rootzip=$(basename $(find $tools/root/root_zips -name *.zip))
+	elif [[ $countroot -gt "1" ]]; then
+		while [[ $rootzip = "" ]]; do
+			banner
+			echo "${greenb}Choose Root Zip:$normal"
+			echo ""
+			findrootzip=""
+			findrootzip=$(find $tools/root/root_zips -name *.zip | rev | cut -d"/" -f1 | rev)
+			choosepr ssucho in ${findrootzip[@]}
+			if [[ $REPLY = "q" ]]; then
+				exit
+			else
+				export rootzip="$ssucho"
+			fi
+		done
+	fi
+	if [[ ! $(echo "$rootzip" | grep "SuperSU\|supersu\|SuperSu\|Supersu") = "" ]]; then
+		rootver="supersu"
+	fi
+	if [[ $api -ge "23" ]] || [[ $androidversion = "5.1.1" && $(grep "ro.product.manufacturer" $romdir/system/build.prop | cut -d"=" -f2) = "samsung" ]] && [[ $rootver = "supersu" ]]; then
 		choice=""
 		while [[ ! ${choice} =~ ^[1-3]$ ]]; do
 			banner
@@ -6169,29 +6197,9 @@ root() {
 		grep "install-recovery.sh" symlinks >> symunroot
 	fi
 	sed -i "/#ROOT/ r $tools/root/root_prog" $usdir/updater-script
-	supersu=""
-	countroot=""
-	countroot=$(find $tools/root/supersu -name *.zip | wc -l)
-	if [[ $countroot = "1" ]]; then
-		export supersu=$(basename $(find $tools/root/supersu -name *.zip))
-	elif [[ $countroot -gt "1" ]]; then
-		while [[ $supersu = "" ]]; do
-			banner
-			echo "${greenb}Choose SuperSU version:$normal"
-			echo ""
-			findsupersu=""
-			findsupersu=$(find $tools/root/supersu -name *.zip | rev | cut -d"/" -f1 | rev)
-			choosepr ssucho in ${findsupersu[@]}
-			if [[ $REPLY = "q" ]]; then
-				exitk
-			else
-				export supersu="$ssucho"
-			fi
-		done
-	fi
-	sed -i "s/#SUPERSU/$supersu/g" $usdir/updater-script
-	mkdir -p $romdir/supersu
-	cp $tools/root/supersu/$supersu $romdir/supersu/
+	sed -i "s/#ROOTZIP/$rootzip/g" $usdir/updater-script
+	mkdir -p $romdir/rootzip
+	cp $tools/root/root_zips/$rootzip $romdir/rootzip/
 }
 rootrem() {
 	cd $prfiles
@@ -6520,6 +6528,7 @@ update_project() {
 				permtype="sparse_dat"
 				rm -rf $romdir/META-INF
 				cp -r $tools/updater/META-INF-DAT/META-INF $romdir/
+				cp $tools/updater/META-INF/com/google/android/update-binary $usdir/
 				cp -r $tools/updater/META-INF-DAT/install $romdir/
 				cd $prfiles
 				rm -rf permtype set_metadata set_perm
