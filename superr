@@ -2343,7 +2343,7 @@ deodex_start() {
 			echo ""
 			read -n 1 -p "Please enter your choice: " choice
 		done
-		# START oat2dex
+		# START M oat2dex
 		if [[ $choice = "1" ]]; then
 			choice=""
 			while [[ ! ${choice} =~ ^[1-2]$ ]]; do
@@ -2361,7 +2361,7 @@ deodex_start() {
 				oat2dex=$(find $tools/smali/current -name *oat2dex*)
 			fi
 			deodex_m
-		# START smali/baksmali
+		# START M smali/baksmali
 		elif [[ $choice = "2" ]]; then
 			baksmali=$(find $tools/smali/current -name *baksmali*)
 			smali=$(find $tools/smali/current -name *smali* | grep -v "baksmali")
@@ -2369,11 +2369,54 @@ deodex_start() {
 		fi
 		return 1
 	elif [[ $api -eq 23 && $androidversion = "N" ]] || [[ $api -eq 24 ]]; then
-		oat2dex=$(find $tools/smali/current -name *oat2dex*)
-		baksmali=$(find $tools/smali/current -name *baksmali*)
-		smali=$(find $tools/smali/current -name *smali* | grep -v "baksmali")
+		if [[ ! $(getconf LONG_BIT) = "64" ]]; then
+			banner
+			echo "${redt}You need 64-bit Linux to use this feature$normal"
+			exit_deo
+		fi
+		if [[ ! -f $base/tools/oattools/bin/oatdump ]]; then
+			banner
+			echo "$redb${yellowt}NOTICE:$normal"
+			echo "${redt}You need oatdump to continue.$normal"
+			echo ""
+			read -n 1 -p "Would you like to download/install it now?  y/n  " reply
+			if [[ ! $reply = "y" ]]; then
+				echo ""
+				exit_deo
+			fi
+			banner
+			echo "${bluet}Downloading/Installing now ...$normal"
+			mkdir -p $base/tools/oattools
+			cd $base/tools/oattools
+			(wget "https://bitbucket.org/superr/superrs-kitchen/downloads/oattools.zip" 2>&1) >/dev/null
+			if [[ ! -f $base/tools/oattools/oattools.zip ]]; then
+				banner
+				echo "$redb${yellowt}ERROR:$normal"
+				echo "${redt}The oatdump download failed.$normal"
+				rm -rf $base/tools/oattools
+				cd $romdir
+				exit_deo
+			fi
+			$p7z x -y oattools.zip 2>&1 >/dev/null
+			rm -f oattools.zip
+			cd $romdir
+			if [[ ! -f $base/tools/oattools/bin/oatdump || ! -f $base/tools/oattools/bin/dexrepair ]]; then
+				banner
+				echo "$redb${yellowt}ERROR:$normal"
+				echo "${redt}The oatdump download/install failed.$normal"
+				rm -rf $base/tools/oattools
+				exit_deo
+			fi
+		fi
+		oattools="$base/tools/oattools/bin"
 		deodex_n
 		return 1
+	else
+		banner
+		echo "$redb${yellowt}ERROR:$normal"
+		echo "${redt}The Android version could not be detected.$normal"
+		echo ""
+		exit_deo
 	fi
 }
 deodex_l() {
@@ -3428,7 +3471,7 @@ deodex_n() {
 		if [[ ! $arch2 = "" ]]; then
 			echo "${bluet}ARCH2: $greent$arch2$normal"
 		fi
-		echo "${bluet}METHOD: ${greent}oat2dex$normal"
+		echo "${bluet}METHOD: ${greent}oatdump$normal"
 		echo ""
 		read -n 1 -p "Would you like to continue deodexing? y/n  "
 		if [[ ! $REPLY = "y" ]]; then
@@ -3451,30 +3494,27 @@ deodex_n() {
 				echo ""
 				echo "... Deodexing $app"
 				echo ""
-				java -Xmx${heapsize}m -jar $oat2dex $deoappdir/$app/$deoarch/$app.odex $framedir/$deoarch2/odex >> $logs/deodex.log
-				if [[ $(gawk "/$app\/$app\.apk/{getline; print}" $logs/deodex.log | grep "error\|Failed\|skip") = "" ]]; then
-					if [[ ! -f $deoappdir/$app/$deoarch/$app.dex ]]; then
-						echo "${redt}${app} Failed ...$normal"
-						echo "$deoappdir/$app/$deoarch/$app.odex" >> $logs/deodex_fail_list
-						rm -rf $deoappdir/$app/$deoarch/$app-classes*.dex
-						continue
-					fi
-					mv $deoappdir/$app/$deoarch/$app.dex $deoappdir/$app/$deoarch/classes.dex
-					find $deoappdir/$app/$deoarch -name $app-classes*.dex | while read line; do
-					        appclassdex=$(basename $line)
-					        appclassdir=$(dirname $line)
-					        classname=$(echo "$appclassdex" | cut -d"-" -f2)
-					        mv $line $appclassdir/$classname
-					done
-					$p7z u -tzip $deoappdir/$app/$app.apk $deoappdir/$app/$deoarch/classes*.dex 2>/dev/null >> $logs/zip.log
-					rm -rf $deoappdir/$app/oat
-				else
+				$oattools/oatdump --oat-file="$deoappdir/$app/$deoarch/$app.odex" --export-dex-to="$deoappdir/$app/$deoarch" >> $logs/deodex.log
+				$oattools/dexrepair -I $deoappdir/$app/$deoarch >> $logs/deodex.log
+				if [[ ! -f $deoappdir/$app/$deoarch/$app.apk_export.dex_repaired.dex ]]; then
 					echo "${redt}${app} Failed ...$normal"
 					echo "$deoappdir/$app/$deoarch/$app.odex" >> $logs/deodex_fail_list
+					rm -rf $deoappdir/$app/$deoarch/$app.apk:classes*.dex_export.dex_repaired.dex
+					continue
 				fi
+				mv $deoappdir/$app/$deoarch/$app.apk_export.dex_repaired.dex $deoappdir/$app/$deoarch/classes.dex
+				find $deoappdir/$app/$deoarch -name $app.apk:classes*.dex_export.dex_repaired.dex | while read line; do
+				        appclassdex=$(basename $line)
+				        appclassdir=$(dirname $line)
+				        classname=$(echo "$appclassdex" | cut -d":" -f2 | cut -d"_" -f1)
+				        mv $line $appclassdir/$classname
+				done
+				$p7z u -tzip $deoappdir/$app/$app.apk $deoappdir/$app/$deoarch/classes*.dex 2>/dev/null >> $logs/zip.log
+				$p7z d $deoappdir/$app/$app.apk META-INF >> $logs/zip.log
+				rm -rf $deoappdir/$app/oat
 			else
 				echo ""
-				echo "$app is already deodexed ..."
+				echo "$greent$app is already deodexed ...$normal"
 				echo ""
 				rm -rf $deoappdir/$app/oat
 			fi
@@ -3531,28 +3571,6 @@ deodex_n() {
 				fi
 				extraapp=$(basename $line)
 				mv $romdir/$line $romdir/system/app/$extraapp
-			done
-		fi
-	fi
-	echo "$clears"
-	echo ""
-	echo "----------------------------------------------------"
-	echo "Deoptimizing boot.oat ..."
-	echo "----------------------------------------------------"
-	echo ""
-        if [[ ! -d "$framedir/$arch/odex" ]]; then
-		mkdir -p $framedir/$arch/odex
-		line=""
-		ls $framedir/$arch | grep .oat | while read line; do
-			java -Xmx${heapsize}m -jar $oat2dex -o $framedir/$arch/odex odex $framedir/$arch/$line >> $logs/deodex.log
-		done
-	fi
-	if [[ ! $arch2 = "" ]]; then
-		if [[ ! -d "$framedir/$arch2/odex" ]]; then
-			mkdir -p $framedir/$arch2/odex
-			line=""
-			ls $framedir/$arch2 | grep .oat | while read line; do
-				java -Xmx${heapsize}m -jar $oat2dex -o $framedir/$arch2/odex odex $framedir/$arch2/$line >> $logs/deodex.log
 			done
 		fi
 	fi
@@ -3626,75 +3644,45 @@ deodex_n() {
 	echo "Start deodexing /system/framework ..."
 	echo "----------------------------------------------------"
 	echo ""
+	mkdir -p $framedir/bootdex
+	$oattools/oatdump --oat-file="$framedir/$arch/boot.oat" --export-dex-to="$framedir/bootdex" >> $logs/deodex.log
 	frame=""
-	for frame in $(ls $framedir/$deoarch | grep .odex | rev | cut -c 6- | rev); do
-		if [[ $(echo $frame | grep classes) = "" && $($p7z l $framedir/$frame.jar | grep classes.dex) = "" ]]; then
+	for frame in $(ls $framedir | grep .jar | rev | cut -d"." -f2- | rev); do
+		if [[ $($p7z l $framedir/$frame.jar | grep classes.dex) = "" ]]; then
 			echo ""
 			echo "... Deodexing $frame"
 			echo ""
-			java -Xmx${heapsize}m -jar $oat2dex $framedir/$deoarch/$frame.odex $framedir/$deoarch2/odex >> $logs/deodex.log
-			if [[ $(gawk "/framework\/$frame\.jar/{getline; print}" $logs/deodex.log | grep "error\|Failed\|skip") = "" ]]; then
-				if [[ ! -f $framedir/$deoarch/$frame.dex ]]; then
-					echo "${redt}${frame} Failed ...$normal"
-					echo "$framedir/$deoarch/$frame.odex" >> $logs/deodex_fail_list
-					rm -rf $framedir/$deoarch/$frame-classes*.dex
-					continue
-				fi
-				mv $framedir/$deoarch/$frame.dex $framedir/$deoarch/classes.dex
-				find $framedir/$deoarch -name $frame-classes*.dex | while read line; do
-				        frameclassdex=$(basename $line)
-				        frameclassdir=$(dirname $line)
-				        classname=$(echo "$frameclassdex" | cut -d"-" -f2)
-				        mv $line $frameclassdir/$classname
-				done
-				if [[ ! -f $framedir/$frame.apk ]]; then
-					$p7z u -tzip $framedir/$frame.jar $framedir/$deoarch/classes*.dex 2>/dev/null >> $logs/zip.log
-				else
-					$p7z u -tzip $framedir/$frame.apk $framedir/$deoarch/classes*.dex 2>/dev/null >> $logs/zip.log
-				fi
-				rm -rf $framedir/$deoarch/classes*.dex
-			else
-				echo "${redt}${frame} Failed ...$normal"
-				echo "$framedir/$deoarch/$frame.odex" >> $logs/deodex_fail_list
+			mkdir -p $framedir/frametmp
+			if [[ -f $framedir/oat/$arch/$frame.odex ]]; then
+				$oattools/oatdump --oat-file="$framedir/oat/$arch/$frame.odex" --export-dex-to="$framedir/frametmp" >> $logs/deodex.log
+			elif [[ -f $framedir/$arch/boot-$frame.oat ]]; then
+				$oattools/oatdump --oat-file="$framedir/$arch/boot-$frame.oat" --export-dex-to="$framedir/frametmp" >> $logs/deodex.log
+			elif [[ -f $framedir/bootdex/$frame.jar_export.dex ]]; then
+				mv $framedir/bootdex/$frame.jar* $framedir/frametmp/
 			fi
-		else
-			echo ""
-			echo "$frame is already deodexed ..."
-			echo ""
-		fi
-	done
-	frame2=""
-	for frame2 in $(ls $framedir/$deoarch2/odex | grep .dex | rev | cut -c 5- | rev); do
-		if [[ $(echo $frame2 | grep classes) = "" && $($p7z l $framedir/$frame2.jar | grep classes.dex) = "" ]]; then
-			echo ""
-			echo "... Deodexing $frame2"
-			echo ""
-			mv $framedir/$deoarch2/odex/$frame2.dex $framedir/$deoarch2/odex/classes.dex
-			find $framedir/$deoarch2/odex -name $frame-classes*.dex | while read line; do
+			$oattools/dexrepair -I $framedir/frametmp >> $logs/deodex.log
+			mv $framedir/frametmp/$frame.jar_export.dex_repaired.dex $framedir/frametmp/classes.dex
+			if [[ ! -f $framedir/frametmp/classes.dex ]]; then
+				echo "$redt$frame Failed ...$normal"
+				echo "$frame.jar" >> $logs/deodex_fail_list
+				rm -rf $framedir/frametmp
+				continue
+			fi
+			find $framedir/frametmp -name $frame.jar:classes*.dex_export.dex_repaired.dex | while read line; do
 				frameclassdex=$(basename $line)
 				frameclassdir=$(dirname $line)
-				classname=$(echo "$frameclassdex" | cut -d"-" -f2)
+				classname=$(echo "$frameclassdex" | cut -d":" -f2 | cut -d"_" -f1)
 				mv $line $frameclassdir/$classname
 			done
-			if [[ $(ls $framedir | grep $frame2.apk) = "" ]]; then
-				$p7z u -tzip $framedir/$frame2.jar $framedir/$deoarch2/odex/classes*.dex 2>/dev/null >> $logs/zip.log
-			else
-				$p7z u -tzip $framedir/$frame2.apk $framedir/$deoarch2/odex/classes*.dex 2>/dev/null >> $logs/zip.log
-			fi
-			rm -rf $framedir/$deoarch2/odex/classes*.dex
+			$p7z u -tzip $framedir/$frame.jar $framedir/frametmp/classes*.dex 2>/dev/null >> $logs/zip.log
+			rm -rf $framedir/frametmp
 		else
-			if [[ $frame2 != *"classes"* ]]; then
-				echo ""
-				echo "$frame2 is already deodexed ..."
-				echo ""
-				rm -rf $framedir/$deoarch2/odex/$frame2.dex
-			fi
+			echo ""
+			echo "$greent$frame is already deodexed ...$normal"
+			echo ""
 		fi
 	done
-	rm -rf $framedir/$arch/odex
-	if [[ ! $arch2 = "" ]]; then
-		rm -rf $framedir/$arch2/odex
-	fi
+	rm -rf $framedir/bootdex
 	delframework="y"
 	if [[ -s $logs/deodex_fail_list ]]; then
 		banner
