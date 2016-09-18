@@ -22,6 +22,8 @@
 /tools/rimg2sdat.exe
 /tools/zipalign.exe
 /tools/oattools
+/tools/oattools_m
+/tools/oattools_n
 /tools/devices/*
 !/tools/devices/a5xelte
 !/tools/devices/ada
