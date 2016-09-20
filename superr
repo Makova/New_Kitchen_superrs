@@ -4,7 +4,6 @@
 
 banner() {
 	echo "$clears"
-	chkstat
 	echo ""
 	echo "------------------------------------------------------"
 	echo "$bold$stand                   SuperR's Kitchen                   $normal"
@@ -1533,11 +1532,7 @@ build_zip() {
 		echo ""
 		echo "1) Build full ROM Zip"
 		echo "2) Build system.img"
-		if [[ $bashwin = "" ]]; then
-			echo "3) Sign existing zip"
-		else
-			echo "${redt}3) Sign existing zip$normal"
-		fi
+		echo "3) Sign existing zip"
 		echo "${yellowt}4) Custom zip menu"
 		echo "5) ROM Tools menu"
 		echo "m = Main menu"
@@ -1586,16 +1581,6 @@ build_zip() {
 		return 1
 	# START Sign Existing zip
 	elif [[ $choice = "3" ]]; then
-		if [[ ! $bashwin = "" ]]; then
-			banner
-			echo "${redb}${yellowt}${bold}ERROR:$normal"
-			echo "${redt}You cannot sign zips in Bash on Ubuntu on Windows"
-			echo "due to not being able to install java.$normal"
-			echo ""
-			read -p "Press ENTER to return to Build Menu"
-			build_zip
-			return 1
-		fi
 		cd $romdir
 		countzip=$(ls | grep ".zip" | wc -l)
 		if [[ $(echo "$countzip") = "1" ]]; then
@@ -1864,17 +1849,10 @@ change_permtype() {
 	rom_tools
 }
 chkstat() {
-	if [[ $(ps -A | grep chkstatd) = "" ]]; then
-		if [[ -f $tools/source/img_tools/extras/chkstatd ]]; then
-			$tools/source/img_tools/extras/chkstatd &
-			if [[ $(ps -A | grep chkstatd) = "" ]]; then
-				echo ""
-				exit
-			fi
-		else
-			exit
-		fi
-	fi
+	while [[ ! $(grep 'Kitchen/\" $romdir' $base/superr) = "" && $(grep 'Kitchen/\" $romdir' $base/superr | grep "#") = "" ]]; do
+		sleep 5
+	done
+	killall superr
 }
 choosepr() {
 	local v e
@@ -2257,13 +2235,6 @@ deodex_start() {
 		rom_tools
 		return 1
 	}
-	if [[ ! $bashwin = "" ]]; then
-		banner
-		echo "${redb}${yellowt}${bold}ERROR:$normal"
-		echo "${redt}You cannot deodex in Bash on Ubuntu on Windows due"
-		echo "to not being able to install java.$normal"
-		exit_deo
-	fi
 	rm -rf $logs/extraodex.txt
 	if [[ ! -d "$framedir" || ! -f $romdir/system/build.prop ]]; then
 		banner
@@ -2314,11 +2285,19 @@ deodex_start() {
 			sqshfile="odex.priv-app.sqsh"
 			deodex_sqsh
 		fi
-		grep -v "odex.app\|odex.priv-app" $usdir/updater-script > $usdir/updater-script2
+		if [[ -f $romdir/system/odex.framework.sqsh ]]; then
+			sqshfile="odex.framework.sqsh"
+			deodex_sqsh
+		fi
+		if [[ -f $romdir/system/etc/product/orig.applications.sqsh ]]; then
+			sqshfile="orig.applications.sqsh"
+			deodex_sqsh
+		fi
+		grep -v "odex.app\|odex.priv-app\|odex.framework\|orig.applications" $usdir/updater-script > $usdir/updater-script2
 		mv $usdir/updater-script2 $usdir/updater-script
-		grep -v "odex.app\|odex.priv-app" $prfiles/symlinks > $prfiles/symlinks2
+		grep -v "odex.app\|odex.priv-app\|odex.framework\|orig.applications" $prfiles/symlinks > $prfiles/symlinks2
 		mv $prfiles/symlinks2 $prfiles/symlinks
-		grep -v "odex.app\|odex.priv-app" $prfiles/symlinks.orig > $prfiles/symlinks.orig2
+		grep -v "odex.app\|odex.priv-app\|odex.framework\|orig.applications" $prfiles/symlinks.orig > $prfiles/symlinks.orig2
 		mv $prfiles/symlinks.orig2 $prfiles/symlinks.orig
 	fi
 	totalmem=$(grep MemTotal /proc/meminfo | gawk '{ print $2 }')
@@ -4200,11 +4179,34 @@ deodex_old() {
 deodex_sqsh() {
 	banner
 	echo "${bluet}Extracting $sqshfile ...$normal"
-	cd $romdir/system
-	if [[ ! $(echo "$sqshfile" | grep priv-app) = "" ]]; then
-		sqshdir="sqshtmp/priv-app"
-	elif [[ ! $(echo "$sqshfile" | grep app) = "" ]]; then
-		sqshdir="sqshtmp/app"
+	if [[ ! $(echo "$sqshfile" | grep "priv-app\|odex.app\|framework") = "" ]]; then
+		cd $romdir/system
+		sqshtype=$(echo "$sqshfile" | cut -d"." -f2)
+		sqshdir=$(echo "sqshtmp/$sqshtype")
+	elif [[ ! $(echo "$sqshfile" | grep "orig.applications") = "" ]]; then
+		cd $romdir/system/etc/product
+		mkdir -p sqshtmp
+		mv $sqshfile sqshtmp/
+		cd sqshtmp
+		$p7z x $sqshfile 2>/dev/null >> $logs/zip.log
+		banner
+		echo "${bluet}Moving odex files ...$normal"
+		if [[ ! $(ls | grep arm64) = "" ]]; then
+			odexarch="arm64"
+			cd arm64
+		elif [[ ! $(ls | grep arm) = "" ]]; then
+			odexarch="arm"
+			cd arm
+		fi
+		ls | while read line; do
+			odexapp=$(echo "$line" | sed 's/\.odex//')
+			mv $line $romdir/system/etc/product/applications/$odexapp/oat/$odexarch/
+			mv $romdir/system/etc/product/sqshtmp/$odexapp/$odexapp.apk $romdir/system/etc/product/applications/$odexapp/
+		done
+		rm -rf $romdir/system/etc/product/sqshtmp $romdir/system/etc/product/orig.applications
+		sqshfile=""
+		cd $romdir
+		return 1
 	else
 		sqshdir="sqshtmp"
 	fi
@@ -4213,17 +4215,46 @@ deodex_sqsh() {
 	cd $sqshdir
 	$p7z x $sqshfile 2>/dev/null >> $logs/zip.log
 	rm -rf $sqshfile
-	cd $romdir/system/sqshtmp
 	banner
 	echo "${bluet}Moving odex files to system ...$normal"
-	line=""
-	find . -type d | sed 's/^.\///' | while read line; do
-		mkdir -p $romdir/system/$line
-	done
-	line=""
-	find . -type f | sed 's/^.\///' | while read line; do
-		mv $line $romdir/system/$line
-	done
+	if [[ -d $romdir/system/$sqshdir/arm || -d $romdir/system/$sqshdir/arm64 ]]; then
+		if [[ -d $romdir/system/$sqshdir/arm ]]; then
+			cd $romdir/system/$sqshdir/arm
+			sqsharch="arm"
+		elif [[ -d $romdir/system/$sqshdir/arm64 ]]; then
+			cd $romdir/system/$sqshdir/arm64
+			sqsharch="arm64"
+		fi
+		if [[ ! $sqshtype = "framework" ]]; then
+			line=""
+			ls | grep .odex | while read line; do
+				tmpapp=$(echo "$line" | sed 's/\.odex//')
+				mkdir -p $romdir/system/$sqshtype/$tmpapp/oat/$sqsharch
+				mv "$line" $romdir/system/$sqshtype/$tmpapp/oat/$sqsharch/
+			done
+		else
+			line=""
+			ls | grep .odex | while read line; do
+				tmpapp=$(echo "$line" | sed 's/\.odex//')
+				if [[ -d $framedir/$tmpapp ]]; then
+					mkdir -p $framedir/$tmpapp/oat/$sqsharch
+					mv "$line" $framedir/$tmpapp/oat/$sqsharch/
+				fi
+			done
+			mkdir -p $romdir/system/$sqshtype/oat/$sqsharch
+			mv * $romdir/system/$sqshtype/oat/$sqsharch/
+		fi
+	else
+		cd $romdir/system/sqshtmp
+		line=""
+		find . -type d | sed 's/^.\///' | while read line; do
+			mkdir -p $romdir/system/$line
+		done
+		line=""
+		find . -type f | sed 's/^.\///' | while read line; do
+			mv $line $romdir/system/$line
+		done
+	fi
 	cd $romdir/system
 	rmleft=$(echo "$sqshfile" | sed 's/\.sqsh$//')
 	rm -rf sqshtmp $rmleft
@@ -4255,12 +4286,6 @@ dozipalign() {
 	fi
 }
 exitk() {
-	exec 3>&2
-	exec 2> /dev/null
-	killall chkstatd
-	#sleep 1
-	exec 2>&3
-	exec 3>&-
 	exit
 }
 elf_unpack() {
@@ -5560,13 +5585,16 @@ imgextract() {
 	if [[ ! $bashwin = "" ]]; then
 		banner
 		echo "${redb}${yellowt}${bold}WARNING:$normal"
-		echo "${redt}You cannot mount/extract images while running in"
-		echo "Bash on Ubuntu on Windows.$normal"
+		echo "${redt}You may not be able to mount/extract images"
+		echo "while running in Windows Subsystem for Linux (WSL)."
+		echo "There may be unexpected results$normal"
 		echo ""
-		read -p "Press ENTER to return to the Main Menu"
-		cd $base
-		exec ./superr
-		return 1
+		read -n 1 -p "Would you like to continue?  y/n  " reply
+		if [[ ! $reply = "y" ]]; then
+			cd $base
+			exec ./superr
+			return 1
+		fi
 	fi
 	myuser=$(echo "$(whoami | gawk '{ print $1 }')")
 	banner
@@ -6370,11 +6398,7 @@ rom_tools() {
 		echo ""
 		echo "${yellowb}${redt}ROM Tools Menu$normal"
 		echo ""
-		if [[ $bashwin = "" ]]; then
-			echo "1) Deodex ROM (${bluet}CURRENT: $greent$odexstatus1$normal)"
-		else
-			echo "${redt}1) Deodex ROM (CURRENT: Not supported$normal)"
-		fi
+		echo "1) Deodex ROM (${bluet}CURRENT: $greent$odexstatus1$normal)"
 		echo "2) Change perm type (${bluet}CURRENT: $greent$permtype$normal)"
 		echo "3) /data/app support (${bluet}CURRENT: $greent$dataapp1$normal)"
 		echo "${yellowt}4) Root Menu"
@@ -6736,15 +6760,6 @@ root_tools() {
 	fi
 }
 signzip() {
-	if [[ ! $bashwin = "" ]]; then
-		banner
-		echo "${redb}${yellowt}${bold}ERROR:$normal"
-		echo "${redt}You cannot sign zips in Bash on Ubuntu on Windows"
-		echo "due to not being able to install java.$normal"
-		echo ""
-		read -p "Press ENTER to continue"
-		return 1
-	fi
 	if [[ $signzipname = "" ]]; then
 		signzipname="$signature2"
 	fi
@@ -7110,6 +7125,10 @@ fi
 export base=$(pwd)
 tools=$base/tools
 superrv=$(grep "SuperR's Kitchen v" README.md | gawk '{ print $4 }')
+if [[ ! $firstrun = "1" ]]; then
+	export firstrun="1"
+	chkstat &
+fi
 if [[ ! $(uname -s | grep "CYGWIN\|cygwin\|Cygwin") = "" ]]; then
 	rm -rf $tools/dependencies2
 	cp $tools/dependencies $tools/dependencies2
@@ -7200,7 +7219,7 @@ if [[ ! -f $tools/depmet ]]; then
 			exitk
 		fi
 	fi
-	if [[ $bashwin = "" ]] && [[ $(which java) = "" || $(java -version 2>&1 | grep "java version\|openjdk version" | cut -d'"' -f2 | cut -c 1,3) -lt "18" ]]; then
+	if [[ $(which java) = "" || $(java -version 2>&1 | grep "java version\|openjdk version" | cut -d'"' -f2 | cut -c 1,3) -lt "18" ]]; then
 		debpkg="default-jre"
 		banner
 		echo "${redb}${yellowt}${bold}MISSING DEPENDENCY:$normal"
