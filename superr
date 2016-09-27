@@ -24,29 +24,29 @@ assert_devices() {
 	fi
 	if [[ $(grep -o "#ASSERT" updater-script) = "" ]]; then
 		banner
-		echo "$redb$yellowt${bold}ERROR:$normal"
-		echo "${redt}There is no assert to ammend."
+		echo "$redb$yellowt$bold$t_error$normal"
+		echo "$redt$t_asserts_no_assert"
 		echo ""
-		read -p "Press ENTER to return to ROM Tools menu"
+		read -p "$t_enter_rom_tools"
 		rom_tools
 		return 1
 	fi
 	assertch=""
 	while [[ ! ${assertch} =~ ^[1-4]$ ]] && [[ ! $assertch = "m" && ! $assertch = "q" ]]; do
 		banner
-		echo "${bluet}CURRENT PROJECT: $greent$romname$normal"
-		echo "${bluet}ANDROID VERSION: $greent$androidversion$normal"
+		echo "$bluet$t_startup_project $greent$romname$normal"
+		echo "$bluet$t_startup_version $greent$androidversion$normal"
 		echo ""
-		echo "${yellowb}${redt}Asserts Menu$normal"
+		echo "$yellowb$redt$t_menu_asserts$normal"
 		echo ""
-		echo "1) Add/Remove Device (${bluet}CURRENT: $greent$assertdevices$normal)"
-		echo "2) Add Custom assert (${bluet}CURRENT: $greent$assertcustom1$normal)"
-		echo "3) Reset asserts to default"
-		echo "${yellowt}4) ROM Tools Menu"
-		echo "m = Main menu"
-		echo "${magentat}q = Quit$normal"
+		echo "1) $t_menu_add_assert ($bluet$t_title_current$greent$assertdevices$normal)"
+		echo "2) $t_menu_asserts_custom ($bluet$t_title_current$greent$assertcustom1$normal)"
+		echo "3) $t_menu_asserts_reset"
+		echo "${yellowt}4) $t_menu_rom_tools"
+		echo "m = $t_title_main"
+		echo "${magentat}q = $t_menu_quit$normal"
 		echo ""
-		read -n 1 -p "Please enter your choice:" assertch
+		read -n 1 -p "$t_select" assertch
 	done
 	# START ROM Tools menu
 	if [[ $assertch = "4" ]]; then
@@ -61,7 +61,7 @@ assert_devices() {
 	elif [[ $assertch = "q" ]]; then
 		echo ""
 		echo ""
-		exitk
+		exit
 	fi
 	grep "getprop(" updater-script > $assertdir/assert_original
 	grep -v "getprop(" updater-script > updater-script2
@@ -71,24 +71,15 @@ assert_devices() {
 		rm -rf $assertdir/assertdevice
 		rm -rf $assertdir/assert
 		banner
-		echo "${bluet}CURRENT DEVICE ASSERTS: $greent$assertdevices$normal"
+		echo "$t_asserts_current $greent$assertdevices$normal"
 		echo ""
-		echo "$redb$yellowt${bold}WARNING:$normal"
-		echo "${redt}Device asserts allow/deny the flashing of ROMs. If you"
-		echo "allow a ROM to be flashed on the wrong device it can"
-		echo "have serious consequences. You have been warned :)$normal"
-		echo ""
-		echo "Please enter the comma separated device asserts. The"
-		echo "current device should already be in the list but make"
-		echo "sure it is. Press ENTER when finished."
-		echo ""
-		echo "${greenb}Example:$normal"
+		echo -e "$t_asserts_enter"
 		echo ""
 		echo "${yellowt}surnia,surnia_cdma,xt1526$normal"
 		echo ""
 		read -e -i "$devicename" -p "" assertdevice2
 		banner
-		echo "${bluet}Preparing device asserts ...$normal"
+		echo "$bluet$t_asserts_prep$normal"
 		assertdevice=$(echo "$assertdevice2" | sed 's/\ //g')
 		echo "$assertdevice" | tr , '\n' > $assertdir/assertdevice
 		cd $assertdir
@@ -108,15 +99,13 @@ assert_devices() {
 	# START Add Custom assert
 	elif [[ $assertch = "2" ]]; then
 		banner
-		echo "Type your custom assert below. Press ENTER when finished."
-		echo ""
-		echo "${greenb}Example:$normal"
+		echo -e "$t_asserts_type"
 		echo ""
 		echo "${yellowt}ro.baseband=1.09.20.1112$normal"
 		echo ""
 		read -e -p "" assertcustom
 		banner
-		echo "${bluet}Preparing custom assert ...$normal"
+		echo "$bluet$t_asserts_prep_cust$normal"
 		propname=$(echo "$assertcustom" | cut -d"=" -f1)
 		propvalue=$(echo "$assertcustom" | cut -d"=" -f2)
 		cd $assertdir
@@ -136,7 +125,7 @@ assert_devices() {
 		return 1
 	fi
 	if [[ -f assertcustom ]]; then
-		grep "ro.product.device\|ro.build.product\|ro.product.name" assert > assert-2
+		grep "ro.product.device" assert > assert-2
 		mv assert-2 assert
 		cat assertcustom >> assert
 	fi
@@ -170,13 +159,13 @@ boot_dmverity() {
 boot_forcee() {
 	if [[ $forceestatus = "Yes" ]]; then
 		banner
-		read -n 1 -p "Would you like to remove forecencrypt?  y/n  " reply
+		read -n 1 -p "$t_boot_forcee_rem_ask" reply
 		if [[ ! $reply = "y" ]]; then
 			boot_tools
 			return 1
 		fi
 		banner
-		echo "${bluet}Removing forceencrypt ...$normal"
+		echo "$bluet$t_boot_rem_forcee$normal"
 		if [[ ! $(${usesudo}grep "/data" $fstab | grep forceencrypt) = "" ]]; then
 			${usesudo}sed -i '/\/data/s/forceencrypt/encryptable/g' $fstab
 			touch $prfiles/forceencrypt
@@ -185,18 +174,18 @@ boot_forcee() {
 			touch $prfiles/forcefdeorfbe
 		fi
 		banner
-		echo "${greent}forceencrypt has been removed.$normal"
+		echo "$greent$t_boot_forsee_rem$normal"
 		echo ""
-		read -p "Press ENTER to return to boot menu"
+		read -p "$t_enter_boot_menu"
 	else
 		banner
-		read -n 1 -p "Would you like to add forecencrypt?  y/n  " reply
+		read -n 1 -p "$t_boot_forcee_add_ask" reply
 		if [[ ! $reply = "y" ]]; then
 			boot_tools
 			return 1
 		fi
 		banner
-		echo "${bluet}Adding forceencrypt ...$normal"
+		echo "$bluet$t_boot_add_forcee$normal"
 		if [[ -f $prfiles/forcefdeorfbe ]]; then
 			${usesudo}sed -i '/\/data/s/encryptable/forcefdeorfbe/g' $fstab
 		elif [[ -f $prfiles/forceencrypt ]]; then
@@ -204,9 +193,9 @@ boot_forcee() {
 		fi
 		rm -rf $prfiles/forcefdeorfbe $prfiles/forceencrypt
 		banner
-		echo "${greent}forceencrypt has been added.$normal"
+		echo "$greentt_boot_forcee_add$normal"
 		echo ""
-		read -p "Press ENTER to return to boot menu"
+		read -p "$t_enter_boot_menu"
 	fi
 	boot_tools
 	return 1
@@ -214,10 +203,10 @@ boot_forcee() {
 boot_initd() {
 	if [[ $chosenimg = "recovery" ]]; then
 		banner
-		echo "${redb}${yellowt}${bold}ERROR:$normal"
-		echo "${redt}This feature is only for boot.img$normal"
+		echo "$redb$yellowt$bold$t_error$normal"
+		echo "$redt$t_boot_warn$normal"
 		echo ""
-		read -p "Press ENTER to return to Boot/Recovery menu"
+		read -p "$t_enter_boot_menu"
 		boot_tools
 		return 1
 	fi
@@ -231,16 +220,16 @@ boot_initd() {
 			mv $prfiles/init.d $romdir/system/etc/
 		fi
 		banner
-		echo "${greent}init.d support has been added$normal"
+		echo "$greent$t_boot_initd_add$normal"
 		echo ""
-		read -p "Press ENTER to return to boot menu"
+		read -p "$t_enter_boot_menu"
 		boot_tools
 		return 1
 	else
 		banner
-		echo "${greent}You already have init.d support$normal"
+		echo "$greent$t_boot_already_initd$normal"
 		echo ""
-		read -n 1 -p "Should we attempt to remove it? y/n  "
+		read -n 1 -p "$t_boot_initd_rem_q"
 		echo ""
 		echo ""
 		if [[ $REPLY = "y" ]]; then
@@ -263,17 +252,17 @@ boot_initd() {
 			isinitd
 			if [[ $initdstatus = "Yes" ]]; then
 				banner
-				echo "${redb}${yellowt}${bold}ERROR:$normal"
-				echo "${redt}init.d cannot be fully removed by this kitchen.$normal"
+				echo "$redb$yellowt$bold$t_error$normal"
+				echo "$redt$t_boot_initd_cant$normal"
 				echo ""
-				read -p "Press ENTER to return to boot menu"
+				read -p "$t_enter_boot_menu"
 				boot_tools
 				return 1
 			fi
 			banner
-			echo "${greent}init.d has been removed.$normal"
+			echo "$greent$t_boot_initd_rem$normal"
 			echo ""
-			read -p "Press ENTER to return to boot menu"
+			read -p "$t_enter_boot_menu"
 			boot_tools
 			return 1
 		else
@@ -285,10 +274,10 @@ boot_initd() {
 boot_insecure() {
 	if [[ $chosenimg = "recovery" ]]; then
 		banner
-		echo "${redb}${yellowt}${bold}ERROR:$normal"
-		echo "${redt}This feature is only for boot.img$normal"
+		echo "$redb$yellowt$bold$t_error$normal"
+		echo "$redt$t_boot_warn$normal"
 		echo ""
-		read -p "Press ENTER to return to Boot/Recovery menu"
+		read -p "$t_enter_boot_menu"
 		boot_tools
 		return 1
 	fi
@@ -306,25 +295,25 @@ boot_insecure() {
 			${usesudo}mv $romdir/bootimg/ramdisk/default.prop2 $romdir/bootimg/ramdisk/default.prop
 		fi
 		banner
-		echo "${greent}The boot.img is now insecure$normal"
+		echo "$greent$t_boot_insecure$normal"
 		echo ""
-		read -p "Press ENTER to return to boot menu"
+		read -p "$t_enter_boot_menu"
 		boot_tools
 		return 1
 	else
 		banner
-		echo "${greent}The boot.img is already insecure$normal"
+		echo "$greent$t_boot_already_insecure$normal"
 		echo ""
-		read -n 1 -p "Should we attempt to secure it? y/n  "
+		read -n 1 -p "$t_boot_secure_ask"
 		echo ""
 		echo ""
 		if [[ $REPLY = "y" ]]; then
 			${usesudo}sed -i 's/ro\.secure=0/ro\.secure=1/' $romdir/bootimg/ramdisk/default.prop
 			${usesudo}sed -i 's/ro\.adb\.secure=0/ro\.adb\.secure=1/' $romdir/bootimg/ramdisk/default.prop
 			banner
-			echo "${greent}The boot.img is now secure$normal"
+			echo "$greentt_boot_secure$normal"
 			echo ""
-			read -p "Press ENTER to return to boot menu"
+			read -p "$t_enter_boot_menu"
 			boot_tools
 			return 1
 		else
@@ -336,7 +325,7 @@ boot_insecure() {
 boot_repack() {
 	if [[ $bootext = "" ]]; then
 		banner
-		echo "${bluet}Repacking ${chosenimg}.img ...$normal"
+		echo "$bluet$t_boot_repack ${chosenimg}.img ...$normal"
 		echo ""
 	fi
 	if [[ -f $romdir/${chosenimg}img/MTK ]]; then
@@ -355,10 +344,10 @@ boot_repack() {
 		else
 			rm -rf $romdir/${chosenimg}img
 			banner
-			echo "${redb}${yellowt}${bold}ERROR:$normal"
-			echo "${redt}There was a problem packing your ${chosenimg}.img."
+			echo "$redb$yellowt$bold$t_error$normal"
+			echo "$redt$t_boot_repack_problem ${chosenimg}.img$normal"
 			echo ""
-			read -p "Press ENTER to continue"
+			read -p "$t_enter_continue"
 			if [[ $bootext = "" ]]; then
 				boot_tools
 			fi
@@ -380,10 +369,10 @@ boot_repack() {
 				comp=$(cat "$romdir/${chosenimg}img/${chosenimg}.img-compression")
 			elif [[ -z "$comp" ]]; then
 				banner
-				echo "${redb}${yellowt}${bold}ERROR:$normal"
-				echo "${redt}Compression method can't be determined.$normal"
+				echo "$redb$yellowt$bold$t_error$normal"
+				echo "$redt$t_boot_no_comp$normal"
 				echo ""
-				read -p "Press ENTER to continue"
+				read -p "$t_enter_continue"
 				if [[ $bootext = "" ]]; then
 					boot_tools
 				fi
@@ -427,10 +416,10 @@ boot_repack() {
 					${usesudo}rm -rf $romdir/${chosenimg}img
 				fi
 				banner
-				echo "${redb}${yellowt}${bold}ERROR:$normal"
-				echo "${redt}There was a problem repacking your ${chosenimg}.img.$normal"
+				echo "$redb$yellowt$bold$t_error$normal"
+				echo "$redt$t_boot_repack_problem ${chosenimg}.img$normal"
 				echo ""
-				read -p "Press ENTER to continue"
+				read -p "$t_enter_continue"
 				if [[ $bootext = "" ]]; then
 					boot_tools
 				fi
@@ -440,10 +429,10 @@ boot_repack() {
 		else
 			${usesudo}rm -rf $romdir/${chosenimg}img
 			banner
-			echo "${redb}${yellowt}${bold}ERROR:$normal"
-			echo "${redt}There is no ramdisk.$normal"
+			echo "$redb$yellowt$bold$t_error$normal"
+			echo "$redt$t_boot_no_ramdisk$normal"
 			echo ""
-			read -p "Press ENTER to continue"
+			read -p "$t_enter_continue"
 			if [[ $bootext = "" ]]; then
 				boot_tools
 			fi
@@ -458,9 +447,9 @@ boot_repack() {
 	if [[ $bootext = "" ]]; then
 		banner
 		if [[ $repackk = "" ]]; then
-			echo "$greent$chosenimg.img packed, ramdisk deleted.$normal"
+			echo "$greent$chosenimg.img $t_boot_packed_d$normal"
 		else
-			echo "$greent$chosenimg.img packed, ramdisk remains.$normal"
+			echo "$greent$chosenimg.img $t_boot_packed_k$normal"
 		fi
 		echo ""
 	fi
@@ -468,57 +457,22 @@ boot_repack() {
 		$tools/open_bump.py $chosenimg.img
 		mv ${chosenimg}_bumped.img $chosenimg.img
 		if [[ $bootext = "" ]]; then
-			echo "${greent}renamed ${chosenimg}_bumped.img to $chosenimg.img$normal"
+			echo "$greent$t_boot_bump_rename $chosenimg.img$normal"
 			echo ""
 		fi
 	fi
 	if [[ $bootext = "" ]]; then
 		echo ""
-		read -p "Press ENTER to continue"
+		read -p "$t_enter_continue"
 		boot_tools
 	fi
 	repackk=""
 	bootext=""
 	return 1
 }
-boot_sud() {
-	if [[ $rootstatus = "Yes" ]]; then
-		if [[ ! $sudstatus = "Yes" ]]; then
-			banner
-			read -n 1 -p "Would you like to add su.d to your rom?  y/n  " reply
-			if [[ ! $reply = "y" ]]; then
-				root_tools
-				return 1
-			fi
-			mkdir -p $romdir/system/su.d
-			sed -i 's/#ROOT/#SUD\n#ROOT/' $usdir/updater-script
-			sed -i "/#SUD/ r $tools/boot/sud_perms" $usdir/updater-script
-		else
-			banner
-			read -n 1 -p "Would you like to remove su.d support?  y/n  " reply
-			if [[ ! $reply = "y" ]]; then
-				root_tools
-				return 1
-			fi
-			rm -rf $romdir/system/su.d
-			grep -v "#SUD\|su\.d" $usdir/updater-script > $usdir/updater-script2
-			mv $usdir/updater-script2 $usdir/updater-script
-		fi
-	else
-		banner
-		echo "$redb$yellowt${bold}ERROR:$normal"
-		echo "${redt}You must add root before adding su.d$normal"
-		echo ""
-		read -p "Press ENTER to return to Boot Tools"
-		root_tools
-		return 1
-	fi
-	root_tools
-	return 1
-}
 boot_tools() {
 	banner
-	echo "${bluet}Checking status ...$normal"
+	echo "$bluet$t_boot_status$normal"
 	timestamp=$(date +%m-%d-%Y-%H:%M:%S)
 	dmveritystatus=""
 	forceestatus=""
@@ -537,15 +491,13 @@ boot_tools() {
 		androidversion=$(grep "ro.build.version.release" $romdir/build.prop | cut -d"=" -f2)
 	else
 		banner
-		echo "${redb}${yellowt}${bold}ERROR:$normal"
-		echo "${redt}The Android version can't be determined. Please extract"
-		echo "your Android system, or add the matching build.prop to"
-		echo "the rom directory and try again.$normal"
+		echo "$redb$yellowt$bold$t_error$normal"
+		echo -e "$redt$t_boot_and_ver_problem$normal"
 		echo ""
-		read -p "Press ENTER to return to Main Menu"
+		read -p "$t_enter_main_menu"
 		cd $base
 		exec ./superr
-		exitk
+		exit
 	fi
 	if [[ -f $tools/open_bump.py ]]; then
 		if [[ -f $romdir/system/build.prop ]]; then
@@ -593,17 +545,17 @@ boot_tools() {
 	elif [[ -f $romdir/boot.img && -f $romdir/recovery.img ]]; then
 		while [[ ! ${choice} =~ ^[1-2]$ ]] && [[ ! $choice = "m" && ! $choice = "q" ]]; do
 			banner
-			echo "${bluet}CURRENT PROJECT: $greent$romname$normal"
-			echo "${bluet}ANDROID VERSION: $greent$androidversion$normal"
+			echo "$bluet$t_startup_project $greent$romname$normal"
+			echo "$bluet$t_startup_version $greent$androidversion$normal"
 			echo ""
-			echo "${yellowb}${redt}Choose boot or recovery img$normal"
+			echo "$yellowb$redt$t_title_cho_boot$normal"
 			echo ""
 			echo "1) boot.img"
 			echo "2) recovery.img"
-			echo "${yellowt}m = Main menu"
-			echo "${magentat}q = Quit$normal"
+			echo "${yellowt}m = $t_title_main"
+			echo "${magentat}q = $t_menu_quit$normal"
 			echo ""
-			read -n 1 -p "Please enter your choice:" choice
+			read -n 1 -p "$t_select" choice
 		done
 	fi
 	# START boot.img chosen
@@ -621,29 +573,29 @@ boot_tools() {
 	elif [[ $choice = "q" ]]; then
 		echo ""
 		echo ""
-		exitk
+		exit
 	fi
 	if [[ -d $romdir/${chosenimg}img ]]; then
 		choice=""
 		while [[ ! ${choice} =~ ^[1-6]$ ]] && [[ ! $choice = "m" && ! $choice = "q" ]]; do
 			banner
-			echo "${bluet}CURRENT PROJECT: $greent$romname$normal"
-			echo "${bluet}ANDROID VERSION: $greent$androidversion$normal"
+			echo "$bluet$t_startup_project $greent$romname$normal"
+			echo "$bluet$t_startup_version $greent$androidversion$normal"
 			echo ""
-			echo "${yellowb}${redt}Boot/Recovery Tools Menu$normal"
+			echo "$yellowb$redt$t_title_boot$normal"
 			echo ""
-			echo "1) Pack ${chosenimg}.img, delete ramdisk"
-			echo "2) Pack ${chosenimg}.img, keep ramdisk"
+			echo "1) $t_menu_pack_boot ${chosenimg}.img $t_menu_pack_boot_d"
+			echo "2) $t_menu_pack_boot ${chosenimg}.img $t_menu_pack_boot_k"
 			if [[ $chosenimg = "boot" ]]; then
-				echo "3) Add/Remove init.d support (${bluet}CURRENT: $initdstatus1$normal)"
-				echo "4) Insecure/Secure the boot.img (${bluet}CURRENT: $insecurestatus1$normal)"
-				echo "5) Remove dm-verity (${bluet}CURRENT: $dmveritystatus1$normal)"
-				echo "6) Add/Remove forceencrypt (${bluet}CURRENT: $forceestatus1$normal)"
+				echo "3) $t_menu_initd ($bluet$t_title_current$initdstatus1$normal)"
+				echo "4) $t_menu_insecure ($bluet$t_title_current$insecurestatus1$normal)"
+				echo "5) $t_menu_dmverity ($bluet$t_title_current$dmveritystatus1$normal)"
+				echo "6) $t_menu_forcee ($bluet$t_title_current$forceestatus1$normal)"
 			fi
-			echo "${yellowt}m = Main menu"
-			echo "${magentat}q = Quit$normal"
+			echo "${yellowt}m = $t_title_main"
+			echo "${magentat}q = $t_menu_quit$normal"
 			echo ""
-			read -n 1 -p "Please enter your choice:" choice
+			read -n 1 -p "$t_select" choice
 		done
 
 		# START Pack img, delete ramdisk
@@ -670,18 +622,18 @@ boot_tools() {
 			findfstab
 			if [[ $(${usesudo}grep "verify" $fstab) = "" ]]; then
 				banner
-				echo "${redb}${yellowt}${bold}NOTICE:$normal"
-				echo "${redt}dm-verity is already disabled.$normal"
+				echo "${redb}${yellowt}${bold}$t_notice$normal"
+				echo "$redt$t_boot_already_dmverity$normal"
 				echo ""
-				read -p "Press ENTER to return to Boot/Recovery menu"
+				read -p "$t_enter_boot_menu"
 				boot_tools
 				return 1
 			fi
 			boot_dmverity
 			banner
-			echo "${greent}dm-verity has been removed.$normal"
+			echo "$greent$t_boot_dmverity_rem$normal"
 			echo ""
-			read -p "Press ENTER to return to boot menu"
+			read -p "$t_enter_boot_menu"
 			boot_tools
 			return 1
 		# START Remove forceencrypt
@@ -698,40 +650,40 @@ boot_tools() {
 		elif [[ $choice = "q" ]]; then
 			echo ""
 			echo ""
-			exitk
+			exit
 		fi
 	fi
 	if [[ ! $chosenimg = "" ]]; then
 		choice=""
 		while [[ ! ${choice} =~ ^[1-3]$ ]] && [[ ! $choice = "m" && ! $choice = "q" ]]; do
 			banner
-			echo "${bluet}CURRENT PROJECT: $greent$romname$normal"
-			echo "${bluet}ANDROID VERSION: $greent$androidversion$normal"
+			echo "$bluet$t_startup_project $greent$romname$normal"
+			echo "$bluet$t_startup_version $greent$androidversion$normal"
 			echo ""
-			echo "${yellowb}${redt}Boot/Recovery Tools Menu$normal"
+			echo "$yellowb$redt$t_title_boot$normal"
 			echo ""
-			echo "${redt}Unpack ${chosenimg}.img for more options$normal"
+			echo "$redt$t_title_unpack$normal"
 			echo ""
 			if [[ $islg = "lge" && ! $bumpstatusr = "" ]]; then
-				echo "1) Unpack ${chosenimg}.img (${bluet}BUMPED: $bumpstatusr$normal)"
+				echo "1) $t_menu_unpack ${chosenimg}.img ($bluet$t_title_bumped$bumpstatusr$normal)"
 			else
-				echo "1) Unpack ${chosenimg}.img"
+				echo "1) $t_menu_unpack ${chosenimg}.img"
 			fi
-			echo "2) Build ${chosenimg} flashable"
+			echo "2) $t_menu_boot_flashable ${chosenimg}"
 			if [[ -f $romdir/recovery.img && -f $romdir/boot.img ]]; then
-				echo "3) Switch between boot/recovery"
+				echo "3) $t_menu_switch_boot"
 			fi
-			echo "${yellowt}m = Main menu"
-			echo "${magentat}q = Quit$normal"
+			echo "${yellowt}m = $t_title_main"
+			echo "${magentat}q = $t_menu_quit$normal"
 			echo ""
-			read -n 1 -p "Please enter your choice:" choice
+			read -n 1 -p "$t_select" choice
 		done
 	else
 		banner
-		echo "${redb}${yellowt}${bold}ERROR:$normal"
-		echo "${redt}There is no boot/recovery img in the selected rom directory$normal"
+		echo "$redb$yellowt$bold$t_error$normal"
+		echo "$redt$t_boot_no_img $romname$normal"
 		echo ""
-		read -p "Press ENTER to return to the main menu"
+		read -p "$t_enter_main_menu"
 		cd $base/
 		exec ./superr
 		return 1
@@ -749,10 +701,10 @@ boot_tools() {
 		get_devicename
 		if [[ $devicename = "" ]]; then
 			banner
-			echo "${redb}${yellowt}ERROR:$normal"
-			echo "${redt}Please copy a build.prop to the project directory and try again.$normal"
+			echo "$redb$yellowt$t_error$normal"
+			echo "$redt$t_boot_prop_warn$normal"
 			echo ""
-			read -p "Press ENTER to return to Boot/Recovery Tools menu"
+			read -p "$t_enter_boot_menu"
 			boot_tools
 			return 1
 		else
@@ -765,7 +717,7 @@ boot_tools() {
 		get_sig
 		get_byname
 		banner
-		echo "${bluet}Preparing to build ...$normal"
+		echo "$bluet$t_boot_prep_build$normal"
 		if [[ -d $romdir/META-INF ]]; then
 			mv $romdir/META-INF $romdir/META-INF1
 		fi
@@ -800,18 +752,19 @@ boot_tools() {
 		grep -v "#ASSERT" $usdir/updater-script > $usdir/updater-script2
 		mv $usdir/updater-script2 $usdir/updater-script
 		sed -i "s/#SIGNATURE/$signature3/g" $usdir/updater-script
+		sed -i "s/#SIGCUST/$sigcust1/g" $usdir/updater-script
 		sed -i "s/#DEVICENAME/$devicename/g" $usdir/updater-script
 		sed -i "s/#DEVICECHK/$devicechk/g" $usdir/updater-script
 		banner
 		if [[ $chosenimg = "recovery" ]]; then
-			echo "${bluet}Building $signature2.zip in $romname ...$normal"
+			echo "$bluet$signature2.zip $t_general_build $romname ...$normal"
 			cd $romdir
 			if [[ -f $signature2.zip ]]; then
 				mv $signature2.zip ${signature2}_$timestamp.zip
 			fi
 			$p7z a -mx7 $signature2.zip recovery.img META-INF 2>/dev/null >> $logs/zip.log
 		elif [[ $chosenimg = "boot" ]]; then
-			echo "${bluet}Building $signature2.zip in $romname ...$normal"
+			echo "$bluet$signature2.zip $t_general_build $romname ...$normal"
 			cd $romdir
 			if [[ -f $signature2.zip ]]; then
 				mv $signature2.zip ${signature2}_$timestamp.zip
@@ -827,10 +780,10 @@ boot_tools() {
 				mv $romdir/META-INF1 $romdir/META-INF
 			fi
 			banner
-			echo "${redb}${yellowt}${bold}MISSING FILES:$normal"
-			echo "${redt}There is no boot.img or recovery.img in $romname.$normal"
+			echo "$redb$yellowt$bold$t_missing$normal"
+			echo "$redt$t_boot_no_img$normal"
 			echo ""
-			read -p "Press ENTER to return to the Build zip menu"
+			read -p "$t_enter_build_zip_menu"
 			boot_tools
 			return 1
 		fi
@@ -840,10 +793,10 @@ boot_tools() {
 		fi
 		rm -rf $prfiles/boot
 		banner
-		echo "$greent$signature2.zip has been created in $romname. Enjoy!$normal"
+		echo "$greent$signature2.zip $t_general_create $romname$normal"
 		echo ""
 		signzip
-		read -p "Press ENTER to return to Boot/Recovery Tools menu"
+		read -p "$t_enter_boot_menu"
 		boot_tools
 		return 1
 	# START Boot/Recovery Menu
@@ -859,13 +812,13 @@ boot_tools() {
 	elif [[ $choice = "q" ]]; then
 		echo ""
 		echo ""
-		exitk
+		exit
 	fi
 }
 boot_unpack() {
 	if [[ $bootext = "" ]]; then
 		banner
-		echo "${bluet}Unpacking ${chosenimg}.img ...$normal"
+		echo "$bluet$t_boot_unpack ${chosenimg}.img ...$normal"
 		echo ""
 	fi
 	if [[ -f $romdir/${chosenimg}.img ]]; then
@@ -914,10 +867,10 @@ boot_unpack() {
 			if [[ ! $unpackmtk -eq 0 ]]; then
 				rm -rf $romdir/${chosenimg}img
 				banner
-				echo "${redb}${yellowt}${bold}ERROR:$normal"
-				echo "${redt}There was a problem unpacking your ${chosenimg}.img.$normal"
+				echo "$redb$yellowt$bold$t_error$normal"
+				echo "$redt$t_boot_unpack_problem ${chosenimg}.img$normal"
 				echo ""
-				read -p "Press ENTER to continue"
+				read -p "$t_enter_continue"
 				if [[ $bootext = "" ]]; then
 					boot_tools
 				fi
@@ -928,10 +881,10 @@ boot_unpack() {
 		elif [[ ! -f $romdir/${chosenimg}img/ramdisk/default.prop ]]; then
 			rm -rf $romdir/${chosenimg}img
 			banner
-			echo "${redb}${yellowt}${bold}ERROR:$normal"
-			echo "${redt}There was a problem unpacking your ${chosenimg}.img.$normal"
+			echo "$redb$yellowt$bold$t_error$normal"
+			echo "$redt$t_boot_unpack_problem ${chosenimg}.img$normal"
 			echo ""
-			read -p "Press ENTER to continue"
+			read -p "$t_enter_continue"
 			if [[ $bootext = "" ]]; then
 				boot_tools
 			fi
@@ -940,10 +893,10 @@ boot_unpack() {
 		fi
 	else
 		banner
-		echo "${redb}${yellowt}${bold}ERROR:$normal"
-		echo "${redt}You need a ${chosenimg}.img for this process.$normal"
+		echo "$redb$yellowt$bold$t_error$normal"
+		echo "$redt$t_boot_need_img$normal"
 		echo ""
-		read -p "Press ENTER to continue"
+		read -p "$t_enter_continue"
 		if [[ $bootext = "" ]]; then
 			boot_tools
 		fi
@@ -1001,22 +954,22 @@ build_custom_zip() {
 		choice=""
 		while [[ ! ${choice} =~ ^[1-7]$ ]] && [[ ! $choice = "m" && ! $choice = "q" ]]; do
 			banner
-			echo "${bluet}CURRENT PROJECT: $greent$romname$normal"
-			echo "${bluet}ANDROID VERSION: $greent$androidversion$normal"
+			echo "$bluet$t_startup_project $greent$romname$normal"
+			echo "$bluet$t_startup_version $greent$androidversion$normal"
 			echo ""
-			echo "${yellowb}${redt}Choose custom zip to build$normal"
+			echo "$yellowb$redt$t_title_cho_cust_zip$normal"
 			echo ""
-			echo "1) framework, app, priv-app"
-			echo "2) framework, app, priv-app, lib"
-			echo "3) framework"
-			echo "4) app, priv-app"
-			echo "5) lib"
-			echo "6) media"
-			echo "${yellowt}7) Build zip menu"
-			echo "m = Main menu"
-			echo "${magentat}q = Quit$normal"
+			echo "1) $t_menu_fap"
+			echo "2) $t_menu_fapl"
+			echo "3) $t_menu_f"
+			echo "4) $t_menu_ap"
+			echo "5) $t_menu_l"
+			echo "6) $t_menu_m"
+			echo "${yellowt}7) $t_menu_build_menu"
+			echo "m = $t_title_main"
+			echo "${magentat}q = $t_menu_quit$normal"
 			echo ""
-			read -n 1 -p "Please enter your choice: " choice
+			read -n 1 -p "$t_select" choice
 		done
 		# START Build zip menu
 		if [[ $choice = "7" ]]; then
@@ -1033,13 +986,13 @@ build_custom_zip() {
 		if [[ $choice = "q" ]]; then
 			echo ""
 			echo ""
-			exitk
+			exit
 		fi
 		byname=$(cat $deviceloc/superr_byname)
 		cd $prfiles
 		get_sig
 		banner
-		echo "${bluet}Preparing META-INF directory ...$normal"
+		echo "$bluet$t_cust_meta_prep$normal"
 		if [[ -d $romdir/META-INF ]]; then
 			mv $romdir/META-INF $romdir/META-INF1
 		fi
@@ -1061,6 +1014,7 @@ build_custom_zip() {
 		grep -v "#ASSERT" $usdir/updater-script > $usdir/updater-script2
 		mv $usdir/updater-script2 $usdir/updater-script
 		sed -i "s/#SIGNATURE/$signature1/g" $usdir/updater-script
+		sed -i "s/#SIGCUST/$sigcust1/g" $usdir/updater-script
 		sed -i "s/#DEVICENAME/$devicename/g" $usdir/updater-script
 		sed -i "s/#DEVICECHK/$devicechk/g" $usdir/updater-script
 		if [[ $choice = "1" || $choice = "2" || $choice = "4" ]]; then
@@ -1098,7 +1052,7 @@ build_custom_zip() {
 			if [[ -d $romdir/system/app || -d $romdir/system/priv-app ]]; then
 				if [[ "$odexstatus" = "Deodexed" ]]; then
 					banner
-					read -n 1 -p "Should we zipalign before building the zip? y/n  "
+					read -n 1 -p "$t_zipalign_q"
 					echo ""
 					echo ""
 					if [[ $REPLY = "y" ]]; then
@@ -1107,10 +1061,10 @@ build_custom_zip() {
 				fi
 			else
 				banner
-				echo "${redb}${yellowt}${bold}ERROR:$normal"
-				echo "${redt}There is no app or priv-app directory in $romname.$normal"
+				echo "$redb$yellowt$bold$t_error$normal"
+				echo "$redt$t_cust_no_app_priv $romname$normal"
 				echo ""
-				read -p "Press ENTER to return to the Build menu"
+				read -p "$t_enter_build_menu"
 				build_zip
 				return 1
 			fi
@@ -1124,7 +1078,7 @@ build_custom_zip() {
 		if [[ $choice = "1" ]]; then
 			if [[ ! $isframe = "" && ! $isapp = "" && ! $isprivapp = "" ]]; then
 				signature2=$(echo "$signature-afp")
-				echo "${bluet}Building $signature2.zip in $romname ...$normal"
+				echo "$bluet$signature2.zip $t_general_build $romname ...$normal"
 				cd $usdir
 				grep -v "\"/system/lib\"\|\"/system/media\"" updater-script > updater-script2
 				mv updater-script2 updater-script
@@ -1143,10 +1097,10 @@ build_custom_zip() {
 					mv $romdir/META-INF1 $romdir/META-INF
 				fi
 				banner
-				echo "${redb}${yellowt}${bold}MISSING FILES:$normal"
-				echo "${redt}One or more directories you want to zip do not exist.$normal"
+				echo "$redb$yellowt$bold$t_missing$normal"
+				echo "$redt$t_cust_not_exist$normal"
 				echo ""
-				read -p "Press ENTER to return to the Build menu"
+				read -p "$t_enter_build_menu"
 				build_zip
 				return 1
 			fi
@@ -1155,7 +1109,7 @@ build_custom_zip() {
 		if [[ $choice = "2" ]]; then
 			if [[ ! $isframe = "" && ! $isapp = "" && ! $isprivapp = "" && ! $islib = "" ]]; then
 				signature2=$(echo "$signature-aflp")
-				echo "${bluet}Building $signature2.zip in $romname ...$normal"
+				echo "$bluet$signature2.zip $t_general_build $romname ...$normal"
 				cd $usdir
 				grep -v "\"/system/media\"" updater-script > updater-script2
 				mv updater-script2 updater-script
@@ -1174,10 +1128,10 @@ build_custom_zip() {
 					mv $romdir/META-INF1 $romdir/META-INF
 				fi
 				banner
-				echo "${redb}${yellowt}${bold}MISSING FILES:$normal"
-				echo "${redt}One or more directories you want to zip do not exist.$normal"
+				echo "$redb$yellowt$bold$t_missing$normal"
+				echo "$redt$t_cust_not_exist$normal"
 				echo ""
-				read -p "Press ENTER to return to the Build menu"
+				read -p "$t_enter_build_menu"
 				build_zip
 				return 1
 			fi
@@ -1186,7 +1140,7 @@ build_custom_zip() {
 		if [[ $choice = "3" ]]; then
 			if [[ ! $isframe = "" ]]; then
 				signature2=$(echo "$signature-framework")
-				echo "${bluet}Building $signature2.zip in $romname ...$normal"
+				echo "$bluet$signature2.zip $t_general_build $romname ...$normal"
 				cd $usdir
 				grep -v "\"/system/app\"\|\"/system/lib\"\|\"/system/media\"\|\"/system/priv-app\"" updater-script > updater-script2
 				mv updater-script2 updater-script
@@ -1205,10 +1159,10 @@ build_custom_zip() {
 					mv $romdir/META-INF1 $romdir/META-INF
 				fi
 				banner
-				echo "${redb}${yellowt}${bold}MISSING FILES:$normal"
-				echo "${redt}The framework directory does not exist in $romname.$normal"
+				echo "$redb$yellowt$bold$t_missing$normal"
+				echo "$redt$t_cust_frame_not_exist $romname$normal"
 				echo ""
-				read -p "Press ENTER to return to the Build menu"
+				read -p "$t_enter_build_menu"
 				build_zip
 				return 1
 			fi
@@ -1217,7 +1171,7 @@ build_custom_zip() {
 		if [[ $choice = "4" ]]; then
 			if [[ ! $isapp = "" || ! $isprivapp = "" ]]; then
 				signature2=$(echo "$signature-ap")
-				echo "${bluet}Building $signature2.zip in $romname ...$normal"
+				echo "$bluet$signature2.zip $t_general_build $romname ...$normal"
 				cd $usdir
 				grep -v "\"/system/framework\"\|\"/system/lib\"\|\"/system/media\"" updater-script > updater-script2
 				mv updater-script2 updater-script
@@ -1236,10 +1190,10 @@ build_custom_zip() {
 					mv $romdir/META-INF1 $romdir/META-INF
 				fi
 				banner
-				echo "${redb}${yellowt}${bold}MISSING FILES:$normal"
-				echo "${redt}The app or priv-app directory does not exist in $romname.$normal"
+				echo "$redb$yellowt$bold$t_missing$normal"
+				echo "$redt$t_cust_no_app_priv $romname$normal"
 				echo ""
-				read -p "Press ENTER to return to the Build menu"
+				read -p "$t_enter_build_menu"
 				build_zip
 				return 1
 			fi
@@ -1248,7 +1202,7 @@ build_custom_zip() {
 		if [[ $choice = "5" ]]; then
 			if [[ ! $islib = "" ]]; then
 				signature2=$(echo "$signature-lib")
-				echo "${bluet}Building $signature2.zip in $romname ...$normal"
+				echo "$bluet$signature2.zip $t_general_build $romname ...$normal"
 				cd $usdir
 				grep -v "\"/system/app\"\|\"/system/framework\"\|\"/system/media\"\|\"/system/priv-app\"" updater-script > updater-script2
 				mv updater-script2 updater-script
@@ -1267,10 +1221,10 @@ build_custom_zip() {
 					mv $romdir/META-INF1 $romdir/META-INF
 				fi
 				banner
-				echo "${redb}${yellowt}${bold}MISSING FILES:$normal"
-				echo "${redt}The lib directory does not exist in $romname.$normal"
+				echo "$redb$yellowt$bold$t_missing$normal"
+				echo "$redtt_cust_lib_not_exist $romname$normal"
 				echo ""
-				read -p "Press ENTER to return to the Build menu"
+				read -p "$t_enter_build_menu"
 				build_zip
 				return 1
 			fi
@@ -1279,7 +1233,7 @@ build_custom_zip() {
 		if [[ $choice = "6" ]]; then
 			if [[ ! $ismedia = "" ]]; then
 				signature2=$(echo "$signature-media")
-				echo "${bluet}Building $signature2.zip in $romname ...$normal"
+				echo "$bluet$signature2.zip $t_general_build $romname ...$normal"
 				cd $usdir
 				grep -v "\"/system/app\"\|\"/system/framework\"\|\"/system/lib\"\|\"/system/priv-app\"" updater-script > updater-script2
 				mv updater-script2 updater-script
@@ -1298,33 +1252,33 @@ build_custom_zip() {
 					mv $romdir/META-INF1 $romdir/META-INF
 				fi
 				banner
-				echo "${redb}${yellowt}${bold}MISSING FILES:$normal"
-				echo "${redt}The media directory does not exist in $romname.$normal"
+				echo "$redb$yellowt$bold$t_missing$normal"
+				echo "$redt$t_cust_media_not_exist $romname$normal"
 				echo ""
-				read -p "Press ENTER to return to the Build menu"
+				read -p "$t_enter_build_menu"
 				build_zip
 				return 1
 			fi
 		fi
 		banner
 		if [[ -f $signature2.zip ]]; then
-			echo "$greent$signature2.zip has been created in $romname$normal"
+			echo "$greent$signature2.zip $t_general_create $romname$normal"
 			echo ""
 			signzip
-			read -p "Press ENTER to return to Build Menu"
+			read -p "$t_enter_build_menu"
 		else
-			echo "$redt${yellowb}ERROR:$normal"
-			echo "${redt}Something went wrong. Check the zip.log for errors.$normal"
+			echo "$redb$yellowt$bold$t_error$normal"
+			echo "$redt$t_build_check_ziplog$normal"
 			echo ""
-			read -p "Press ENTER to return to Build menu"
+			read -p "$t_enter_build_menu"
 		fi
 	else
 		banner
-		echo "${redb}${yellowt}${bold}MISSING FILES:$normal"
-		echo "${redt}Make sure you have at least one of the following in $romname"
+		echo "$redb$yellowt$bold$t_missing$normal"
+		echo "$redt$t_cust_dir_info $romname"
 		echo "${yellowt}system/framework, system/app, system/priv-app, system/media$normal"
 		echo ""
-		read -p "Press ENTER to return to Build menu"
+		read -p "$t_enter_build_menu"
 	fi
 	build_zip
 }
@@ -1336,16 +1290,16 @@ build_rom_zip() {
 	isfullrom
 	if [[ ! $fullrom = "Yes" ]]; then
 		banner
-		echo "${redb}${yellowt}${bold}MISSING FILES:$normal"
-		echo "${redt}Make sure you have system, META-INF, and boot.img in $romname$normal"
+		echo "$redb$yellowt$bold$t_missing$normal"
+		echo "$redt$t_cust_file_check $romname$normal"
 		echo ""
-		read -p "Press ENTER to return to ROM Tools"
+		read -p "$t_enter_rom_tools"
 		rom_tools
 		return 1
 	fi
 	if [[ "$odexstatus" = "Deodexed" ]]; then
 		banner
-		read -n 1 -p "Should we zipalign before building the ROM? y/n  "
+		read -n 1 -p "$t_zipalign_q"
 		echo ""
 		echo ""
 		if [[ $REPLY = "y" ]]; then
@@ -1371,9 +1325,14 @@ build_rom_zip() {
 	fi
 	cd $romdir
 	permtype=$(cat $prfiles/permtype)
+	banner
+	echo "$bluet$t_cust_prep$normal"
+	cp -R META-INF META-INF1
+	cd $usdir
+	grep -v "#ASSERT\|#SYM\|#PERM\|#ROOT\|#BUSYBOX\|#VENDOR\|#CUSTOM\|#SUD\|#DATA" updater-script > updater-script2
+	mv updater-script2 updater-script
+	cd $romdir
 	if [[ $permtype = "sparse_dat" ]]; then
-		banner
-		echo "${bluet}Preparing files for dat creation ...$normal"
 		if [[ ! -f $prfiles/file_contexts ]]; then
 			if [[ -f $romdir/boot.img ]]; then
 				chosenimg="boot"
@@ -1382,25 +1341,19 @@ build_rom_zip() {
 				${usesudo}rm -rf $romdir/bootimg
 			else
 				banner
-				echo "${redb}${yellowt}ERROR:$normal"
-				echo "${redt}You need a boot.img for this process.$normal"
+				echo "$redb$yellowt$t_error$normal"
+				echo "$redt$t_build_need_boot_img$normal"
 				echo ""
-				read -p "Press ENTER to return to Build menu"
+				read -p "$t_enter_build_menu"
 				build_zip
 				return 1
 			fi
 			if [[ ! -f $prfiles/file_contexts ]]; then
 				banner
-				echo "${redb}${yellowt}ERROR:$normal"
-				echo "${redt}Either your kernel does not support selinux, or"
-				echo "the kitchen can't find what it needs. If you are sure"
-				echo "your device supports selinux, you can copy the file_contexts"
-				echo "file from the ramdisk to your 00_project_files directory"
-				echo "to use this feature."
+				echo "$redb$yellowt$t_error$normal"
+				echo -e "$t_build_selinux_error"
 				echo ""
-				echo "${bluet}For now, you will need to build a normal ROM zip.$normal"
-				echo ""
-				read -p "Press ENTER to return to build menu"
+				read -p "$t_enter_build_menu"
 				build_zip
 				return 1
 			fi
@@ -1434,9 +1387,9 @@ build_rom_zip() {
 		fi
 		rm -rf $romdir/tmpsparse
 		banner
-		echo "${bluet}Building $signature.zip in $romname"
+		echo "$bluet$signature.zip $t_general_build $romname"
 		echo ""
-		echo "${yellowt}This may take a while. Please be patient ...$normal"
+		echo "$yellowt$t_build_patient$normal"
 		echo ""
 		if [[ -f $prfiles/data-set_metadata ]]; then
 			$p7z a -mx7 $signature.zip install boot.img META-INF system.new.dat system.patch.dat system.transfer.list vendor.new.dat vendor.patch.dat vendor.transfer.list data supersu rootzip busybox $prfiles/file_contexts 2>/dev/null >> $logs/zip.log
@@ -1446,7 +1399,7 @@ build_rom_zip() {
 		rm -rf vendor.new.dat vendor.transfer.list vendor.patch.dat data.new.dat data.patch.dat data.transfer.list system.new.dat system.transfer.list system.patch.dat
 	elif [[ $permtype = "raw_img" ]]; then
 		banner
-		echo "${bluet}Preparing files for img creation ...$normal"
+		echo "$bluet$t_build_prep_img$normal"
 		if [[ ! -f $prfiles/file_contexts ]]; then
 			if [[ -f $romdir/boot.img ]]; then
 				chosenimg="boot"
@@ -1455,10 +1408,10 @@ build_rom_zip() {
 				${usesudo}rm -rf $romdir/bootimg
 			else
 				banner
-				echo "${redb}${yellowt}ERROR:$normal"
-				echo "${redt}You need a boot.img for this process.$normal"
+				echo "$redb$yellowt$t_error$normal"
+				echo "$redt$t_build_need_boot_img$normal"
 				echo ""
-				read -p "Press ENTER to return to Build menu"
+				read -p "$t_enter_build_menu"
 				build_zip
 				return 1
 			fi
@@ -1489,35 +1442,35 @@ build_rom_zip() {
 			fi
 		fi
 		banner
-		echo "${bluet}Building $signature.zip in $romname"
+		echo "$bluet$signature.zip $t_general_build $romname ...$normal"
 		echo ""
-		echo "${yellowt}This may take a while. Please be patient ...$normal"
+		echo "$yellowt$t_build_patient$normal"
 		echo ""
 		if [[ -f $prfiles/data-set_metadata ]]; then
-			$p7z a -mx7 $signature.zip boot.img META-INF system_new.img vendor_new.img data supersu rootzip busybox 2>/dev/null >> $logs/zip.log
+			$p7z a -mx7 $signature.zip boot.img META-INF system_new.img vendor_new.img data supersu rootzip busybox  2>/dev/null >> $logs/zip.log
 		else
 			$p7z a -mx7 $signature.zip boot.img META-INF system_new.img vendor_new.img data_new.img supersu rootzip busybox 2>/dev/null >> $logs/zip.log
 		fi
 		rm -rf system_new.img vendor_new.img data_new.img
 	else
 		banner
-		echo "${bluet}Building $signature.zip in $romname ...$normal"
+		echo "$bluet$signature.zip $t_general_build $romname ...$normal"
 		$p7z a -mx7 $signature.zip boot.img META-INF system vendor data supersu rootzip busybox 2>/dev/null >> $logs/zip.log
 	fi
+	rm -rf META-INF
+	mv META-INF1 META-INF
 	banner
 	if [[ -f $signature.zip ]]; then
-		echo "$greent$signature.zip has been created in $romname.$normal"
+		echo "$greent$signature.zip $t_general_create $romname$normal"
 		echo ""
-		#if [[ ! $permtype = "sparse_dat" && ! $permtype = "raw_img" ]]; then
 		signature2="$signature"
 		signzip
-		#fi
-		read -p "Press ENTER to return to ROM Tools"
+		read -p "$t_enter_rom_tools"
 	else
-		echo "${redt}${yellowb}ERROR:$normal"
-		echo "${redt}Something went wrong. Check the zip.log for errors.$normal"
+		echo "$redb$yellowt$bold$t_error$normal"
+		echo "$redt$t_build_check_ziplog$normal"
 		echo ""
-		read -p "Press ENTER to return to ROM Tools"
+		read -p "$t_enter_rom_tools"
 	fi
 	rom_tools
 }
@@ -1525,20 +1478,20 @@ build_zip() {
 	choice=""
 	while [[ ! ${choice} =~ ^[1-5]$ ]] && [[ ! $choice = "m" && ! $choice = "q" ]]; do
 		banner
-		echo "${bluet}CURRENT PROJECT: $greent$romname$normal"
-		echo "${bluet}ANDROID VERSION: $greent$androidversion$normal"
+		echo "$bluet$t_startup_project $greent$romname$normal"
+		echo "$bluet$t_startup_version $greent$androidversion$normal"
 		echo ""
-		echo "${yellowb}${redt}Build Menu$normal"
+		echo "$yellowb$redt$t_menu_build_menu$normal"
 		echo ""
-		echo "1) Build full ROM Zip"
-		echo "2) Build system.img"
-		echo "3) Sign existing zip"
-		echo "${yellowt}4) Custom zip menu"
-		echo "5) ROM Tools menu"
-		echo "m = Main menu"
-		echo "${magentat}q = Quit$normal"
+		echo "1) $t_menu_build_zip"
+		echo "2) $t_menu_sys_img"
+		echo "3) $t_menu_sign"
+		echo "${yellowt}4) $t_menu_custom_zip"
+		echo "5) $t_menu_rom_tools"
+		echo "m = $t_title_main"
+		echo "${magentat}q = $t_menu_quit$normal"
 		echo ""
-		read -n 1 -p "Please enter your choice: " choice
+		read -n 1 -p "$t_select" choice
 	done
 	# START Build ROM Zip
 	if [[ $choice = "1" ]]; then
@@ -1547,7 +1500,7 @@ build_zip() {
 	# START Build system.img
 	elif [[ $choice = "2" ]]; then
 		banner
-		echo "${bluet}Preparing files for system.img creation ...$normal"
+		echo "$bluet$t_build_prep_sys_img$normal"
 		if [[ ! -f $prfiles/file_contexts ]]; then
 			if [[ -f $romdir/boot.img ]]; then
 				chosenimg="boot"
@@ -1565,18 +1518,18 @@ build_zip() {
 			imgname="system.img"
 		elif [[ ! -f system_new.img ]]; then
 			banner
-			echo "${redt}There was a problem creating the image.$normal"
+			echo "$redt$t_build_img_error$normal"
 			echo ""
-			read -p "Press ENTER to return to Build menu"
+			read -p "$t_enter_build_menu"
 			build_zip
 			return 1
 		else
 			imgname="system_new.img"
 		fi
 		banner
-		echo "${greent}$imgname has been created in $romname$normal"
+		echo "$greent$imgname $t_general_create $romname$normal"
 		echo ""
-		read -p "Press ENTER to return to Build Menu"
+		read -p "$t_enter_build_menu"
 		build_zip
 		return 1
 	# START Sign Existing zip
@@ -1587,27 +1540,27 @@ build_zip() {
 			signzipname=$(ls | grep ".zip" | rev | cut -d"." -f2- | rev)
 		elif [[ $(echo "$countzip") = "0" ]]; then
 			banner
-			echo "${redb}${yellowt}${bold}ERROR:$normal"
-			echo "${redt}There is no zip to sign.$normal"
+			echo "$redb$yellowt$bold$t_error$normal"
+			echo "$redt$t_build_no_zip$normal"
 			echo ""
-			read -p "Press ENTER to return to Build Menu"
+			read -p "$t_enter_build_menu"
 			build_zip
 			return 1
 		else
 			while [[ $signzipname = "" ]]; do
 				banner
-				echo "${greenb}Choose zip to sign:$normal"
+				echo "$greenb$t_build_cho_zip$normal"
 				echo ""
 				findzip=""
 				findzip=( $(ls | grep ".zip") )
 				prchoice="ext"
 				choosepr project in ${findzip[@]}
 				if [[ $REPLY = "q" ]]; then
-					exitk
+					exit
 				elif [[ $REPLY = "m" ]]; then
 					cd $base
 					exec ./superr
-					exitk
+					exit
 				else
 					signzipname=$(echo $project | rev | cut -d"." -f2- | rev)
 				fi
@@ -1635,7 +1588,7 @@ build_zip() {
 	elif [[ $choice = "q" ]]; then
 		echo ""
 		echo ""
-		exitk
+		exit
 	fi
 }
 change_permtype() {
@@ -1647,44 +1600,44 @@ change_permtype() {
 	choice=""
 	while [[ ! ${choice} =~ ^[1-5]$ ]] && [[ ! $choice = "m" && ! $choice = "q" ]]; do
 		banner
-		echo "${bluet}CURRENT PROJECT: $greent$romname$normal"
-		echo "${bluet}ANDROID VERSION: $greent$androidversion$normal"
+		echo "$bluet$t_startup_project $greent$romname$normal"
+		echo "$bluet$t_startup_version $greent$androidversion$normal"
 		echo ""
-		echo "${yellowb}${redt}Change/Choose Perm Menu$normal"
+		echo "$yellowb$redt$t_perm_title$normal"
 		echo ""
 		if [[ $permtype = "set_metadata" ]]; then
-			echo "1) set_metadata (${bluet}CURRENT$normal)"
+			echo "1) $t_perm_set_metadata_cur ($bluet$t_current$normal)"
 		else
 			if [[ ! $api -ge "19" ]]; then
-				echo "${redt}1) set_metadata (For KitKat+ only)$normal"
+				echo "${redt}1) $t_perm_set_metadata$normal"
 			else
-				echo "1) set_metadata (For KitKat+)"
+				echo "1) $t_perm_set_metadata"
 			fi
 		fi
 		if [[ $permtype = "set_perm" ]]; then
-			echo "2) set_perm (${bluet}CURRENT$normal)"
+			echo "2) $t_perm_set_perm ($bluet$t_current$normal)"
 		else
-			echo "2) set_perm"
+			echo "2) $t_perm_set_perm"
 		fi
 		if [[ $permtype = "sparse_dat" ]]; then
-			echo "3) Sparse dat (${bluet}CURRENT$normal)"
+			echo "3) $t_perm_sparse ($bluet$t_current$normal)"
 		else
 			if [[ ! $api -ge "21" || ! $(getconf LONG_BIT) = "64" ]]; then
-				echo "${redt}3) Sparse dat (For 64bit Linux and Lollipop+ only)$normal"
+				echo "${redt}3) $t_perm_sparse_red$normal"
 			else
-				echo "3) Sparse dat"
+				echo "3) $t_perm_sparse"
 			fi
 		fi
 		if [[ $permtype = "raw_img" ]]; then
-			echo "4) raw_img (${bluet}CURRENT$normal)"
+			echo "4) $t_perm_raw_img ($bluet$t_current$normal)"
 		else
-			echo "4) raw_img"
+			echo "4) $t_perm_raw_img"
 		fi
-		echo "${yellowt}5) ROM Tools menu"
-		echo "m = Main menu"
-		echo "${magentat}q = Quit$normal"
+		echo "${yellowt}5) $t_menu_rom_tools"
+		echo "m = $t_title_main"
+		echo "${magentat}q = $t_menu_quit$normal"
 		echo ""
-		read -n 1 -p "Please enter your choice:" choice
+		read -n 1 -p "$t_select" choice
 	done
 	# START ROM Tools menu chosen
 	if [[ $choice = "5" ]]; then
@@ -1699,10 +1652,10 @@ change_permtype() {
 	elif [[ $choice = "q" ]]; then
 		echo ""
 		echo ""
-		exitk
+		exit
 	fi
 	banner
-	echo "${bluet}Checking symlinks ...$normal"
+	echo "$bluet$t_perm_check_symlinks$normal"
 	if [[ ! -f $prfiles/symlinks && ! $(grep ^symlink $usdir/updater-script 2>/dev/null) = "" ]]; then
 		cd $usdir
 		get_symlinks
@@ -1719,10 +1672,10 @@ change_permtype() {
 		fi
 	elif [[ ! -f $prfiles/symlinks ]]; then
 		banner
-		echo "${redb}${yellowt}${bold}ERROR:$normal"
-		echo "${redt}The kitchen can't find any symlinks. The ROM will not work correctly.$normal"
+		echo "$redb$yellowt$bold$t_error$normal"
+		echo "$redt$t_perm_no_symlinks$normal"
 		echo ""
-		read -p "Press ENTER to return to ROM Tools menu"
+		read -p "$t_enter_rom_tools"
 		rom_tools
 		return 1
 	fi
@@ -1731,14 +1684,14 @@ change_permtype() {
 	if [[ $choice = "1" ]]; then
 		if [[ ! $api -ge "19" ]]; then
 			banner
-			echo "${redb}${yellowt}${bold}ERROR:$normal"
-			echo "${redt}This ROM is NOT KitKat+$normal"
+			echo "$redb$yellowt$bold$t_error$normal"
+			echo "$redt$t_perm_set_metadata_error$normal"
 			echo ""
-			read -p "Press ENTER to return to Change Perm menu"
+			read -p "$t_enter_change_perm_menu"
 			change_permtype
 			return 1
 		fi
-		echo "${bluet}Changing perm type ...$normal"
+		echo "$bluet$t_perm_changing_perm$normal"
 		if [[ ! -d $romdir/META-INF ]]; then
 			permtype="set_metadata"
 			echo "set_metadata" > $prfiles/permtype
@@ -1766,7 +1719,7 @@ change_permtype() {
 		echo "$permtype" > $prfiles/permtype
 	# set_perm chosen
 	elif [[ $choice = "2" ]]; then
-		echo "${bluet}Changing perm type ...$normal"
+		echo "$bluet$t_perm_changing_perm$normal"
 		if [[ ! -d $romdir/META-INF ]]; then
 			permtype="set_perm"
 			echo "set_perm" > $prfiles/permtype
@@ -1796,14 +1749,14 @@ change_permtype() {
 	elif [[ $choice = "3" ]]; then
 		if [[ ! $api -ge "21" || ! $(getconf LONG_BIT) = "64" ]]; then
 			banner
-			echo "${redb}${yellowt}${bold}ERROR:$normal"
-			echo "${redt}This ROM is NOT Lollipop+ or you are running 32bit Linux.$normal"
+			echo "$redb$yellowt$bold$t_error$normal"
+			echo "$redt$t_perm_sparse_error$normal"
 			echo ""
-			read -p "Press ENTER to return to Change Perm menu"
+			read -p "$t_enter_change_perm_menu"
 			change_permtype
 			return 1
 		fi
-		echo "${bluet}Changing perm type ...$normal"
+		echo "$bluet$t_perm_changing_perm$normal"
 		rm -rf $romdir/META-INF
 		cp -r $tools/updater/META-INF-DAT/META-INF $romdir/
 		cp $tools/updater/META-INF/com/google/android/update-binary $usdir/
@@ -1817,7 +1770,7 @@ change_permtype() {
 		echo "$permtype" > $prfiles/permtype
 	# raw_img chosen
 	elif [[ $choice = "4" ]]; then
-		echo "${bluet}Changing perm type ...$normal"
+		echo "$bluet$t_perm_changing_perm$normal"
 		rm -rf $romdir/META-INF
 		cp -r $tools/updater/META-INF-IMG/META-INF $romdir/
 		cp $tools/updater/META-INF/com/google/android/update-binary $usdir/
@@ -1864,13 +1817,15 @@ choosepr() {
 		i=i+1
 	done
 	if [[ $prchoice = "del" || $prchoice = "ext" ]]; then
-		echo "${yellowt}m = Main Menu"
+		echo "${yellowt}m = $t_title_main"
 	elif [[ $prchoice = "first" ]]; then
-		echo "${yellowt}n = New Project$normal"
+		echo "${yellowt}n = $t_menu_new$normal"
+	elif [[ $prchoice = "plug" ]]; then
+		echo "${yellowt}b = $t_menu_back$normal"
 	fi
-	echo "${magentat}q = quit$normal"
+	echo "${magentat}q = $t_menu_quit$normal"
 	echo ""
-	read -p "Choose an option and press ENTER: " REPLY
+	read -p "$t_select_enter" REPLY
 	i="$REPLY"
 	if [[ $i -gt 0 && $i -le $# ]]; then
 		export $v="${!i}"
@@ -1893,10 +1848,10 @@ data_apprem() {
 debinstall() {
 	debbased=$(which dpkg)
 	if [[ ! $debbased = "" ]]; then
-		read -n 1 -p "Would you like to install now? y/n  " reply
+		read -n 1 -p "$t_dep_install_q" reply
 		if [[ $reply = "y" ]]; then
 			banner
-			echo "${bluet}Installing dependencies ...$normal"
+			echo "$bluet$t_dep_install$normal"
 			echo ""
 			${usesudo2}apt-get -qq update
 			${usesudo2}apt-get -qq -y install $debpkg
@@ -1912,17 +1867,17 @@ debinstall() {
 	fi
 	echo ""
 	echo ""
-	read -p "Press ENTER to quit"
+	read -p "$t_enter_exit"
 	rm -rf depinstall
 	debpkg=""
-	exitk
+	exit
 }
 debloat_rom() {
 	if [[ ! -d $prfiles ]]; then
 		mkdir -p $prfiles
 	fi
 	banner
-	echo "${bluet}Determining bloat status ...$normal"
+	echo "$bluet$t_bloat_status$normal"
 	debloatstatus=""
 	debloatstatus1=""
 	debloatcustomstatus=""
@@ -1935,40 +1890,40 @@ debloat_rom() {
 	choice=""
 	while [[ ! ${choice} =~ ^[1-6]$ ]] && [[ ! $choice = "m" && ! $choice = "q" ]]; do
 		banner
-		echo "${bluet}CURRENT PROJECT: $greent$romname$normal"
-		echo "${bluet}ANDROID VERSION: $greent$androidversion$normal"
+		echo "$bluet$t_startup_project $greent$romname$normal"
+		echo "$bluet$t_startup_version $greent$androidversion$normal"
 		echo ""
-		echo "${yellowb}${redt}Debloat Menu$normal"
+		echo "$yellowb$redt$t_menu_rom_debloat$normal"
 		echo ""
-		echo "1) Debloat ROM (${bluet}CURRENT:$normal $debloatstatus1)"
+		echo "1) $t_menu_debloat ($bluet$t_title_current$normal $debloatstatus1)"
 		if [[ ! -s $tools/root/bloat_custom ]]; then
-			echo "2) Custom Debloat ($debloatcustomstatus1)"
+			echo "2) $t_menu_debloat_cust ($debloatcustomstatus1)"
 		else
-			echo "2) Custom Debloat (${bluet}CURRENT:$normal $debloatcustomstatus1)"
+			echo "2) $t_menu_debloat_cust ($bluet$t_title_current$normal $debloatcustomstatus1)"
 		fi
-		echo "3) Remove Samsung Knox (${bluet}CURRENT:$normal $knoxstatus1)"
-		echo "4) Restore Bloat/Knox"
-		echo "5) Refresh Bloat Status"
-		echo "${yellowt}6) ROM Tools Menu"
-		echo "m = Main menu"
-		echo "${magentat}q = Quit$normal"
+		echo "3) $t_menu_debloat_knox ($bluet$t_title_current$normal $knoxstatus1)"
+		echo "4) $t_menu_debloat_restore"
+		echo "5) $t_menu_debloat_refresh"
+		echo "${yellowt}6) $t_menu_rom_tools"
+		echo "m = $t_title_main"
+		echo "${magentat}q = $t_menu_quit$normal"
 		echo ""
-		read -n 1 -p "Please enter your choice: " choice
+		read -n 1 -p "$t_select" choice
 	done
 
 	# START Debloat ROM
 	if [[ $choice = "1" ]]; then
-		if [[ $debloatstatus = "Debloated" ]]; then
+		if [[ $debloatstatus = "$t_debloated" ]]; then
 			banner
-			echo "${redb}${yellowt}${bold}ERROR:$normal"
-			echo "${redt}This ROM is already debloated$normal"
+			echo "$redb$yellowt$bold$t_error$normal"
+			echo "$redt$t_bloat_already_debloated$normal"
 			echo ""
-			read -p "Press ENTER to return to Debloat menu"
+			read -p "$t_enter_debloat_menu"
 			debloat_rom
 			return 1
 		fi
 		banner
-		read -n 1 -p "Would you like to debloat your ROM? y/n  "
+		read -n 1 -p "$t_bloat_q"
 		echo ""
 		echo ""
 		if [[ ! $REPLY = "y" ]]; then
@@ -1976,7 +1931,7 @@ debloat_rom() {
 			return 1
 		fi
 		banner
-		echo "${bluet}Removing bloat ...$normal"
+		echo "$bluet$t_bloat_rem$normal"
 		debloat=""
 		cat $prfiles/debloat_list | while read debloat; do
 			debloatdir=$(echo $debloat | rev | cut -d"/" -f2- | rev)
@@ -1989,10 +1944,10 @@ debloat_rom() {
 		rm -rf debloat_knox
 		isdebloatstatus
 		banner
-		echo "${greent}Bloat has been moved to:"
+		echo "$greent$t_bloat_moved"
 		echo "$yellowt$prfiles/debloated_files$normal"
 		echo ""
-		read -p "Press ENTER to return to Debloat menu"
+		read -p "$t_enter_debloat_menu"
 		debloat_rom
 		return 1
 
@@ -2000,26 +1955,26 @@ debloat_rom() {
 	elif [[ $choice = "2" ]]; then
 		if [[ ! -s $tools/root/bloat_custom ]]; then
 			banner
-			echo "${redb}${yellowt}${bold}ERROR:$normal"
-			echo "${redt}Add content to the following file to use this feature:"
+			echo "$redb$yellowt$bold$t_error$normal"
+			echo "$redt$t_bloat_cust_info"
 			echo ""
-			echo "${yellowt}$tools/root/bloat_custom$normal"
+			echo "$yellowt$tools/root/bloat_custom$normal"
 			echo ""
-			read -p "Press ENTER to return to Debloat menu"
+			read -p "$t_enter_debloat_menu"
 			debloat_rom
 			return 1
 		fi
-		if [[ $debloatcustomstatus = "Debloated" ]]; then
+		if [[ $debloatcustomstatus = "$t_debloated" ]]; then
 			banner
-			echo "${redb}${yellowt}${bold}ERROR:$normal"
-			echo "${redt}This ROM is already debloated$normal"
+			echo "$redb$yellowt$bold$t_error$normal"
+			echo "$redt$t_bloat_already_debloated$normal"
 			echo ""
-			read -p "Press ENTER to return to Debloat menu"
+			read -p "$t_enter_debloat_menu"
 			debloat_rom
 			return 1
 		fi
 		banner
-		read -n 1 -p "Would you like to debloat your ROM? y/n  "
+		read -n 1 -p "$t_bloat_q"
 		echo ""
 		echo ""
 		if [[ ! $REPLY = "y" ]]; then
@@ -2027,7 +1982,7 @@ debloat_rom() {
 			return 1
 		fi
 		banner
-		echo "${bluet}Removing bloat ...$normal"
+		echo "$bluet$t_bloat_rem$normal"
 		debloat=""
 		cat $prfiles/debloat_custom | while read debloat; do
 			debloatdir=$(echo $debloat | rev | cut -d"/" -f2- | rev)
@@ -2040,10 +1995,10 @@ debloat_rom() {
 		rm -rf debloat_knox
 		isdebloatcustomstatus
 		banner
-		echo "${greent}Bloat has been moved to:"
+		echo "$greent$t_bloat_moved"
 		echo "$yellowt$prfiles/debloated_files$normal"
 		echo ""
-		read -p "Press ENTER to return to Debloat menu"
+		read -p "$t_enter_debloat_menu"
 		debloat_rom
 		return 1
 
@@ -2051,15 +2006,15 @@ debloat_rom() {
 	elif [[ $choice = "3" ]]; then
 		if [[ $knoxstatus = "No" ]]; then
 			banner
-			echo "${redb}${yellowt}${bold}ERROR:$normal"
-			echo "${redt}Knox is not present in this ROM$normal"
+			echo "$redb$yellowt$bold$t_error$normal"
+			echo "$redt$t_bloat_knox_not_exist$normal"
 			echo ""
-			read -p "Press ENTER to return to Debloat menu"
+			read -p "$t_enter_debloat_menu"
 			debloat_rom
 			return 1
 		fi
 		banner
-		read -n 1 -p "Would you like remove Knox? y/n  "
+		read -n 1 -p "$t_bloat_knoz_rem_q"
 		echo ""
 		echo ""
 		if [[ ! $REPLY = "y" ]]; then
@@ -2067,7 +2022,7 @@ debloat_rom() {
 			return 1
 		fi
 		banner
-		echo "${bluet}Removing knox ...$normal"
+		echo "$bluet$t_bloat_knox_rem$normal"
 		debloat=""
 		cat $prfiles/debloat_knox | while read debloat; do
 			debloatdir=$(echo $debloat | rev | cut -d"/" -f2- | rev)
@@ -2080,10 +2035,10 @@ debloat_rom() {
 		rm -rf debloat_knox
 		isknoxstatus
 		banner
-		echo "${greent}Knox has been moved to:"
+		echo "$greent$t_bloat_knox_moved"
 		echo "$yellowt$prfiles/debloated_files$normal"
 		echo ""
-		read -p "Press ENTER to return to Debloat menu"
+		read -p "$t_enter_debloat_menu"
 		debloat_rom
 		return 1
 	# START Restore Bloat/Knox
@@ -2091,15 +2046,15 @@ debloat_rom() {
 		if [[ -d $prfiles/debloated_files ]]; then
 			if [[ ! -d $prfiles/debloated_files ]]; then
 				banner
-				echo "$redb$yellowt${bold}ERROR:$normal"
-				echo "${redt}There are no files to restore$normal"
+				echo "$redb$yellowt$bold$t_error$normal"
+				echo "$redt$t_bloat_no_files_restore$normal"
 				echo ""
-				read -p "Press Enter to return to Debloat Menu"
+				read -p "$t_enter_debloat_menu"
 				debloat_rom
 				return 1
 			fi
 			banner
-			read -n 1 -p "Would you like to restore bloat? y/n  "
+			read -n 1 -p "$t_bloat_restore_q"
 			echo ""
 			echo ""
 			if [[ ! $REPLY = "y" ]]; then
@@ -2107,7 +2062,7 @@ debloat_rom() {
 				return 1
 			fi
 			banner
-			echo "${bluet}Restoring bloat ...$normal"
+			echo "$bluet$t_bloat_restore$normal"
 			cd $prfiles/debloated_files
 			line=""
 			find . -type d | sed 's/^.\///' | while read line; do
@@ -2124,17 +2079,17 @@ debloat_rom() {
 			rm -rf debloat_knox
 			isdebloatstatus
 			banner
-			echo "${greent}The bloat has been restored.$normal"
+			echo "$greent$t_bloat_has_restored$normal"
 			echo ""
-			read -p "Press ENTER to return to the Debloat menu"
+			read -p "$t_enter_debloat_menu"
 			debloat_rom
 			return 1
 		else
 			banner
-			echo "${redb}${yellowt}${bold}ERROR:$normal"
-			echo "${redt}There is nothing to restore.$normal"
+			echo "$redb$yellowt$bold$t_error$normal"
+			echo "$redt$t_bloat_no_restore$normal"
 			echo ""
-			read -p "Press ENTER to return to the Debloat menu"
+			read -p "$t_enter_debloat_menu"
 			debloat_rom
 			return 1
 		fi
@@ -2158,24 +2113,24 @@ debloat_rom() {
 	elif [[ $choice = "q" ]]; then
 		echo ""
 		echo ""
-		exitk
+		exit
 	fi
 }
 delete_project() {
 	cd $base
 	if [[ $(ls -d */ | grep 'superr_') = "" ]]; then
 		banner
-		echo "${redb}${yellowt}${bold}ERROR:$normal"
-		echo "${redt}There are no projects to delete.$normal"
+		echo "$redb$yellowt$bold$t_error$normal"
+		echo "$redt$t_delete_no_project$normal"
 		echo ""
-		read -p "Press ENTER to return to then Main menu"
+		read -p "$t_enter_main_menu"
 		cd $base
 		exec ./superr
 		return 1
 	fi
 	while [[ $delrom = "" ]]; do
 		banner
-		echo "$redb$yellowt${bold}Delete Projects:$normal"
+		echo "$redb$yellowt$bold$t_title_delete$normal"
 		echo ""
 		findproject=""
 		findproject=( $(ls -d */ | grep 'superr_' | sed 's/superr_//' | sed 's/\///') )
@@ -2186,7 +2141,7 @@ delete_project() {
 			exec ./superr
 			return 1
 		elif [[ $REPLY = "q" ]]; then
-			exitk
+			exit
 		else
 			delrom="$delproject"
 		fi
@@ -2195,7 +2150,7 @@ delete_project() {
 	echo "$yellowt$base/superr_$delrom$normal"
 	echo ""
 	REPLY=""
-	read -n 1 -p "Should we delete the project above? y/n  "
+	read -n 1 -p "$t_delete_q"
 	if [[ $REPLY = "y" ]]; then
 		if [[ -f $base/superr_$delrom/system/build.prop ]]; then
 			delapi=$(grep "ro.build.version.sdk" $base/superr_$delrom/system/build.prop | cut -d"=" -f2)
@@ -2216,12 +2171,12 @@ delete_project() {
 		return 1
 	fi
 	banner
-	echo "$yellowt$base/superr_$delrom ${greent}has been deleted.$normal"
+	echo "$yellowt$base/superr_$delrom $greent$t_delete_has_been$normal"
 	echo ""
 	if [[ "superr_$delrom" = "superr_$romname" ]]; then
 		romname=""
 	fi
-	read -p "Press ENTER to return to main menu"
+	read -p "$t_enter_main_menu"
 	echo ""
 	cd $base
 	exec ./superr
@@ -2231,38 +2186,34 @@ deodex_start() {
 	cd $romdir
 	exit_deo() {
 		echo ""
-		read -p "Press ENTER to return to ROM Tools"
+		read -p "$t_enter_rom_tools"
 		rom_tools
 		return 1
 	}
 	rm -rf $logs/extraodex.txt
 	if [[ ! -d "$framedir" || ! -f $romdir/system/build.prop ]]; then
 		banner
-		echo "${redb}${yellowt}${bold}MISSING FILES:$normal"
-		echo "${redt}You must copy the framework directory and build.prop"
-		echo "from your ROM into the $yellowt$romname/system ${redt}directory$normal"
+		echo "$redb$yellowt$bold$t_missing$normal"
+		echo -e "$redt$t_deodex_copy_frame_prop $yellowt$romname/system$normal"
 		exit_deo
 	fi
 	if [[ ! "$odexstatus" = "Odexed" ]]; then
 		banner
-		echo "${redt}There are no odex files in this rom.$normal"
+		echo "$redt$t_deodex_no_odex$normal"
 		exit_deo
 	fi
 	if [[ $api -ge 21 && $(find $framedir -name boot.oat) = "" ]]; then
 		banner
-		echo "$redb${yellowt}ERROR:$normal"
-		echo "${redt}There is no boot.oat in this rom. It cannot be deodexed.$normal"
+		echo "$redb$yellowt$bold$t_error$normal"
+		echo "$redt$t_deodex_no_boot_oat$normal"
 		exit_deo
 	fi
 	banner
-	echo "$redb${yellowt}NOTICE:$normal"
-	echo "${bluet}Deodexing ROMs may or may not work. You may get"
-	echo "errors, it may not boot, or both. I am aware of"
-	echo "the problems. Unless you know how to fix them,"
-	echo "please do not post about it. Thanks :)$normal"
+	echo "$yellowb$redt$t_notice$normal"
+	echo -e "$bluet$t_deodex_disclaimer$normal"
 	echo ""
 	reply=""
-	read -n 1 -p "Would you like to try anyway?  y/n  " reply
+	read -n 1 -p "$t_deodex_try_anyway" reply
 	if [[ ! $reply = "y" ]]; then
 		rom_tools
 		return 1
@@ -2318,7 +2269,7 @@ deodex_start() {
 		choice=""
 		while [[ ! ${choice} =~ ^[1-3]$ ]]; do
 			banner
-			echo "Which deodex method should we use?"
+			echo "$t_deodex_use_method"
 			echo ""
 			echo "1) oat2dex"
 			echo "2) smali/baksmali"
@@ -2328,19 +2279,19 @@ deodex_start() {
 				echo "3) oatdump"
 			fi
 			echo ""
-			read -n 1 -p "Please enter your choice: " choice
+			read -n 1 -p "$t_select" choice
 		done
 		# START M oat2dex
 		if [[ $choice = "1" ]]; then
 			choice=""
 			while [[ ! ${choice} =~ ^[1-2]$ ]]; do
 				banner
-				echo "Which oat2dex version should we use?"
+				echo "$t_deodex_oat2dex_ver"
 				echo ""
-				echo "1) Official v0.86"
-				echo "2) Latest commit built from source"
+				echo "1) $t_deodex_oat2dex_official"
+				echo "2) $t_deodex_oat2dex_latest"
 				echo ""
-				read -n 1 -p "Please enter your choice: " choice
+				read -n 1 -p "$t_select" choice
 			done
 			if [[ $choice = "1" ]]; then
 				oat2dex=$(find $tools/smali/old -name *oat2dex*)
@@ -2357,29 +2308,29 @@ deodex_start() {
 		elif [[ $choice = "3" ]]; then
 			if [[ ! $(getconf LONG_BIT) = "64" ]]; then
 				banner
-				echo "${redt}You need 64-bit Linux to use this feature$normal"
+				echo "$redt$t_deodex_need_64_bit$normal"
 				exit_deo
 			fi
 			if [[ ! -f $base/tools/oattools_m/bin/oatdump ]]; then
 				banner
-				echo "$redb${yellowt}NOTICE:$normal"
-				echo "${redt}You need oatdump to continue.$normal"
-				echo "$yellowt(approximately 105MB download)$normal"
+				echo "$yellowb$redt$t_notice$normal"
+				echo "$redt$t_deodex_need_oatdump$normal"
+				echo "$yellowt$t_deodex_oatdump_dl_m$normal"
 				echo ""
-				read -n 1 -p "Would you like to download/install it now?  y/n  " reply
+				read -n 1 -p "$t_deodex_dl_q" reply
 				if [[ ! $reply = "y" ]]; then
 					echo ""
 					exit_deo
 				fi
 				banner
-				echo "${bluet}Downloading/Installing now ...$normal"
+				echo "$bluet$t_deodex_dl_install$normal"
 				mkdir -p $base/tools/oattools_m
 				cd $base/tools/oattools_m
 				(wget "https://bitbucket.org/superr/superrs-kitchen/downloads/oattools_m.zip" 2>&1) >/dev/null
 				if [[ ! -f $base/tools/oattools_m/oattools_m.zip ]]; then
 					banner
-					echo "$redb${yellowt}ERROR:$normal"
-					echo "${redt}The oatdump download failed.$normal"
+					echo "$redb$yellowt$bold$t_error$normal"
+					echo "$redt$t_deodex_oatdump_dl_failed$normal"
 					rm -rf $base/tools/oattools_m
 					cd $romdir
 					exit_deo
@@ -2389,8 +2340,8 @@ deodex_start() {
 				cd $romdir
 				if [[ ! -f $base/tools/oattools_m/bin/oatdump || ! -f $base/tools/oattools_m/bin/dexrepair ]]; then
 					banner
-					echo "$redb${yellowt}ERROR:$normal"
-					echo "${redt}The oatdump download/install failed.$normal"
+					echo "$redb$yellowt$bold$t_error$normal"
+					echo "$redt$t_deodex_oatdump_dl_install_failed$normal"
 					rm -rf $base/tools/oattools_m
 					exit_deo
 				fi
@@ -2403,7 +2354,7 @@ deodex_start() {
 	elif [[ $api -eq 23 && $androidversion = "N" ]] || [[ $api -eq 24 ]]; then
 		if [[ ! $(getconf LONG_BIT) = "64" ]]; then
 			banner
-			echo "${redt}You need 64-bit Linux to use this feature$normal"
+			echo "$redt$t_deodex_need_64_bit$normal"
 			exit_deo
 		fi
 		if [[ -d $base/tools/oattools ]]; then
@@ -2411,24 +2362,24 @@ deodex_start() {
 		fi
 		if [[ ! -f $base/tools/oattools_n/bin/oatdump ]]; then
 			banner
-			echo "$redb${yellowt}NOTICE:$normal"
-			echo "${redt}You need oatdump to continue.$normal"
-			echo "$yellowt(approximately 70MB download)$normal"
+			echo "$yellowb$redt$t_notice$normal"
+			echo "$redt$t_deodex_need_oatdump$normal"
+			echo "$yellowt$t_deodex_oatdump_dl_n$normal"
 			echo ""
-			read -n 1 -p "Would you like to download/install it now?  y/n  " reply
+			read -n 1 -p "$t_deodex_dl_q" reply
 			if [[ ! $reply = "y" ]]; then
 				echo ""
 				exit_deo
 			fi
 			banner
-			echo "${bluet}Downloading/Installing now ...$normal"
+			echo "$bluet$t_deodex_dl_install$normal"
 			mkdir -p $base/tools/oattools_n
 			cd $base/tools/oattools_n
 			(wget "https://bitbucket.org/superr/superrs-kitchen/downloads/oattools_n.zip" 2>&1) >/dev/null
 			if [[ ! -f $base/tools/oattools_n/oattools_n.zip ]]; then
 				banner
-				echo "$redb${yellowt}ERROR:$normal"
-				echo "${redt}The oatdump download failed.$normal"
+				echo "$redb$yellowt$bold$t_error$normal"
+				echo "$redt$t_deodex_oatdump_dl_failed$normal"
 				rm -rf $base/tools/oattools_n
 				cd $romdir
 				exit_deo
@@ -2438,8 +2389,8 @@ deodex_start() {
 			cd $romdir
 			if [[ ! -f $base/tools/oattools_n/bin/oatdump || ! -f $base/tools/oattools_n/bin/dexrepair ]]; then
 				banner
-				echo "$redb${yellowt}ERROR:$normal"
-				echo "${redt}The oatdump download/install failed.$normal"
+				echo "$redb$yellowt$bold$t_error$normal"
+				echo "$redt$t_deodex_oatdump_dl_install_failed$normal"
 				rm -rf $base/tools/oattools_n
 				exit_deo
 			fi
@@ -2449,8 +2400,8 @@ deodex_start() {
 		return 1
 	else
 		banner
-		echo "$redb${yellowt}ERROR:$normal"
-		echo "${redt}The Android version could not be detected.$normal"
+		echo "$redb$yellowt$bold$t_error$normal"
+		echo "$redt$t_deodex_no_api$normal"
 		echo ""
 		exit_deo
 	fi
@@ -2479,44 +2430,30 @@ deodex_l() {
 	else
 		while [[ ! -f $framedir/$arch/boot.oat ]]; do
 			banner
-			echo "Configure the arch of your device."
-			echo ""
-			echo "HINT:"
-			echo "Check the framework directory, you should see"
-			echo "another directory inside. The name of it should go"
-			echo "here (ex. arm, arm64, x86)."
-			echo ""
-			echo "If you can't get past this part, check the"
-			echo "following:"
-			echo ""
-			echo "1. Make sure this is a Lollipop rom."
-			echo "2. Make sure you typed the arch variable correctly."
-			echo "3. Make sure your rom is not already deodexed."
-			echo ""
-			echo "Type the arch of your device and press ENTER."
+			echo -e "$t_deodex_config_arch"
 			echo ""
 			read arch
 		done
 	fi
 	if [[ -f $framedir/$arch/boot.oat ]]; then
 		banner
-		echo "${bluet}CURRENT PROJECT: $greent$romname"
-		echo "${bluet}ANDROID VERSION: $greent$androidversion"
-		echo "${bluet}API LEVEL: $greent$api"
-		echo "${bluet}ARCH: $greent$arch$normal"
+		echo "$bluet$t_startup_project $greent$romname"
+		echo "$bluet$t_startup_version$greent$androidversion"
+		echo "$bluet$t_deodex_api$greent$api"
+		echo "$bluet$t_deodex_arch$greent$arch$normal"
 		if [[ ! $arch2 = "" ]]; then
-			echo "${bluet}ARCH2: $greent$arch2$normal"
+			echo "$bluet$t_deodex_arch2$greent$arch2$normal"
 		fi
 		echo ""
-		read -n 1 -p "Would you like to continue deodexing? y/n  "
+		read -n 1 -p "$t_deodex_continue_q"
 		if [[ ! $REPLY = "y" ]]; then
 			rom_tools
 			return 1
 		fi
 	else
 		banner
-		echo "${redb}${yellowt}${bold}WARNING:$normal"
-		echo "${redt}Something went wrong. Sorry for the inconvenience.$normal"
+		echo "$redb$yellowt$bold$t_warning$normal"
+		echo "$redt$t_error_mess$normal"
 		exit_deo
 	fi
 	dodeodexl() {
@@ -2527,7 +2464,7 @@ deodex_l() {
 			fi
 			if [[ $($p7z l $deoappdir/$app/$app.apk | grep classes.dex) = "" ]]; then
 				echo ""
-				echo "... Deodexing $app"
+				echo "$t_deodex_deodexing $app"
 				echo ""
 				java -Xmx${heapsize}m -jar $oat2dex $deoappdir/$app/$deoarch/$app.odex $framedir/$deoarch2/odex >> $logs/deodex.log
 				mv $deoappdir/$app/$deoarch/$app.dex $deoappdir/$app/$deoarch/classes.dex
@@ -2541,7 +2478,7 @@ deodex_l() {
 				rm -rf $deoappdir/$app/$deoarch
 			else
 				echo ""
-				echo "$app is already deodexed ..."
+				echo "$greent$app $t_deodex_app_already$normal"
 				echo ""
 				rm -rf $deoappdir/$app/$deoarch
 			fi
@@ -2554,14 +2491,14 @@ deodex_l() {
 		echo "$clears"
 		echo ""
 		echo "----------------------------------------------------"
-		echo "Extracting odex files ..."
+		echo "$t_deodex_extract_txt"
 		echo "----------------------------------------------------"
 		echo ""
 		find $appdir $privdir $framedir -name *odex.gz | while read line; do
 			gzdir=$(dirname $line)
 			gzfile=$(basename $line)
 			echo ""
-			echo "... Extracting $gzfile"
+			echo "$t_deodex_extract $gzfile"
 			echo ""
 			$p7z e -o$gzdir $line 2>/dev/null >> $logs/zip.log
 		done
@@ -2569,7 +2506,7 @@ deodex_l() {
 			xzdir=$(dirname $line)
 			xzfile=$(basename $line)
 			echo ""
-			echo "... Extracting $xzfile"
+			echo "$t_deodex_extract $xzfile"
 			echo ""
 			$p7z e -o$xzdir $line 2>/dev/null >> $logs/zip.log
 		done
@@ -2578,7 +2515,7 @@ deodex_l() {
 		echo "$clears"
 		echo ""
 		echo "----------------------------------------------------"
-		echo "Moving extra apps ..."
+		echo "$t_deodex_move"
 		echo "----------------------------------------------------"
 		echo ""
 		find system vendor -name *.odex 2>/dev/null | grep -v "system/framework/$arch/\|system/framework/$arch2/\|system/app/\|system/priv-app/" | rev | cut -d"/" -f3- | rev | sort -u > $logs/extraodex.txt
@@ -2604,7 +2541,7 @@ deodex_l() {
 	echo "$clears"
 	echo ""
 	echo "----------------------------------------------------"
-	echo "Deoptimizing boot.oat ..."
+	echo "$t_deodex_deop"
 	echo "----------------------------------------------------"
 	echo ""
 	if [[ ! -d "$framedir/$arch/odex" ]]; then
@@ -2618,7 +2555,7 @@ deodex_l() {
 	echo "$clears"
 	echo ""
 	echo "----------------------------------------------------"
-	echo "Start deodexing /system/app ..."
+	echo "$t_deodex_start_app"
 	echo "----------------------------------------------------"
 	echo ""
 	applist=$(ls $appdir)
@@ -2657,7 +2594,7 @@ deodex_l() {
 	echo "$clears"
 	echo ""
 	echo "----------------------------------------------------"
-	echo "Start deodexing /system/priv-app ..."
+	echo "$t_deodex_start_priv"
 	echo "----------------------------------------------------"
 	echo ""
 	applist=$(ls $privdir)
@@ -2682,14 +2619,14 @@ deodex_l() {
 	echo "$clears"
 	echo ""
 	echo "----------------------------------------------------"
-	echo "Start deodexing /system/framework ..."
+	echo "$t_deodex_start_frame"
 	echo "----------------------------------------------------"
 	echo ""
 	frame=""
 	for frame in $(ls $framedir/$deoarch | grep .odex | rev | cut -c 6- | rev); do
 		if [[ $(echo $frame | grep classes) = "" && $($p7z l $framedir/$frame.jar | grep classes.dex) = "" ]]; then
 			echo ""
-			echo "... Deodexing $frame"
+			echo "$t_deodex_deodexing $frame"
 			echo ""
 			java -Xmx${heapsize}m -jar $oat2dex $framedir/$deoarch/$frame.odex $framedir/$deoarch2/odex >> $logs/deodex.log
 			mv $framedir/$deoarch/$frame.dex $framedir/$deoarch/classes.dex
@@ -2707,7 +2644,7 @@ deodex_l() {
 			rm -rf $framedir/$deoarch/classes*.dex
 		else
 			echo ""
-			echo "$frame is already deodexed ..."
+			echo "$greent$frame $t_deodex_app_already$normal"
 			echo ""
 		fi
 	done
@@ -2715,7 +2652,7 @@ deodex_l() {
 	for frame2 in $(ls $framedir/$deoarch2/dex | grep .dex | rev | cut -c 5- | rev); do
 		if [[ $(echo $frame2 | grep classes) = "" && $($p7z l $framedir/$frame2.jar | grep classes.dex) = "" ]]; then
 			echo ""
-			echo "... Deodexing $frame2"
+			echo "$t_deodex_deodexing $frame2"
 			echo ""
 			mv $framedir/$deoarch2/dex/$frame2.dex $framedir/$deoarch2/dex/classes.dex
 			find $framedir/$deoarch2/dex -name $frame2-classes*.dex | while read line; do
@@ -2733,7 +2670,7 @@ deodex_l() {
 		else
 			if [[ $frame2 != *"classes"* ]]; then
 				echo ""
-				echo "$frame2 is already deodexed ..."
+				echo "$greent$frame2 $t_deodex_app_already$normal"
 				echo ""
 				rm -rf $framedir/$deoarch2/dex/$frame2.dex
 			fi
@@ -2742,7 +2679,7 @@ deodex_l() {
 	echo "$clears"
 	echo ""
 	echo "----------------------------------------------------"
-	echo "Cleaning up ..."
+	echo "$t_deodex_clean"
 	echo "----------------------------------------------------"
 	echo ""
 	echo ""
@@ -2754,11 +2691,11 @@ deodex_l() {
 	stillodexed=$(find system vendor -name *.odex 2>/dev/null)
 	if [[ "$stillodexed" = "" ]]; then
 		banner
-		echo "${greent}Deodexing complete$normal"
+		echo "$greent$t_deodex_complete$normal"
 		exit_deo
 	else
 		banner
-		echo "${redt}The following odex files are still in your ROM"
+		echo "$redt$t_deodex_remain"
 		echo ""
 		echo "$yellowt$stillodexed$normal"
 		exit_deo
@@ -2788,45 +2725,31 @@ deodex_m() {
 	else
 		while [[ ! -f $framedir/$arch/boot.oat ]]; do
 			banner
-			echo "Configure the arch of your device."
-			echo ""
-			echo "HINT:"
-			echo "Check the framework directory, you should see"
-			echo "another directory inside. The name of it should go"
-			echo "here (ex. arm, arm64, x86)."
-			echo ""
-			echo "If you can't get past this part, check the"
-			echo "following:"
-			echo ""
-			echo "1. Make sure this is a Marshmallow rom."
-			echo "2. Make sure you typed the arch variable correctly."
-			echo "3. Make sure your rom is not already deodexed."
-			echo ""
-			echo "Type the arch of your device and press ENTER."
+			echo -e "$t_deodex_config_arch"
 			echo ""
 			read arch
 		done
 	fi
 	if [[ -f $framedir/$arch/boot.oat ]]; then
 		banner
-		echo "${bluet}CURRENT PROJECT: $greent$romname"
-		echo "${bluet}ANDROID VERSION: $greent$androidversion"
-		echo "${bluet}API LEVEL: $greent$api"
-		echo "${bluet}ARCH: $greent$arch$normal"
+		echo "${bluet}$t_startup_project $greent$romname"
+		echo "$bluet$t_startup_version$greent$androidversion"
+		echo "$bluet$t_deodex_api$greent$api"
+		echo "$bluet$t_deodex_arch$greent$arch$normal"
 		if [[ ! $arch2 = "" ]]; then
-			echo "${bluet}ARCH2: $greent$arch2$normal"
+			echo "$bluet$t_deodex_arch2$greent$arch2$normal"
 		fi
-		echo "${bluet}METHOD: ${greent}oat2dex$normal"
+		echo "$bluet$t_deodex_method${greent}oat2dex$normal"
 		echo ""
-		read -n 1 -p "Would you like to continue deodexing? y/n  "
+		read -n 1 -p "$t_deodex_continue_q"
 		if [[ ! $REPLY = "y" ]]; then
 			rom_tools
 			return 1
 		fi
 	else
 		banner
-		echo "${redb}${yellowt}${bold}WARNING:$normal"
-		echo "${redt}Something went wrong. Sorry for the inconvenience.$normal"
+		echo "$redb$yellowt$bold$t_warning$normal"
+		echo "$redt$t_error_mess$normal"
 		exit_deo
 	fi
 	dodeodexm() {
@@ -2837,12 +2760,12 @@ deodex_m() {
 			fi
 			if [[ $($p7z l $deoappdir/$app/$app.apk | grep classes.dex) = "" ]]; then
 				echo ""
-				echo "... Deodexing $app"
+				echo "$t_deodex_deodexing $app"
 				echo ""
 				java -Xmx${heapsize}m -jar $oat2dex $deoappdir/$app/$deoarch/$app.odex $framedir/$deoarch2/odex >> $logs/deodex.log
 				if [[ $(gawk "/$app\/$app\.apk/{getline; print}" $logs/deodex.log | grep "error\|Failed\|skip") = "" ]]; then
 					if [[ ! -f $deoappdir/$app/$deoarch/$app.dex ]]; then
-						echo "${redt}${app} Failed ...$normal"
+						echo "${redt}${app} $t_deodex_fail$normal"
 						echo "$deoappdir/$app/$deoarch/$app.odex" >> $logs/deodex_fail_list
 						rm -rf $deoappdir/$app/$deoarch/$app-classes*.dex
 						continue
@@ -2857,12 +2780,12 @@ deodex_m() {
 					$p7z u -tzip $deoappdir/$app/$app.apk $deoappdir/$app/$deoarch/classes*.dex 2>/dev/null >> $logs/zip.log
 					rm -rf $deoappdir/$app/oat
 				else
-					echo "${redt}${app} Failed ...$normal"
+					echo "${redt}${app} $t_deodex_fail$normal"
 					echo "$deoappdir/$app/$deoarch/$app.odex" >> $logs/deodex_fail_list
 				fi
 			else
 				echo ""
-				echo "$app is already deodexed ..."
+				echo "$greent$app $t_deodex_app_already$normal"
 				echo ""
 				rm -rf $deoappdir/$app/oat
 			fi
@@ -2875,14 +2798,14 @@ deodex_m() {
 		echo "$clears"
 		echo ""
 		echo "----------------------------------------------------"
-		echo "Extracting odex files ..."
+		echo "$t_deodex_extract_txt"
 		echo "----------------------------------------------------"
 		echo ""
 		find $appdir $privdir $framedir -name *odex.gz | while read line; do
 			gzdir=$(dirname $line)
 			gzfile=$(basename $line)
 			echo ""
-			echo "... Extracting $gzfile"
+			echo "$t_deodex_extract $gzfile"
 			echo ""
 			$p7z e -o$gzdir $line 2>/dev/null >> $logs/zip.log
 		done
@@ -2890,7 +2813,7 @@ deodex_m() {
 			xzdir=$(dirname $line)
 			xzfile=$(basename $line)
 			echo ""
-			echo "... Extracting $xzfile"
+			echo "$t_deodex_extract $xzfile"
 			echo ""
 			$p7z e -o$xzdir $line 2>/dev/null >> $logs/zip.log
 		done
@@ -2899,7 +2822,7 @@ deodex_m() {
 		echo "$clears"
 		echo ""
 		echo "----------------------------------------------------"
-		echo "Moving extra apps ..."
+		echo "$t_deodex_move"
 		echo "----------------------------------------------------"
 		echo ""
 		find system vendor -name *.odex 2>/dev/null | grep -v "system/framework/oat/\|system/framework/$arch/\|system/framework/$arch2/\|system/app/\|system/priv-app/" | rev | cut -d"/" -f4- | rev | sort -u > $logs/extraodex.txt
@@ -2925,7 +2848,7 @@ deodex_m() {
 	echo "$clears"
 	echo ""
 	echo "----------------------------------------------------"
-	echo "Deoptimizing boot.oat ..."
+	echo "$t_deodex_deop"
 	echo "----------------------------------------------------"
 	echo ""
 	if [[ ! -d "$framedir/$arch/odex" ]]; then
@@ -2939,7 +2862,7 @@ deodex_m() {
 	echo "$clears"
 	echo ""
 	echo "----------------------------------------------------"
-	echo "Start deodexing /system/app ..."
+	echo "$t_deodex_start_app"
 	echo "----------------------------------------------------"
 	echo ""
 	applist=$(ls $appdir)
@@ -2978,7 +2901,7 @@ deodex_m() {
 	echo "$clears"
 	echo ""
 	echo "----------------------------------------------------"
-	echo "Start deodexing /system/priv-app ..."
+	echo "$t_deodex_start_priv"
 	echo "----------------------------------------------------"
 	echo ""
 	applist=$(ls $privdir)
@@ -3003,14 +2926,14 @@ deodex_m() {
 	echo "$clears"
 	echo ""
 	echo "----------------------------------------------------"
-	echo "Start deodexing /system/framework ..."
+	echo "$t_deodex_start_frame"
 	echo "----------------------------------------------------"
 	echo ""
 	frame=""
 	for frame in $(ls $framedir/$deoarch | grep .odex | rev | cut -c 6- | rev); do
 		if [[ $(echo $frame | grep classes) = "" && $($p7z l $framedir/$frame.jar | grep classes.dex) = "" ]]; then
 			echo ""
-			echo "... Deodexing $frame"
+			echo "$t_deodex_deodexing $frame"
 			echo ""
 			java -Xmx${heapsize}m -jar $oat2dex $framedir/$deoarch/$frame.odex $framedir/$deoarch2/odex >> $logs/deodex.log
 			if [[ $(gawk "/framework\/$frame\.jar/{getline; print}" $logs/deodex.log | grep error) = "" ]]; then
@@ -3028,12 +2951,12 @@ deodex_m() {
 				fi
 				rm -rf $framedir/$deoarch/classes*.dex
 			else
-				echo "${redt}${frame} Failed ...$normal"
+				echo "${redt}${frame} $t_deodex_fail$normal"
 				echo "$framedir/$deoarch/$frame.odex" >> $logs/deodex_fail_list
 			fi
 		else
 			echo ""
-			echo "$frame is already deodexed ..."
+			echo "$greent$frame $t_deodex_app_already$normal"
 			echo ""
 		fi
 	done
@@ -3041,7 +2964,7 @@ deodex_m() {
 	for frame2 in $(ls $framedir/$deoarch2/dex | grep .dex | rev | cut -c 5- | rev); do
 		if [[ $(echo $frame2 | grep classes) = "" && $($p7z l $framedir/$frame2.jar | grep classes.dex) = "" ]]; then
 			echo ""
-			echo "... Deodexing $frame2"
+			echo "$t_deodex_deodexing $frame2"
 			echo ""
 			mv $framedir/$deoarch2/dex/$frame2.dex $framedir/$deoarch2/dex/classes.dex
 			find $framedir/$deoarch2/dex -name $frame-classes*.dex | while read line; do
@@ -3059,7 +2982,7 @@ deodex_m() {
 		else
 			if [[ $frame2 != *"classes"* ]]; then
 				echo ""
-				echo "$frame2 is already deodexed ..."
+				echo "$greent$frame2 $t_deodex_app_already$normal"
 				echo ""
 				rm -rf $framedir/$deoarch2/dex/$frame2.dex
 			fi
@@ -3074,19 +2997,17 @@ deodex_m() {
 	delframework="y"
 	if [[ -s $logs/deodex_fail_list ]]; then
 		banner
-		echo "${redt}There were problems deodexing some of your ROM.$normal"
-		echo "The following file shows where the issues occurred:"
+		echo -e "$t_deodex_problems"
 		echo "${yellowt}$logs/deodex_fail_list"
 		echo ""
-		echo "${bluet}NOTE: If you say NO below, you can try smali/baksmali"
-		echo "method on the remaining files$normal"
+		echo -e "$t_deodex_try_smali"
 		echo ""
-		read -n 1 -p "Would you like to delete framework odex files anyway?  y/n  " delframework
+		read -n 1 -p "$t_deodex_del_frame_q" delframework
 	fi
 	echo "$clears"
 	echo ""
 	echo "----------------------------------------------------"
-	echo "Cleaning up ..."
+	echo "$t_deodex_clean"
 	echo "----------------------------------------------------"
 	echo ""
 	echo ""
@@ -3101,11 +3022,11 @@ deodex_m() {
 	stillodexed=$(find system vendor -name *.odex 2>/dev/null)
 	if [[ "$stillodexed" = "" ]]; then
 		banner
-		echo "${greent}Deodexing complete$normal"
+		echo "$greent$t_deodex_complete$normal"
 		exit_deo
 	else
 		banner
-		echo "${redt}The following odex files are still in your ROM"
+		echo "$redt$t_deodex_remain"
 		echo ""
 		echo "$yellowt$stillodexed$normal"
 		exit_deo
@@ -3135,45 +3056,31 @@ deodex_m2() {
 	else
 		while [[ ! -f $framedir/$arch/boot.oat ]]; do
 			banner
-			echo "Configure the arch of your device."
-			echo ""
-			echo "HINT:"
-			echo "Check the framework directory, you should see"
-			echo "another directory inside. The name of it should go"
-			echo "here (ex. arm, arm64, x86)."
-			echo ""
-			echo "If you can't get past this part, check the"
-			echo "following:"
-			echo ""
-			echo "1. Make sure this is a Marshmallow rom."
-			echo "2. Make sure you typed the arch variable correctly."
-			echo "3. Make sure your rom is not already deodexed."
-			echo ""
-			echo "Type the arch of your device and press ENTER."
+			echo -e "$t_deodex_config_arch"
 			echo ""
 			read arch
 		done
 	fi
 	if [[ -f $framedir/$arch/boot.oat ]]; then
 		banner
-		echo "${bluet}CURRENT PROJECT: $greent$romname"
-		echo "${bluet}ANDROID VERSION: $greent$androidversion"
-		echo "${bluet}API LEVEL: $greent$api"
-		echo "${bluet}ARCH: $greent$arch$normal"
+		echo "${bluet}$t_startup_project $greent$romname"
+		echo "$bluet$t_startup_version$greent$androidversion"
+		echo "$bluet$t_deodex_api$greent$api"
+		echo "$bluet$t_deodex_arch$greent$arch$normal"
 		if [[ ! $arch2 = "" ]]; then
-			echo "${bluet}ARCH2: $greent$arch2$normal"
+			echo "$bluet$t_deodex_arch2$greent$arch2$normal"
 		fi
-		echo "${bluet}METHOD: ${greent}smali/baksmali$normal"
+		echo "$bluet$t_deodex_method${greent}smali/baksmali$normal"
 		echo ""
-		read -n 1 -p "Would you like to continue deodexing? y/n  "
+		read -n 1 -p "$t_deodex_continue_q"
 		if [[ ! $REPLY = "y" ]]; then
 			rom_tools
 			return 1
 		fi
 	else
 		banner
-		echo "${redb}${yellowt}${bold}WARNING:$normal"
-		echo "${redt}Something went wrong. Sorry for the inconvenience.$normal"
+		echo "$redb$yellowt$bold$t_warning$normal"
+		echo "$redt$t_error_mess$normal"
 		exit_deo
 	fi
 	dodeodexm2() {
@@ -3184,7 +3091,7 @@ deodex_m2() {
 			fi
 			if [[ $($p7z l $deoappdir/$app/$app.apk | grep classes.dex) = "" ]]; then
 				echo ""
-				echo "... Deodexing $app"
+				echo "$t_deodex_deodexing $app"
 				echo ""
 				( java -Xmx${heapsize}m -jar $baksmali -x -d $framedir/$deoarch2 -c boot.oat:$app.odex -d $deoappdir/$app/$deoarch/ $deoappdir/$app/$deoarch/$app.odex -o $deoappdir/$app/$deoarch/smali 2>&1 ) >> $deoappdir/$app/$deoarch/classes.log
 				cat $deoappdir/$app/$deoarch/classes.log >> $logs/deodex.log
@@ -3214,7 +3121,7 @@ deodex_m2() {
 				rm -rf $deoappdir/$app/oat
 			else
 				echo ""
-				echo "$app is already deodexed ..."
+				echo "$greent$app $t_deodex_app_already$normal"
 				echo ""
 				rm -rf $deoappdir/$app/oat
 			fi
@@ -3227,14 +3134,14 @@ deodex_m2() {
 		echo "$clears"
 		echo ""
 		echo "----------------------------------------------------"
-		echo "Extracting odex files ..."
+		echo "$t_deodex_extract_txt"
 		echo "----------------------------------------------------"
 		echo ""
 		find $appdir $privdir $framedir -name *odex.gz | while read line; do
 			gzdir=$(dirname $line)
 			gzfile=$(basename $line)
 			echo ""
-			echo "... Extracting $gzfile"
+			echo "$t_deodex_extract $gzfile"
 			echo ""
 			$p7z e -o$gzdir $line 2>/dev/null >> $logs/zip.log
 		done
@@ -3242,7 +3149,7 @@ deodex_m2() {
 			xzdir=$(dirname $line)
 			xzfile=$(basename $line)
 			echo ""
-			echo "... Extracting $xzfile"
+			echo "$t_deodex_extract $xzfile"
 			echo ""
 			$p7z e -o$xzdir $line 2>/dev/null >> $logs/zip.log
 		done
@@ -3251,7 +3158,7 @@ deodex_m2() {
 		echo "$clears"
 		echo ""
 		echo "----------------------------------------------------"
-		echo "Moving extra apps ..."
+		echo "$t_deodex_move"
 		echo "----------------------------------------------------"
 		echo ""
 		find system vendor -name *.odex 2>/dev/null | grep -v "system/framework/oat/\|system/framework/$arch/\|system/framework/$arch2/\|system/app/\|system/priv-app/" | rev | cut -d"/" -f4- | rev | sort -u > $logs/extraodex.txt
@@ -3277,7 +3184,7 @@ deodex_m2() {
 	echo "$clears"
 	echo ""
 	echo "----------------------------------------------------"
-	echo "Start deodexing /system/app ..."
+	echo "$t_deodex_start_app"
 	echo "----------------------------------------------------"
 	echo ""
 	applist=$(ls $appdir)
@@ -3316,7 +3223,7 @@ deodex_m2() {
 	echo "$clears"
 	echo ""
 	echo "----------------------------------------------------"
-	echo "Start deodexing /system/priv-app ..."
+	echo "$t_deodex_start_priv"
 	echo "----------------------------------------------------"
 	echo ""
 	applist=$(ls $privdir)
@@ -3341,7 +3248,7 @@ deodex_m2() {
 	echo "$clears"
 	echo ""
 	echo "----------------------------------------------------"
-	echo "Start deodexing /system/framework ..."
+	echo "$t_deodex_start_frame"
 	echo "----------------------------------------------------"
 	echo ""
 	( java -Xmx${heapsize}m -jar $baksmali $framedir/$deoarch2/boot.oat 2>&1 ) | grep "/system/framework" | sed "s/\/system\/framework\///" >> $framedir/$deoarch2/classes.log
@@ -3357,7 +3264,7 @@ deodex_m2() {
 	        if [[ -d "$framedir/$deoarch" ]]; then
 	                if [[ $($p7z l $framedir/$frame.jar | grep classes.dex) = "" && -f $framedir/$deoarch/$frame.odex ]]; then
 	                        echo ""
-	                        echo "... Deodexing $frame"
+	                        echo "$t_deodex_deodexing $frame"
 	                        echo ""
 				( java -Xmx${heapsize}m -jar $baksmali -x -d $framedir/$deoarch2 -c boot.oat:$frame.odex -d $framedir/$deoarch/ $framedir/$deoarch/$frame.odex -o $framedir/$deoarch/smali 2>&1 ) > $framedir/$deoarch/classes2.log
 				cat $framedir/$deoarch/classes2.log >> $logs/deodex.log
@@ -3388,7 +3295,7 @@ deodex_m2() {
 	                        rm -rf $framedir/$deoarch/classes*.dex
 	                else
 	                        echo ""
-	                        echo "$frame is already deodexed ..."
+	                        echo "$greent$frame $t_deodex_app_already$normal"
 	                        echo ""
 	                        rm -rf $framedir/oat/$frame.odex
 	                fi
@@ -3400,7 +3307,7 @@ deodex_m2() {
 	                line2=$(echo "$line" | rev | cut -d"." -f2- | rev)
 	                if [[ ! -f $framedir/temp/$line || $($p7z l $framedir/temp/$line | grep classes.dex) = "" ]]; then
 	                        echo ""
-	                        echo "... Deodexing $line2"
+	                        echo "$t_deodex_deodexing $line2"
 	                        echo ""
 	                        java -Xmx${heapsize}m -jar $baksmali -x -c boot.oat -d $framedir/$deoarch2 -e /system/framework/$line $framedir/$deoarch2/boot.oat -o $framedir/temp/smali >> $logs/deodex.log
 	                        java -Xmx${heapsize}m -jar $smali -a $api $framedir/temp/smali -o $framedir/temp/$line.tmp >> $logs/deodex.log
@@ -3419,7 +3326,7 @@ deodex_m2() {
 	                        rm -rf $framedir/temp/smali
 	                else
 	                        echo ""
-	                        echo "$line2 is already deodexed ..."
+	                        echo "$greent$line2 $t_deodex_app_already$normal"
 	                        echo ""
 	                fi
 	        done
@@ -3431,7 +3338,7 @@ deodex_m2() {
 	echo "$clears"
 	echo ""
 	echo "----------------------------------------------------"
-	echo "Cleaning up ..."
+	echo "$t_deodex_clean"
 	echo "----------------------------------------------------"
 	echo ""
 	echo ""
@@ -3445,11 +3352,11 @@ deodex_m2() {
 	stillodexed=$(find system vendor -name *.odex 2>/dev/null)
 	if [[ "$stillodexed" = "" ]]; then
 		banner
-		echo "${greent}Deodexing complete$normal"
+		echo "$greent$t_deodex_complete$normal"
 		exit_deo
 	else
 		banner
-		echo "${redt}The following odex files are still in your ROM"
+		echo "$redt$t_deodex_remain"
 		echo ""
 		echo "$yellowt$stillodexed$normal"
 		exit_deo
@@ -3479,45 +3386,31 @@ deodex_m3() {
 	else
 		while [[ ! -f $framedir/$arch/boot.oat ]]; do
 			banner
-			echo "Configure the arch of your device."
-			echo ""
-			echo "HINT:"
-			echo "Check the framework directory, you should see"
-			echo "another directory inside. The name of it should go"
-			echo "here (ex. arm, arm64, x86)."
-			echo ""
-			echo "If you can't get past this part, check the"
-			echo "following:"
-			echo ""
-			echo "1. Make sure this is an N rom."
-			echo "2. Make sure you typed the arch variable correctly."
-			echo "3. Make sure your rom is not already deodexed."
-			echo ""
-			echo "Type the arch of your device and press ENTER."
+			echo -e "$t_deodex_config_arch"
 			echo ""
 			read arch
 		done
 	fi
 	if [[ -f $framedir/$arch/boot.oat ]]; then
 		banner
-		echo "${bluet}CURRENT PROJECT: $greent$romname"
-		echo "${bluet}ANDROID VERSION: $greent$androidversion"
-		echo "${bluet}API LEVEL: $greent$api"
-		echo "${bluet}ARCH: $greent$arch$normal"
+		echo "${bluet}$t_startup_project $greent$romname"
+		echo "$bluet$t_startup_version$greent$androidversion"
+		echo "$bluet$t_deodex_api$greent$api"
+		echo "$bluet$t_deodex_arch$greent$arch$normal"
 		if [[ ! $arch2 = "" ]]; then
-			echo "${bluet}ARCH2: $greent$arch2$normal"
+			echo "$bluet$t_deodex_arch2$greent$arch2$normal"
 		fi
-		echo "${bluet}METHOD: ${greent}oatdump$normal"
+		echo "$bluet$t_deodex_method${greent}oatdump$normal"
 		echo ""
-		read -n 1 -p "Would you like to continue deodexing? y/n  "
+		read -n 1 -p "$t_deodex_continue_q"
 		if [[ ! $REPLY = "y" ]]; then
 			rom_tools
 			return 1
 		fi
 	else
 		banner
-		echo "${redb}${yellowt}${bold}WARNING:$normal"
-		echo "${redt}Something went wrong. Sorry for the inconvenience.$normal"
+		echo "$redb$yellowt$bold$t_warning$normal"
+		echo "$redt$t_error_mess$normal"
 		exit_deo
 	fi
 	dodeodexm3() {
@@ -3528,12 +3421,12 @@ deodex_m3() {
 			fi
 			if [[ $($p7z l $deoappdir/$app/$app.apk | grep classes.dex) = "" ]]; then
 				echo ""
-				echo "... Deodexing $app"
+				echo "$t_deodex_deodexing $app"
 				echo ""
 				$oattools/oatdump --oat-file="$deoappdir/$app/$deoarch/$app.odex" --export-dex-to="$deoappdir/$app/$deoarch" >> $logs/deodex.log
 				$oattools/dexrepair -I $deoappdir/$app/$deoarch >> $logs/deodex.log
 				if [[ ! -f $deoappdir/$app/$deoarch/$app.apk_export.dex_repaired.dex ]]; then
-					echo "${redt}${app} Failed ...$normal"
+					echo "${redt}${app} $t_deodex_fail$normal"
 					echo "$deoappdir/$app/$deoarch/$app.odex" >> $logs/deodex_fail_list
 					rm -rf $deoappdir/$app/$deoarch/$app.apk:classes*.dex_export.dex_repaired.dex
 					continue
@@ -3549,7 +3442,7 @@ deodex_m3() {
 				rm -rf $deoappdir/$app/oat
 			else
 				echo ""
-				echo "$greent$app is already deodexed ...$normal"
+				echo "$greent$app $t_deodex_app_already$normal"
 				echo ""
 				rm -rf $deoappdir/$app/oat
 			fi
@@ -3562,14 +3455,14 @@ deodex_m3() {
 		echo "$clears"
 		echo ""
 		echo "----------------------------------------------------"
-		echo "Extracting odex files ..."
+		echo "$t_deodex_extract_txt"
 		echo "----------------------------------------------------"
 		echo ""
 		find $appdir $privdir $framedir -name *odex.gz | while read line; do
 			gzdir=$(dirname $line)
 			gzfile=$(basename $line)
 			echo ""
-			echo "... Extracting $gzfile"
+			echo "$t_deodex_extract $gzfile"
 			echo ""
 			$p7z e -o$gzdir $line 2>/dev/null >> $logs/zip.log
 		done
@@ -3577,7 +3470,7 @@ deodex_m3() {
 			xzdir=$(dirname $line)
 			xzfile=$(basename $line)
 			echo ""
-			echo "... Extracting $xzfile"
+			echo "$t_deodex_extract $xzfile"
 			echo ""
 			$p7z e -o$xzdir $line 2>/dev/null >> $logs/zip.log
 		done
@@ -3586,7 +3479,7 @@ deodex_m3() {
 		echo "$clears"
 		echo ""
 		echo "----------------------------------------------------"
-		echo "Moving extra apps ..."
+		echo "$t_deodex_move"
 		echo "----------------------------------------------------"
 		echo ""
 		find system vendor -name *.odex 2>/dev/null | grep -v "system/framework/oat/\|system/framework/$arch/\|system/framework/$arch2/\|system/app/\|system/priv-app/" | rev | cut -d"/" -f4- | rev | sort -u > $logs/extraodex.txt
@@ -3612,7 +3505,7 @@ deodex_m3() {
 	echo "$clears"
 	echo ""
 	echo "----------------------------------------------------"
-	echo "Start deodexing /system/app ..."
+	echo "$t_deodex_start_app"
 	echo "----------------------------------------------------"
 	echo ""
 	applist=$(ls $appdir)
@@ -3651,7 +3544,7 @@ deodex_m3() {
 	echo "$clears"
 	echo ""
 	echo "----------------------------------------------------"
-	echo "Start deodexing /system/priv-app ..."
+	echo "$t_deodex_start_priv"
 	echo "----------------------------------------------------"
 	echo ""
 	applist=$(ls $privdir)
@@ -3676,7 +3569,7 @@ deodex_m3() {
 	echo "$clears"
 	echo ""
 	echo "----------------------------------------------------"
-	echo "Start deodexing /system/framework ..."
+	echo "$t_deodex_start_frame"
 	echo "----------------------------------------------------"
 	echo ""
 	mkdir -p $framedir/bootdex
@@ -3685,7 +3578,7 @@ deodex_m3() {
 	for frame in $(ls $framedir | grep .jar | rev | cut -d"." -f2- | rev); do
 		if [[ $($p7z l $framedir/$frame.jar | grep classes.dex) = "" ]]; then
 			echo ""
-			echo "... Deodexing $frame"
+			echo "$t_deodex_deodexing $frame"
 			echo ""
 			mkdir -p $framedir/frametmp
 			if [[ -f $framedir/oat/$arch/$frame.odex ]]; then
@@ -3693,14 +3586,14 @@ deodex_m3() {
 			elif [[ -f $framedir/bootdex/$frame.jar_export.dex ]]; then
 				mv $framedir/bootdex/$frame.jar* $framedir/frametmp/
 			else
-				echo "${greent}no $frame.odex, skipping ...$normal"
+				echo "$greent$frame.odex $t_deodex_no_frame_odex$normal"
 				rm -rf $framedir/frametmp
 				continue
 			fi
 			$oattools/dexrepair -I $framedir/frametmp >> $logs/deodex.log
 			mv $framedir/frametmp/$frame.jar_export.dex_repaired.dex $framedir/frametmp/classes.dex
 			if [[ ! -f $framedir/frametmp/classes.dex ]]; then
-				echo "$redt$frame Failed ...$normal"
+				echo "$redt$frame $t_deodex_fail$normal"
 				echo "$frame.jar" >> $logs/deodex_fail_list
 				rm -rf $framedir/frametmp
 				continue
@@ -3715,7 +3608,7 @@ deodex_m3() {
 			rm -rf $framedir/frametmp
 		else
 			echo ""
-			echo "$greent$frame is already deodexed ...$normal"
+			echo "$greent$frame $t_deodex_app_already$normal"
 			echo ""
 		fi
 	done
@@ -3723,16 +3616,15 @@ deodex_m3() {
 	delframework="y"
 	if [[ -s $logs/deodex_fail_list ]]; then
 		banner
-		echo "${redt}There were problems deodexing some of your ROM.$normal"
-		echo "The following file shows where the issues occurred:"
+		echo -e "$t_deodex_problems"
 		echo "${yellowt}$logs/deodex_fail_list$normal"
 		echo ""
-		read -n 1 -p "Would you like to delete framework odex files anyway?  y/n  " delframework
+		read -n 1 -p "$t_deodex_del_frame_q" delframework
 	fi
 	echo "$clears"
 	echo ""
 	echo "----------------------------------------------------"
-	echo "Cleaning up ..."
+	echo "$t_deodex_clean"
 	echo "----------------------------------------------------"
 	echo ""
 	echo ""
@@ -3747,11 +3639,11 @@ deodex_m3() {
 	stillodexed=$(find system vendor -name *.odex 2>/dev/null)
 	if [[ "$stillodexed" = "" ]]; then
 		banner
-		echo "${greent}Deodexing complete$normal"
+		echo "$greent$t_deodex_complete$normal"
 		exit_deo
 	else
 		banner
-		echo "${redt}The following odex files are still in your ROM"
+		echo "$redt$t_deodex_remain"
 		echo ""
 		echo "$yellowt$stillodexed$normal"
 		exit_deo
@@ -3781,45 +3673,31 @@ deodex_n() {
 	else
 		while [[ ! -f $framedir/$arch/boot.oat ]]; do
 			banner
-			echo "Configure the arch of your device."
-			echo ""
-			echo "HINT:"
-			echo "Check the framework directory, you should see"
-			echo "another directory inside. The name of it should go"
-			echo "here (ex. arm, arm64, x86)."
-			echo ""
-			echo "If you can't get past this part, check the"
-			echo "following:"
-			echo ""
-			echo "1. Make sure this is an N rom."
-			echo "2. Make sure you typed the arch variable correctly."
-			echo "3. Make sure your rom is not already deodexed."
-			echo ""
-			echo "Type the arch of your device and press ENTER."
+			echo -e "$t_deodex_config_arch"
 			echo ""
 			read arch
 		done
 	fi
 	if [[ -f $framedir/$arch/boot.oat ]]; then
 		banner
-		echo "${bluet}CURRENT PROJECT: $greent$romname"
-		echo "${bluet}ANDROID VERSION: $greent$androidversion"
-		echo "${bluet}API LEVEL: $greent$api"
-		echo "${bluet}ARCH: $greent$arch$normal"
+		echo "${bluet}$t_startup_project $greent$romname"
+		echo "$bluet$t_startup_version$greent$androidversion"
+		echo "$bluet$t_deodex_api$greent$api"
+		echo "$bluet$t_deodex_arch$greent$arch$normal"
 		if [[ ! $arch2 = "" ]]; then
-			echo "${bluet}ARCH2: $greent$arch2$normal"
+			echo "$bluet$t_deodex_arch2$greent$arch2$normal"
 		fi
-		echo "${bluet}METHOD: ${greent}oatdump$normal"
+		echo "$bluet$t_deodex_method ${greent}oatdump$normal"
 		echo ""
-		read -n 1 -p "Would you like to continue deodexing? y/n  "
+		read -n 1 -p "$t_deodex_continue_q"
 		if [[ ! $REPLY = "y" ]]; then
 			rom_tools
 			return 1
 		fi
 	else
 		banner
-		echo "${redb}${yellowt}${bold}WARNING:$normal"
-		echo "${redt}Something went wrong. Sorry for the inconvenience.$normal"
+		echo "$redb$yellowt$bold$t_warning$normal"
+		echo "$redt$t_error_mess$normal"
 		exit_deo
 	fi
 	dodeodexn() {
@@ -3830,12 +3708,12 @@ deodex_n() {
 			fi
 			if [[ $($p7z l $deoappdir/$app/$app.apk | grep classes.dex) = "" ]]; then
 				echo ""
-				echo "... Deodexing $app"
+				echo "$t_deodex_deodexing $app"
 				echo ""
 				$oattools/oatdump --oat-file="$deoappdir/$app/$deoarch/$app.odex" --export-dex-to="$deoappdir/$app/$deoarch" >> $logs/deodex.log
 				$oattools/dexrepair -I $deoappdir/$app/$deoarch >> $logs/deodex.log
 				if [[ ! -f $deoappdir/$app/$deoarch/$app.apk_export.dex_repaired.dex ]]; then
-					echo "${redt}${app} Failed ...$normal"
+					echo "${redt}${app} $t_deodex_fail$normal"
 					echo "$deoappdir/$app/$deoarch/$app.odex" >> $logs/deodex_fail_list
 					rm -rf $deoappdir/$app/$deoarch/$app.apk:classes*.dex_export.dex_repaired.dex
 					continue
@@ -3852,7 +3730,7 @@ deodex_n() {
 				rm -rf $deoappdir/$app/oat
 			else
 				echo ""
-				echo "$greent$app is already deodexed ...$normal"
+				echo "$greent$app $t_deodex_app_already$normal"
 				echo ""
 				rm -rf $deoappdir/$app/oat
 			fi
@@ -3865,14 +3743,14 @@ deodex_n() {
 		echo "$clears"
 		echo ""
 		echo "----------------------------------------------------"
-		echo "Extracting odex files ..."
+		echo "$t_deodex_extract_txt"
 		echo "----------------------------------------------------"
 		echo ""
 		find $appdir $privdir $framedir -name *odex.gz | while read line; do
 			gzdir=$(dirname $line)
 			gzfile=$(basename $line)
 			echo ""
-			echo "... Extracting $gzfile"
+			echo "$t_deodex_extract $gzfile"
 			echo ""
 			$p7z e -o$gzdir $line 2>/dev/null >> $logs/zip.log
 		done
@@ -3880,7 +3758,7 @@ deodex_n() {
 			xzdir=$(dirname $line)
 			xzfile=$(basename $line)
 			echo ""
-			echo "... Extracting $xzfile"
+			echo "$t_deodex_extract $xzfile"
 			echo ""
 			$p7z e -o$xzdir $line 2>/dev/null >> $logs/zip.log
 		done
@@ -3889,7 +3767,7 @@ deodex_n() {
 		echo "$clears"
 		echo ""
 		echo "----------------------------------------------------"
-		echo "Moving extra apps ..."
+		echo "$t_deodex_move"
 		echo "----------------------------------------------------"
 		echo ""
 		find system vendor -name *.odex 2>/dev/null | grep -v "system/framework/oat/\|system/framework/$arch/\|system/framework/$arch2/\|system/app/\|system/priv-app/" | rev | cut -d"/" -f4- | rev | sort -u > $logs/extraodex.txt
@@ -3915,7 +3793,7 @@ deodex_n() {
 	echo "$clears"
 	echo ""
 	echo "----------------------------------------------------"
-	echo "Start deodexing /system/app ..."
+	echo "$t_deodex_start_app"
 	echo "----------------------------------------------------"
 	echo ""
 	applist=$(ls $appdir)
@@ -3954,7 +3832,7 @@ deodex_n() {
 	echo "$clears"
 	echo ""
 	echo "----------------------------------------------------"
-	echo "Start deodexing /system/priv-app ..."
+	echo "$t_deodex_start_priv"
 	echo "----------------------------------------------------"
 	echo ""
 	applist=$(ls $privdir)
@@ -3979,7 +3857,7 @@ deodex_n() {
 	echo "$clears"
 	echo ""
 	echo "----------------------------------------------------"
-	echo "Start deodexing /system/framework ..."
+	echo "$t_deodex_start_frame"
 	echo "----------------------------------------------------"
 	echo ""
 	mkdir -p $framedir/bootdex
@@ -3988,7 +3866,7 @@ deodex_n() {
 	for frame in $(ls $framedir | grep .jar | rev | cut -d"." -f2- | rev); do
 		if [[ $($p7z l $framedir/$frame.jar | grep classes.dex) = "" ]]; then
 			echo ""
-			echo "... Deodexing $frame"
+			echo "$t_deodex_deodexing $frame"
 			echo ""
 			mkdir -p $framedir/frametmp
 			if [[ -f $framedir/oat/$arch/$frame.odex ]]; then
@@ -3997,11 +3875,15 @@ deodex_n() {
 				$oattools/oatdump --oat-file="$framedir/$arch/boot-$frame.oat" --export-dex-to="$framedir/frametmp" >> $logs/deodex.log
 			elif [[ -f $framedir/bootdex/$frame.jar_export.dex ]]; then
 				mv $framedir/bootdex/$frame.jar* $framedir/frametmp/
+			else
+				echo "$greent$frame.odex $t_deodex_no_frame_odex$normal"
+				rm -rf $framedir/frametmp
+				continue
 			fi
 			$oattools/dexrepair -I $framedir/frametmp >> $logs/deodex.log
 			mv $framedir/frametmp/$frame.jar_export.dex_repaired.dex $framedir/frametmp/classes.dex
 			if [[ ! -f $framedir/frametmp/classes.dex ]]; then
-				echo "$redt$frame Failed ...$normal"
+				echo "$redt$frame $t_deodex_fail$normal"
 				echo "$frame.jar" >> $logs/deodex_fail_list
 				rm -rf $framedir/frametmp
 				continue
@@ -4016,7 +3898,7 @@ deodex_n() {
 			rm -rf $framedir/frametmp
 		else
 			echo ""
-			echo "$greent$frame is already deodexed ...$normal"
+			echo "$greent$frame $t_deodex_app_already$normal"
 			echo ""
 		fi
 	done
@@ -4024,16 +3906,15 @@ deodex_n() {
 	delframework="y"
 	if [[ -s $logs/deodex_fail_list ]]; then
 		banner
-		echo "${redt}There were problems deodexing some of your ROM.$normal"
-		echo "The following file shows where the issues occurred:"
+		echo -e "$t_deodex_problems"
 		echo "${yellowt}$logs/deodex_fail_list$normal"
 		echo ""
-		read -n 1 -p "Would you like to delete framework odex files anyway?  y/n  " delframework
+		read -n 1 -p "$t_deodex_del_frame_q" delframework
 	fi
 	echo "$clears"
 	echo ""
 	echo "----------------------------------------------------"
-	echo "Cleaning up ..."
+	echo "$t_deodex_clean"
 	echo "----------------------------------------------------"
 	echo ""
 	echo ""
@@ -4048,11 +3929,11 @@ deodex_n() {
 	stillodexed=$(find system vendor -name *.odex 2>/dev/null)
 	if [[ "$stillodexed" = "" ]]; then
 		banner
-		echo "${greent}Deodexing complete$normal"
+		echo "$greent$t_deodex_complete$normal"
 		exit_deo
 	else
 		banner
-		echo "${redt}The following odex files are still in your ROM"
+		echo "$redt$t_deodex_remain"
 		echo ""
 		echo "$yellowt$stillodexed$normal"
 		exit_deo
@@ -4060,11 +3941,11 @@ deodex_n() {
 }
 deodex_old() {
         banner
-	echo "${bluet}CURRENT PROJECT: $greent$romname"
-	echo "${bluet}ANDROID VERSION: $greent$androidversion"
-	echo "${bluet}API LEVEL: $greent$api$normal"
+	echo "${bluet}$t_startup_project $greent$romname"
+	echo "$bluet$t_startup_version$greent$androidversion"
+	echo "$bluet$t_deodex_api$greent$api$normal"
 	echo ""
-	read -n 1 -p "Would you like to continue deodexing? y/n  "
+	read -n 1 -p "$t_deodex_continue_q"
 	if [[ ! $REPLY = "y" ]]; then
 		rom_tools
 		return 1
@@ -4077,7 +3958,7 @@ deodex_old() {
 			fi
                         if [[ $($p7z l $deoappdir/$app.$deoext | grep classes.dex) = "" ]]; then
 				echo ""
-				echo "... Deodexing $app"
+				echo "$t_deodex_deodexing $app"
 				echo ""
 				java -Xmx${heapsize}m -jar $baksmalio -a $api -d $framedir -x $deoappdir/$app.odex -o $deoappdir/smali  >> $logs/deodex.log
 				java -Xmx${heapsize}m -jar $smalio -a $api $deoappdir/smali -o $deoappdir/classes.dex >> $logs/deodex.log
@@ -4087,7 +3968,7 @@ deodex_old() {
 				rm -rf $deoappdir/classes.dex
 			else
 				echo ""
-				echo "$app is already deodexed ..."
+				echo "$greent$app $t_deodex_app_already$normal"
 				echo ""
 				rm -rf $deoappdir/$app.odex
 			fi
@@ -4100,7 +3981,7 @@ deodex_old() {
 		echo "$clears"
 		echo ""
 		echo "----------------------------------------------------"
-		echo "Moving extra apps ..."
+		echo "$t_deodex_move"
 		echo "----------------------------------------------------"
 		echo ""
                 find system vendor -name *.odex 2>/dev/null | grep -v "system/framework\|system/app/\|system/priv-app/" | rev | cut -d"." -f2- | rev > $logs/extraodex.txt
@@ -4114,7 +3995,7 @@ deodex_old() {
 	echo "$clears"
 	echo ""
 	echo "----------------------------------------------------"
-	echo "Start deodexing /system/app ..."
+	echo "$t_deodex_start_app"
 	echo "----------------------------------------------------"
 	echo ""
 	applist=$(ls $appdir | grep .apk | rev | cut -c 5- | rev)
@@ -4133,7 +4014,7 @@ deodex_old() {
 	echo "$clears"
 	echo ""
 	echo "----------------------------------------------------"
-	echo "Start deodexing /system/priv-app ..."
+	echo "$t_deodex_start_priv"
 	echo "----------------------------------------------------"
 	echo ""
 	applist=$(ls $privdir | grep .apk | rev | cut -c 5- | rev)
@@ -4143,7 +4024,7 @@ deodex_old() {
 	echo "$clears"
 	echo ""
 	echo "----------------------------------------------------"
-	echo "Start deodexing /system/framework ..."
+	echo "$t_deodex_start_frame"
 	echo "----------------------------------------------------"
 	echo ""
         applist=$(ls $framedir | grep .jar | rev | cut -c 5- | rev)
@@ -4157,7 +4038,7 @@ deodex_old() {
 	echo "$clears"
 	echo ""
 	echo "----------------------------------------------------"
-	echo "Cleaning up ..."
+	echo "$t_deodex_clean"
 	echo "----------------------------------------------------"
 	echo ""
 	echo ""
@@ -4166,11 +4047,11 @@ deodex_old() {
 	stillodexed=$(find system vendor -name *.odex 2>/dev/null)
 	if [[ "$stillodexed" = "" ]]; then
 		banner
-		echo "${greent}Deodexing complete$normal"
+		echo "$greent$t_deodex_complete$normal"
 		exit_deo
 	else
 		banner
-		echo "${redt}The following odex files are still in your ROM"
+		echo "$redt$t_deodex_remain"
 		echo ""
 		echo "$yellowt$stillodexed$normal"
 		exit_deo
@@ -4178,7 +4059,7 @@ deodex_old() {
 }
 deodex_sqsh() {
 	banner
-	echo "${bluet}Extracting $sqshfile ...$normal"
+	echo "$bluet$t_general_extracting $sqshfile ...$normal"
 	if [[ ! $(echo "$sqshfile" | grep "priv-app\|odex.app\|framework") = "" ]]; then
 		cd $romdir/system
 		sqshtype=$(echo "$sqshfile" | cut -d"." -f2)
@@ -4190,7 +4071,7 @@ deodex_sqsh() {
 		cd sqshtmp
 		$p7z x $sqshfile 2>/dev/null >> $logs/zip.log
 		banner
-		echo "${bluet}Moving odex files ...$normal"
+		echo "$bluet$t_deodex_move_odex$normal"
 		if [[ ! $(ls | grep arm64) = "" ]]; then
 			odexarch="arm64"
 			cd arm64
@@ -4216,7 +4097,7 @@ deodex_sqsh() {
 	$p7z x $sqshfile 2>/dev/null >> $logs/zip.log
 	rm -rf $sqshfile
 	banner
-	echo "${bluet}Moving odex files to system ...$normal"
+	echo "$bluet$t_deodex_move_odex$normal"
 	if [[ -d $romdir/system/$sqshdir/arm || -d $romdir/system/$sqshdir/arm64 ]]; then
 		if [[ -d $romdir/system/$sqshdir/arm ]]; then
 			cd $romdir/system/$sqshdir/arm
@@ -4265,13 +4146,13 @@ dozipalign() {
 	cd $romdir
 	echo ""
 	choice=""
-	read -n 1 -p "Would you also like to zipalign the apk files in /framework?  y/n  " choice
+	read -n 1 -p "$t_zipalign_frame_q" choice
 	echo ""
 	echo ""
 	line=""
 	find system vendor -name *.apk 2>/dev/null | grep -v "/framework/" | sed 's/^\.\///' | sort | while read line; do
 		app=$(basename $line)
-		echo "Zipaligning $app ..."
+		echo "$t_zipalign $app ..."
 		$zipalign -f 4 $line $line-2 >/dev/null 2>&1
 		mv $line-2 $line
 	done
@@ -4279,19 +4160,16 @@ dozipalign() {
 		line=""
 		find system/framework -type f | grep -v "00_project_files" | grep .apk | sed 's/^\.\///' | while read line; do
 			app=$(basename $line)
-			echo "Zipaligning $app ..."
+			echo "$t_zipalign $app ..."
 			$zipalign -f 4 $line $line-2 >/dev/null 2>&1
 			mv $line-2 $line
 		done
 	fi
 }
-exitk() {
-	exit
-}
 elf_unpack() {
 	if [[ $bootext = "" ]]; then
 		banner
-		echo "${bluet}Unpacking kernel.elf ...$normal"
+		echo "$bluet$t_boot_unpack_elf$normal"
 		echo ""
 	fi
 	chosenimg="boot"
@@ -4310,15 +4188,89 @@ elf_unpack() {
 	fi
 	bootext=""
 }
+ext_dirmenu() {
+	isdataappstatus
+	if [[ -f $prfiles/custom_dir ]]; then
+		cctr=$(echo "$greent$(cat $prfiles/custom_dir)")
+	else
+		cctr=$(echo "$t_menu_cctr")
+	fi
+	choice=""
+	while [[ ! ${choice} =~ ^[1-2]$ ]] && [[ ! $choice = "m" && ! $choice = "q" ]]; do
+		banner
+		echo "$bluet$t_startup_project $greent$romname$normal"
+		echo "$bluet$t_startup_version $greent$androidversion$normal"
+		echo ""
+		echo "$yellowb$redt$t_menu_extra_dir$normal"
+		echo ""
+		echo "1) $t_menu_data ($bluet$t_title_current$greent$dataapp1$normal)"
+		echo "${yellowt}2) $t_menu_rom_tools"
+		echo "m = $t_title_main"
+		echo "${magentat}q = $t_menu_quit$normal"
+		echo ""
+		read -n 1 -p "$t_select" choice
+	done
+	# START /data/app support
+	if [[ $choice = "1" ]]; then
+		if [[ ! $dataapp = "Yes" ]]; then
+			banner
+			read -n 1 -p "$t_extra_data_q"
+			echo ""
+			echo ""
+			if [[ $REPLY = "y" ]]; then
+				data_app
+				if [[ $needpart = "1" ]]; then
+					rm -rf $romdir/data
+				else
+					banner
+					echo "$greent$t_extra_data_added"
+					echo ""
+					echo "$yellowt$romdir/data/app$normal"
+					echo ""
+					read -p "$t_enter_extra_dir_menu"
+				fi
+			fi
+		else
+			banner
+			echo -e "$t_extra_already_data"
+			read -n 1 -p ""
+			echo ""
+			echo ""
+			if [[ $REPLY = "y" ]]; then
+				data_apprem
+				banner
+				echo "$greent$t_extra_data_rem$normal"
+				echo ""
+				read -p "$t_enter_extra_dir_menu"
+			fi
+		fi
+		ext_dirmenu
+		return 1
+	# START ROM Tools Menu
+	elif [[ $choice = "2" ]]; then
+		rom_tools
+		return 1
+	# START Main Menu
+	elif [[ $choice = "m" ]]; then
+		cd $base
+		exec ./superr
+		return 1
+	# START Quit
+	elif [[ $choice = "q" ]]; then
+		echo ""
+		echo ""
+		exit
+	fi
+}
 extract_new() {
 	timestamp=$(date +%m-%d-%Y-%H:%M:%S)
 	cd $base
 	if [[ $(ls -d */ | grep 'superr_') = "" ]]; then
 		banner
-		echo "${redb}${yellowt}${bold}ERROR:$normal"
-		echo "${redt}There are no projects to extract from.$normal"
+		echo "$redb$yellowt$bold$t_error$normal"
+		echo "$redt$t_extract_no_project$normal"
 		echo ""
-		read -p "Press ENTER to return to the Main menu"
+		read -p "$t_enter_main_menu"
 		cd $base
 		exec ./superr
 		return 1
@@ -4368,7 +4320,7 @@ extract_new() {
 		prchoice="ext"
 		while [[ $romzip = "" && $romtar = "" && $rommd5 = "" && $romwin = "" && $romchunk = "" && $romimg = "" && $romtgz = "" ]]; do
 			banner
-			echo "${greenb}Extract Options:$normal"
+			echo "$greenb$t_menu_extra_dirct$normal"
 			echo ""
 			choosepr project in ${findproject[@]}
 			if [[ $REPLY = "m" ]]; then
@@ -4378,7 +4330,7 @@ extract_new() {
 				return 1
 			elif [[ $REPLY = "q" ]]; then
 				rm -rf $prfiles/findextract
-				exitk
+				exit
 			else
 				if [[ ! $(echo $project | grep .zip$) = "" ]]; then
 					romzip="$project"
@@ -4416,22 +4368,19 @@ extract_new() {
 	elif [[ -f cache.ext4 ]]; then
 		mv cache.ext4 cache.img
 	fi
-	if [[ $romzip = "" && $romtar = "" && $rommd5 = "" && $romimg = "" && $romwin = "" && $romchunk = "" && $romtgz = "" ]]; then
+	if [[ $romzip = "" && $romtar = ""  && $rommd5 = "" && $romimg = "" && $romwin = "" && $romchunk = "" && $romtgz = "" ]]; then
 		choice=""
 		while [[ ! ${choice} =~ ^[1-2]$ ]] && [[ ! $choice = "m" && ! $choice = "q" ]]; do
 			banner
-			echo "${bluet}CURRENT PROJECT: $greent$romname$normal"
+			echo "$bluet$t_startup_project $greent$romname$normal"
 			echo ""
-			echo "${yellowb}${redt}Extract Menu$normal"
+			echo "$yellowb$redt$t_extract_title$normal"
 			echo ""
-			echo "1) Add a ROM zip, tar/boot.img, system.img/boot.img, or"
-			echo "   win/boot.win then choose this option"
-			echo "2) Pull system, vendor, boot, and recovery images from your"
-			echo "   ${redt}${bold}rooted$normal device OR from custom recovery for extraction."
-			echo "${yellowt}m = Main Menu"
-			echo "${magentat}q = Quit$normal"
+			echo -e "$t_extract_no_files_message"
+			echo "${yellowt}m = $t_title_main"
+			echo "${magentat}q = $t_menu_quit$normal"
 			echo ""
-			read -n 1 -p "Please enter your choice:" choice
+			read -n 1 -p "$t_select" choice
 		done
 		# START Add a ROM zip, tar/boot.img, system.img/boot.img, or win/boot.win
 		if [[ $choice = "1" ]]; then
@@ -4442,31 +4391,24 @@ extract_new() {
 			choice=""
 			while [[ ! ${choice} =~ ^[1-2]$ ]] && [[ ! $choice = "m" && ! $choice = "q" ]]; do
 				banner
-				echo "$yellowb${redt}Choose option to extract images$normal"
+				echo -e "$t_extract_cho_option"
+				echo "${yellowt}m = $t_title_main"
+				echo "${magentat}q = $t_menu_quit$normal"
 				echo ""
-				echo "${bluet}**If you get an error, you can try the other option**$normal"
-				echo ""
-				echo "1) My device is booted to custom recovery (${redt}stock will not work$normal)"
-				echo "2) My device is booted to Android (${redt}must be rooted$normal)"
-				echo "${yellowt}m = Main Menu"
-				echo "${magentat}q = Quit$normal"
-				echo ""
-				read -n 1 -p "Please enter your choice:" choice
+				read -n 1 -p "$t_select" choice
 			done
 			# START My device is booted to custom recovery (stock will not work)
 			if [[ $choice = "1" ]]; then
 				banner
-				echo "${bluet}** Plug in your device$normal"
-				echo ""
-				reply=""
-				read -n 1 -p "Would you like to continue? y/n " reply
+				echo -e "$t_extract_plug"
+				read -n 1 -p "" reply
 				if [[ ! $reply = "y" ]]; then
 					cd $base
 					exec ./superr
 					return 1
 				fi
 				banner
-				echo "${bluet}Detecting partition info ...$normal"
+				echo "$bluet$t_extract_detect_part$normal"
 				echo ""
 				if [[ $($adb shell mount | grep /system) = "" ]]; then
 					$adb shell mount /system
@@ -4507,21 +4449,18 @@ extract_new() {
 			# START My device is booted to Android (must be rooted)
 			elif [[ $choice = "2" ]]; then
 				banner
-				echo "${bluet}** Enable usb debugging on your Android device in system settings"
-				echo "** Plug in your device$normal"
+				echo -e "$t_byname_usb_debug"
 				echo ""
-				echo "$redb${yellowt}This operation requires root.$normal"
-				echo "${redt}You may need to agree to allow root on your device.$normal"
+				echo -e "$t_byname_usb_debug_root"
 				echo ""
-				reply=""
-				read -n 1 -p "Would you like to continue? y/n " reply
+				read -n 1 -p "$t_general_continue_q" reply
 				if [[ ! $reply = "y" ]]; then
 					cd $base
 					exec ./superr
 					return 1
 				fi
 				banner
-				echo "${bluet}Detecting partition info ...$normal"
+				echo "$bluet$t_extract_detect_part$normal"
 				echo ""
 				$adb "wait-for-device"
 				$adb pull /system/build.prop $romdir/build.prop
@@ -4542,7 +4481,7 @@ extract_new() {
 				fi
 				byname=$(cat $deviceloc/superr_byname | sed 's:\\::g')
 				banner
-				echo "${bluet}Checking for free space ...$normal"
+				echo "$bluet$t_extract_check_space$normal"
 				freedetect=""
 				if [[ ! $($adb shell su -C "df | grep /sdcard") = "" ]]; then
 					freespace=$($adb shell su -C "df | grep /sdcard" | gawk '{ print $4 }')
@@ -4550,10 +4489,10 @@ extract_new() {
 					freespace=$($adb shell su -C "df | grep /data" | gawk '{ print $4 }')
 				else
 					banner
-					echo "${redt}The kitchen could not determine your free space.$normal"
+					echo "$redt$t_extract_space_error$normal"
 					echo ""
 					reply=""
-					read -n 1 -p "Would you like to continue anyway?  y/n" reply
+					read -n 1 -p "$t_general_continue_q" reply
 					if [[ ! $reply = "y" ]]; then
 						cd $base
 						exec ./superr
@@ -4564,9 +4503,9 @@ extract_new() {
 				if [[ ! $freedetect = "no" ]]; then
 					reply=""
 					banner
-					echo "${bluet}You have $freespace available on your device for the images.$normal"
+					echo "$bluet$t_extract_space_info $freespace$normal"
 					echo ""
-					read -n 1 -p "Would you like to continue?  y/n" reply
+					read -n 1 -p "$t_general_continue_q" reply
 					if [[ ! $reply = "y" ]]; then
 						cd $base
 						exec ./superr
@@ -4595,18 +4534,16 @@ extract_new() {
 			elif [[ $choice = "q" ]]; then
 				echo ""
 				echo ""
-				exitk
+				exit
 			fi
 			if [[ -f $romdir/system.img ]]; then
 				romimg="system.img"
 			else
 				banner
-				echo "${redb}${yellowt}${bold}ERROR:$normal"
-				echo "${redt}Something went wrong. Most likely you lack permission to"
-				echo "pull images from your device, or you don't have enough"
-				echo "space on your device to store the images.$normal"
+				echo "$redb$yellowt$bold$t_error$normal"
+				echo -e "$redt$t_extract_pull_error$normal"
 				echo ""
-				read -p "Press ENTER to return to the Main menu"
+				read -p "$t_enter_main_menu"
 				cd $base
 				exec ./superr
 				return 1
@@ -4620,20 +4557,21 @@ extract_new() {
 		elif [[ $choice = "q" ]]; then
 			echo ""
 			echo ""
-			exitk
+			exit
 		fi
 	fi
 	banner
-	read -n 1 -p "Should we extract $yellowt$romzip$romtar$rommd5$romimg$romchunk$romwin$romtgz$normal to ${greent}$romname$normal? y/n  "
+	echo "$t_extract_q $yellowt$romzip$romtar$rommd5$romimg$romchunk$romwin$romtgz$normal"
+	read -n 1 -p "$t_extract_q2" reply
 	echo ""
 	echo ""
-	if [[ ! $REPLY = "y" ]]; then
+	if [[ ! $reply = "y" ]]; then
 		cd $base
 		exec ./superr
 		return 1
 	fi
 	banner
-	echo "${bluet}Preparing to extract ...$normal"
+	echo "$bluet$t_extract_prep$normal"
 	if [[ ! $romimg = "cache.img" && ! $romimg = "hidden.img" && ! $romimg = "data.img" && ! $romimg = "vendor.img" && ! $romimg = "generic.img" ]]; then
 		moveoldfiles
 	fi
@@ -4641,11 +4579,10 @@ extract_new() {
 		cd $romdir
 		if [[ $($p7z l $romzip | grep "system.ext4.tar\|system.ext4.tar.a\|tar.md5\|chunk\|system\/build.prop\|system.new.dat\|system_new.img\|system.img") = "" ]]; then
 			banner
-			echo "${redb}${yellowt}${bold}WARNING:$normal"
-			echo "${redt}This zip does not contain anything the kitchen"
-			echo "can extract.$normal"
+			echo "$redb$yellowt$bold$t_warning$normal"
+			echo -e "$redt$t_extract_zip_fail$normal"
 			echo ""
-			read -p "Press ENTER to return to the main Menu"
+			read -p "$t_enter_main_menu"
 			exec ./superr
 			return 1
 		fi
@@ -4658,7 +4595,7 @@ extract_new() {
 		fi
 		if [[ $upbinary = "1" && ! $($p7z l $romzip | gawk '{ print $6 }' | grep "^system/build.prop") = "" ]]; then
 			banner
-			echo "${bluet}Extracting zip ...$normal"
+			echo "$bluet$t_extract_zip$normal"
 			$p7z x $romzip 2>/dev/null >> $logs/zip.log
 			line=""
 			cat $usdir/update-binary | grep "symlink " | while read line; do
@@ -4678,22 +4615,22 @@ extract_new() {
 			update_project
 		elif [[ ! $($p7z l $romzip | grep system.new.dat) = "" ]]; then
 			banner
-			echo "${bluet}Extracting system.new.dat, system.transfer.list, and boot.img ...$normal"
+			echo "$bluet$t_extract_dat$normal"
 			$p7z e $romzip system.new.dat system.transfer.list vendor.new.dat vendor.transfer.list boot.img 2>/dev/null >> $logs/zip.log
 			banner
-			echo "${bluet}Converting to system.img ...$normal"
+			echo "$bluet$t_extract_convert_sys$normal"
 			$tools/sdat2img.py system.transfer.list system.new.dat system.img > $logs/main.log
 			rm -rf system.transfer.list system.new.dat
 			if [[ -f vendor.new.dat && -f vendor.transfer.list ]]; then
 				banner
-				echo "${bluet}Converting to vendor.img ...$normal"
+				echo "$bluet$t_extract_convert_ven$normal"
 				$tools/sdat2img.py vendor.transfer.list vendor.new.dat vendor.img > $logs/main.log
 			fi
 			romzip=""
 			romimg="system.img"
 		elif [[ ! $($p7z l $romzip | grep "system_new.img\|system.img$") = "" ]]; then
 			banner
-			echo "${bluet}Extracting images from zip ...$normal"
+			echo "$bluet$t_extract_img_from_zip$normal"
 			if [[ -f system.img ]]; then
 				mv system.img system_old.img
 			fi
@@ -4708,17 +4645,18 @@ extract_new() {
 			romimg="system.img"
 		elif [[ ! $($p7z l $romzip | grep system.ext4.tar.a) = "" ]]; then
 			banner
-			echo "${bluet}Extracting system.ext4.tar.a and boot.img ...$normal"
+			echo "$bluet$t_extract_tar_boot$normal"
 			$p7z e $romzip system.ext4.tar.a boot.img 2>/dev/null >> $logs/zip.log
+			romzip=""
 			mv system.ext4.tar.a system.ext4.tar
 			romtar="system.ext4.tar"
 		elif [[ ! $($p7z l $romzip | grep tar.md5) = "" && $($p7z l $romzip | grep tar.md5 | gawk '{ print $6 }' | grep ^AP_) = "" ]]; then
 			banner
 			tarmd5=$($p7z l $romzip | grep tar.md5 | gawk '{ print $6 }')
-			echo "${bluet}Extracting $tarmd5 ...$normal"
+			echo "$bluet$t_general_extracting $tarmd5 ...$normal"
 			$p7z e $romzip $tarmd5 2>/dev/null >> $logs/zip.log
 			banner
-			echo "${bluet}Extracting images ...$normal"
+			echo "$bluet$t_extract_img$normal"
 			if [[ ! $(tar -tf $tarmd5 | grep system.img.ext4) = "" ]]; then
 				tar -xf $tarmd5 system.img.ext4 boot.img cache.img.ext4 2>/dev/null >> $logs/zip.log
 				mv system.img.ext4 system.img
@@ -4730,10 +4668,10 @@ extract_new() {
 				rm -rf $tarmd5
 			else
 				banner
-				echo "$redb$yellowt${bold}ERROR:$normal"
-				echo "${redt}Something went wrong wiith the extraction.$normal"
+				echo "$redb$yellowt$bold$t_error$normal"
+				echo "$redt$t_extract_fail$normal"
 				echo ""
-				read -p "Press ENTER to return to Main Menu"
+				read -p "$t_enter_main_menu"
 				cd $base
 				exec ./superr
 				return 1
@@ -4744,10 +4682,10 @@ extract_new() {
 			banner
 			mainmd5=$($p7z l $romzip | grep tar.md5 | gawk '{ print $6 }' | grep ^AP_)
 			cscmd5=$($p7z l $romzip | grep tar.md5 | gawk '{ print $6 }' | grep ^CSC_)
-			echo "${bluet}Extracting tar.md5 files ...$normal"
+			echo "$bluet$t_extract_tar_md5$normal"
 			$p7z e $romzip $mainmd5 $cscmd5 2>/dev/null >> $logs/zip.log
 			banner
-			echo "${bluet}Extracting images ...$normal"
+			echo "$t_extract_img"
 			if [[ ! $(tar -tf $mainmd5 | grep system.img.ext4) = "" ]]; then
 				tar -xf $mainmd5 system.img.ext4 boot.img 2>/dev/null >> $logs/zip.log
 				mv system.img.ext4 system.img
@@ -4765,10 +4703,10 @@ extract_new() {
 				rm -rf $cscmd5
 			else
 				banner
-				echo "$redb$yellowt${bold}ERROR:$normal"
-				echo "${redt}Something went wrong wiith the extraction.$normal"
+				echo "$redb$yellowt$bold$t_error$normal"
+				echo "$redt$t_extract_fail$normal"
 				echo ""
-				read -p "Press ENTER to return to Main Menu"
+				read -p "$t_enter_main_menu"
 				cd $base
 				exec ./superr
 				return 1
@@ -4777,14 +4715,14 @@ extract_new() {
 			romimg="system.img"
 		elif [[ ! $($p7z l $romzip | grep chunk) = "" ]]; then
 			banner
-			echo "${bluet}Extracting sparsechunks and boot.img ...$normal"
+			echo "$bluet$t_extract_chunk$normal"
 			$p7z e $romzip *chunk* boot.img 2>/dev/null >> $logs/zip.log
 			romzip=""
 			romchunk=$(ls | grep chunk)
 		fi
 		if [[ ! $romzip = "" ]]; then
 			banner
-			echo "${bluet}Extracting $romzip in $romname$normal"
+			echo "$bluet$t_general_extracting $romzip$normal"
 			$p7z x $romzip 2>/dev/null >> $logs/zip.log
 			rm -rf $romdir/META-INF/*.RSA
 			rm -rf $romdir/META-INF/*.SF
@@ -4826,7 +4764,7 @@ extract_new() {
 	fi
 	if [[ ! $romchunk = "" ]]; then
 		banner
-		echo "${bluet}Converting sparse chunks to system.img ...$normal"
+		echo "$bluet$t_extract_convert_chunk$normal"
 		$tools/simg2img${cyg} *chunk* system.img.raw
 		offset=$(LANG=C grep -aobP -m1 '\x53\xEF' system.img.raw | head -1 | gawk '{print $1 - 1080}')
 		( dd if=system.img.raw of=system.img ibs=$offset skip=1 2>&1 ) > $logs/main.log
@@ -4856,7 +4794,7 @@ extract_new() {
 				tosystem="1"
 		fi
 		banner
-		echo "${bluet}Extracting to $romname ...$normal"
+		echo "$bluet$t_extract_general $romname ...$normal"
 		cd $romdir
 		echo "$romwin" | while read line; do
 			if [[ $tosystem = "1" ]]; then
@@ -4868,16 +4806,15 @@ extract_new() {
 	fi
 	if [[ ! $romtgz = "" ]]; then
 		banner
-		echo "${bluet}Checking firmware package ...$normal"
+		echo "$bluet$t_extract_check_firm$normal"
 		tar -tzf $romtgz 2>&1 > $logs/tarlist
 		if [[ $(cat $logs/tarlist | grep "image-") = "" ]]; then
 			rm -rf $logs/tarlist
 			banner
-			echo "$yellowb$redt${bold}ERROR:$normal"
-			echo "${redt}The tgz file does not appear to be"
-			echo "official Nexus firmware.$normal"
+			echo "$redb$yellowt$bold$t_error$normal"
+			echo -e "$redt$t_extract_tgz_fail$normal"
 			echo ""
-			read -p "Press ENTER to return to Main Menu"
+			read -p "$t_enter_main_menu"
 			cd $base
 			exec ./superr
 			return 1
@@ -4885,13 +4822,13 @@ extract_new() {
 		eximage=$(cat $logs/tarlist | grep "image-")
 		exdir=$(dirname $eximage)
 		banner
-		echo "${bluet}Extracting files ...$normal"
+		echo "$bluet$t_extract_files$normal"
 		tar -xf $romtgz $eximage 2>&1 > $logs/zip.log
 		mv $romdir/$exdir/* $romdir/
 		rm -rf $exdir
 		imagezip=$(ls | grep image-*.zip)
 		banner
-		echo "${bluet}Extracting images ...$normal"
+		echo "$t_extract_img"
 		$p7z e $imagezip system.img boot.img vendor.img 2>&1 > $logs/zip.log
 		rm -rf $imagezip $logs/tarlist
 		romtgz=""
@@ -4901,17 +4838,17 @@ extract_new() {
 		romnomd5=$(echo "$rommd5" | rev | cut -d"." -f2- | rev)
 		mv $rommd5 $romnomd5
 		if [[ ! $($p7z l $romnomd5 | grep system.img.ext4) = "" ]]; then
-			echo "${bluet}Extracting images ...$normal"
+			echo "$t_extract_img"
 			$p7z x $romnomd5 system.img.ext4 boot.img 2>&1 > $logs/zip.log
 			mv system.img.ext4 system.img
 			rommd5=""
 			romimg="system.img"
 		else
 			banner
-			echo "${redb}${yellowt}${bold}ERROR:$normal"
-			echo "${redt}There is no system.img.ext4 in your tar.md5 file$normal"
+			echo "$redb$yellowt$bold$t_error$normal"
+			echo "$redt$t_extract_md5_fail$normal"
 			echo ""
-			read -p "Press ENTER to return to the main menu"
+			read -p "$t_enter_main_menu"
 			cd $base
 			exec ./superr
 			return 1
@@ -4928,16 +4865,16 @@ extract_new() {
 	if [[ ! $romtar = "" ]]; then
 		if [[ ! $(tar --numeric-owner -tvf $romtar 2>&1 | gawk '{ print $2, $6 }' | grep -m 1 "/bin" | gawk '{ print $1 }') = "0/2000" ]]; then
 			banner
-			echo "${redb}${yellowt}${bold}ERROR:$normal"
-			echo "${redt}Looks like the tar file you have is not from a nandroid backup$normal"
+			echo "$redb$yellowt$bold$t_error$normal"
+			echo "$redt$t_extract_tar_fail$normal"
 			echo ""
-			read -p "Press ENTER to return to the main menu"
+			read -p "$t_enter_main_menu"
 			cd $base
 			exec ./superr
 			return 1
 		fi
 		banner
-		echo "${bluet}Extracting $romtar in $romname$normal"
+		echo "$bluet$t_extract_general $romtar ...$normal"
 		cd $romdir
 		if [[ ! $(tar -tf $romtar -P 2>&1 | grep -o -m 1 system/) = "system/" ]]; then
 			mkdir system
@@ -4958,19 +4895,19 @@ extract_new() {
 			if [[ -f cache.img ]]; then
 				banner
 				choice=""
-				read -n 1 -p "Would you like to extract ${yellowt}cache.img$normal? y/n  " choice
+				read -n 1 -p "$t_extract_cache_extract_q" choice
 				if [[ $choice = "y" ]]; then
 					extractimg="cache"
 					imgextract
 					if [[ -d cache && $(grep "ro.product.manufacturer" $romdir/system/build.prop | cut -d"=" -f2) = "samsung" ]]; then
 						choice=""
 						echo ""
-						echo "Would you like to include the files from cache.img"
-						read -n 1 -p "in your rom?  y/n  " choice
+						echo -e "$t_extract_cache_include_q"
+						read -n 1 -p "" choice
 						echo ""
 						if [[ $choice = "y" ]]; then
 							banner
-							echo "${bluet}Including cache.img files ...$normal"
+							echo "$bluet$t_extract_cache$normal"
 							echo ""
 							cscfull=$(find cache -name *csc*.zip)
 							cscdir=$(echo $cscfull | rev | cut -d"/" -f2- | rev)
@@ -4989,18 +4926,18 @@ extract_new() {
 					fi
 				fi
 			fi
-			if [[ -f vendor.img ]]; then
+			if [[ -f vendor.img && ! -f $prfiles/vendorimg ]]; then
 				banner
 				choice=""
-				read -n 1 -p "Would you like to extract ${yellowt}vendor.img$normal? y/n  " choice
+				read -n 1 -p "$t_extract_vendor_extract_q" choice
 				if [[ $choice = "y" ]]; then
 					extractimg="vendor"
 					imgextract
 					if [[ -d vendor ]]; then
 						choice=""
 						echo ""
-						echo "Would you like to include the files from vendor.img"
-						read -n 1 -p "in your rom? y/n  " choice
+						echo -e "$t_extract_vendor_include_q"
+						read -n 1 -p "" choice
 						if [[ $choice = "y" ]]; then
 							touch $prfiles/vendorimg
 						else
@@ -5008,6 +4945,9 @@ extract_new() {
 						fi
 					fi
 				fi
+			elif [[ -f vendor.img && -f $prfiles/vendorimg ]]; then
+				extractimg="vendor"
+				imgextract
 			fi
 			get_devicename
 			mkdir -p $base/tools/devices/$devicename
@@ -5030,10 +4970,10 @@ extract_new() {
 			update_project
 		else
 			banner
-			echo "${redb}${yellowt}${bold}ERROR:$normal"
-			echo "${redt}There was a problem extracting your ROM.$normal"
+			echo "$redb$yellowt$bold$t_error$normal"
+			echo "$redt$t_extract_rom_fail$normal"
 			echo ""
-			read -p "Press ENTER to return to the Main menu"
+			read -p "$t_enter_main_menu"
 			cd $base
 			exec ./superr
 			return 1
@@ -5044,7 +4984,7 @@ extract_new() {
 	return 1
 }
 findfstab() {
-		fstab=$(${usesudo}find ! -type l | grep -v "goldfish\|ranchu\|charger" | grep -m 1 fstab | sed 's/\.\///')
+	fstab=$(${usesudo}find ! -type l | grep -v "goldfish\|ranchu\|charger" | grep -m 1 fstab | sed 's/\.\///')
 }
 findimgsize() {
 	cd $romdir
@@ -5055,35 +4995,32 @@ findimgsize() {
 		choice=""
 		while [[ ! ${choice} =~ ^[1-4]$ ]] && [[ ! $choice = "q" ]]; do
 			banner
-			echo "$yellowb${redt}Choose $whatimg partition detection method$normal"
+			echo "$yellowb$redt$t_extract_cho_part_detect $whatimg$normal"
 			echo ""
-			echo "1) Device through adb shell (recommended)"
-			echo "2) Project $whatimg directory (BETA)"
-			echo "3) Enter manually"
+			echo "1) $t_extract_adb_shell"
+			echo "2) $t_extract_project_dir $whatimg"
+			echo "3) $t_extract_manual"
 			if [[ -f $whatimg.img ]]; then
 				echo "4) $whatimg.img"
 			fi
-			echo "${magentat}q = quit$normal"
+			echo "${magentat}q = $t_menu_quit$normal"
 			echo ""
-			read -n 1 -p "Enter choice:  " choice
+			read -n 1 -p "$t_select" choice
 		done
 		#START Device through adb shell
 		if [[ $choice = "1" ]]; then
 			banner
-			echo "${bluet}** Enable usb debugging on your Android device in system settings"
-			echo "** Plug in your device$normal"
+			echo -e "$t_byname_usb_debug"
 			echo ""
-			echo "$redb${yellowt}This operation requires root.$normal"
-			echo "${redt}You may need to agree to allow root on your device.$normal"
+			echo -e "$t_byname_usb_debug_root"
 			echo ""
-			reply=""
-			read -n 1 -p "Would you like to continue? y/n " reply
+			read -n 1 -p "$t_general_continue_q" reply
 			if [[ ! $reply = "y" ]]; then
 				build_zip
 				return 1
 			fi
 			banner
-			echo "${bluet}Determining $whatimg partition size ...$normal"
+			echo "$bluet$t_extract_detect $whatimg ...$normal"
 			byname=$(cat $deviceloc/superr_byname)
 			byname2=$(echo "$byname" | sed 's/\\//g')
 			if [[ -f $deviceloc/superr_mmc ]]; then
@@ -5115,9 +5052,9 @@ findimgsize() {
 			rawsize=$($adb shell "cat /proc/partitions" | grep "$imgblock" | gawk '{ print $3 }')
 			if [[ $rawsize = "" ]]; then
 				banner
-				echo "${redt}Something went wrong.$normal"
+				echo "$redt$t_error_mess$normal"
 				echo ""
-				read -p "Press ENTER to choose another detection method"
+				read -p "$t_enter_cho_another_detection"
 				findimgsize
 				return 1
 			fi
@@ -5125,17 +5062,11 @@ findimgsize() {
 		#START Project $whatimg directory (BETA)
 		elif [[ $choice = "2" ]]; then
 			banner
-			echo "$redb$yellowt${bold}WARNING:$normal"
-			echo "${redt}This feature is in BETA. It may not flash properly."
-			echo "You may get an error like the following:"
-			echo ""
-			echo "${yellowt}blkdiscard failed: Invalid argument"
-			echo ""
-			echo "${redt}You can change perms to set_metadata or set_perm to"
-			echo "avoid using this feature$normal"
+			echo "$redb$yellowt$bold$t_warning$normal"
+			echo -e "$t_extract_beta"
 			echo ""
 			choice=""
-			read -n 1 -p "Would you like to continue anyway y/n  " choice
+			read -n 1 -p "$t_general_cont_anyway_q" choice
 			if [[ ! $choice = "y" ]]; then
 				build_zip
 				return 1
@@ -5146,14 +5077,14 @@ findimgsize() {
 		elif [[ $choice = "3" ]]; then
 			banner
 			imgsize=""
-			echo "Enter $whatimg partition size in bytes:"
+			echo "$t_extract_manual_bytes $whatimg:"
 			read whatsize
 			if [[ $whatsize = "" ]]; then
 				banner
-				echo "$redb$yellowt${bold}ERROR:$normal"
-				echo "${redt}$whatimg partition size is empty. Please try again.$normal"
+				echo "$redb$yellowt$bold$t_error$normal"
+				echo "$redt$whatimg $t_extract_detect_fail$normal"
 				echo ""
-				read -p "Press ENTER to return to Build menu"
+				read -p "$t_enter_build_menu"
 				build_zip
 				return 1
 			else
@@ -5163,7 +5094,7 @@ findimgsize() {
 		elif [[ $choice = "4" ]]; then
 			if [[ -f $whatimg.img ]]; then
 				banner
-				echo "${bluet}Checking/Converting if $whatimg.img is sparse ...$normal"
+				echo "$bluet$t_extract_sparse_convert$normal"
 				$tools/simg2img${cyg} $whatimg.img $whatimg.img-2 2>/dev/null
 				if [[ ! -s $whatimg.img-2 ]]; then
 					rm -rf $whatimg.img-2
@@ -5173,10 +5104,10 @@ findimgsize() {
 				export ${imgfile}size=$(wc -c $whatimg.img | gawk '{ print $1 }')
 			else
 				banner
-				echo "$redb$yellowt${bold}ERROR:$normal"
-				echo "${redt}There is no $whatimg.img$normal"
+				echo "$redb$yellowt$bold$t_error$normal"
+				echo "$redt$t_extract_img_fail $whatimg.img$normal"
 				echo ""
-				read -p "Press ENTER to return to Build menu"
+				read -p "$t_enter_build_menu"
 				build_zip
 				return 1
 			fi
@@ -5184,7 +5115,7 @@ findimgsize() {
 		elif [[ $choice = "q" ]]; then
 			echo ""
 			echo ""
-			exitk
+			exit
 		fi
 	fi
 }
@@ -5193,22 +5124,21 @@ get_byname() {
 		choice=""
 		while [[ ! ${choice} =~ ^[1-4]$ ]]; do
 			banner
-			echo "How would you like to get your partition info?"
+			echo "$t_byname_how_to_get_q"
 			echo ""
-			echo "1) Detect by-name from boot/recovery images (recommended)"
-			echo "2) Detect by-name from your device"
-			echo "3) Enter by-name manually"
-			echo "4) Detect mmcblk partitions from recovery.img"
+			echo "1) $t_menu_byname_detect_boot"
+			echo "2) $t_menu_byname_detect_device"
+			echo "3) $t_menu_byname_detect_manual"
+			echo "4) $t_menu_byname_detect_mmc"
 			echo ""
-			read -n 1 -p "Please enter your choice:" choice
+			read -n 1 -p "$t_select" choice
 		done
 		# START Detect by-name from your device
 		if [[ $choice = "2" ]]; then
 			banner
-			echo "${bluet}** Enable usb debugging on your Android device in system settings"
-			echo "** Plug in your device$normal"
+			echo -e "$t_byname_usb_debug"
 			echo ""
-			read -p "Press ENTER when ready"
+			read -p "$t_enter_ready"
 			$adb "wait-for-device"
 			$adb pull /system/build.prop $deviceloc/build.prop
 			get_devicename
@@ -5230,11 +5160,10 @@ get_byname() {
 				if [[ $byname1 = "" ]]; then
 					rm -rf $deviceloc/superr_byname
 					banner
-					echo "${redb}${yellowt}ERROR:$normal"
-					echo "${redt}by-name could not be detected from your device."
-					echo "Try detecting mmc partitions from recovery.img$normal"
+					echo "$redb$yellowt$t_error$normal"
+					echo -e "$redt$t_byname_error_device$normal"
 					echo ""
-					read -p "Press ENTER to continue"
+					read -p "$t_enter_continue"
 					get_byname
 					return 1
 				else
@@ -5242,12 +5171,10 @@ get_byname() {
 				fi
 			else
 				banner
-				echo "${redb}${yellowt}${bold}ERROR:$normal"
-				echo "${redt}The device you are detecting is not the same"
-				echo "as the one in your project. Please connect"
-				echo "the correct device and try again.$normal"
+				echo "$redb$yellowt$bold$t_error$normal"
+				echo -e "$redt$t_byname_error_wrong_device$normal"
 				echo ""
-				read -p "Press ENTER to continue"
+				read -p "$t_enter_continue"
 				if [[ -f $prfiles/permtype_old ]]; then
 					mv $prfiles/permtype_old $prfiles/permtype
 				fi
@@ -5261,11 +5188,10 @@ get_byname() {
 		if [[ $choice = "1" ]]; then
 			if [[ ! -f $romdir/boot.img && ! -f $romdir/kernel.elf && ! -f $romdir/recovery.img ]]; then
 				banner
-				echo "${redb}${yellowt}ERROR:$normal"
-				echo "${redt}Please copy a boot.img, recovery.img, or kernel.elf to the"
-				echo "project directory and try again.$normal"
+				echo "$redb$yellowt$t_error$normal"
+				echo -e "$redt$t_byname_no_boot$normal"
 				echo ""
-				read -p "Press ENTER to continue"
+				read -p "$t_enter_continue"
 				get_byname
 				return 1
 			fi
@@ -5275,47 +5201,47 @@ get_byname() {
 					choice=""
 					while [[ ! ${choice} =~ ^[1-2]$ ]]; do
 						banner
-						echo "Which image should we use?"
+						echo "$t_byname_which_img_q"
 						echo ""
 						echo "1) boot.img"
 						echo "2) recovery.img"
 						echo ""
-						read -n 1 -p "Make your selection:  " choice
+						read -n 1 -p "$t_select" choice
 						echo ""
 					done
 					banner
 					if [[ $choice = 1 ]]; then
-						echo "${bluet}Detecting by-name from boot.img ...$normal"
+						echo "$bluet$t_byname_detect_boot$normal"
 						chosenimg="boot"
 						bootext="1"
 						boot_unpack
 					elif [[ $choice = "2" ]]; then
-						echo "${bluet}Detecting by-name from recovery.img ...$normal"
+						echo "$bluet$t_byname_detect_recovery$normal"
 						chosenimg="recovery"
 						bootext="1"
 						boot_unpack
 					fi
 				elif [[ -f $romdir/boot.img ]]; then
-					echo "${bluet}Detecting by-name from boot.img ...$normal"
+					echo "$bluet$t_byname_detect_boot$normal"
 					chosenimg="boot"
 					bootext="1"
 					boot_unpack
 				elif [[ -f $romdir/recovery.img ]]; then
-					echo "${bluet}Detecting by-name from recovery.img ...$normal"
+					echo "$bluet$t_byname_detect_recovery$normal"
 					chosenimg="recovery"
 					bootext="1"
 					boot_unpack
 				elif [[ -f $romdir/kernel.elf ]]; then
-					echo "${bluet}Detecting by-name from kernel.elf ...$normal"
+					echo "$bluet$t_byname_detect_elf$normal"
 					chosenimg="boot"
 					bootext="1"
 					elf_unpack
 				else
 					banner
-					echo "${redb}${yellowt}ERROR:$normal"
-					echo "${redt}You need a boot.img, recovery.img, or kernel.elf for this process.$normal"
+					echo "$redb$yellowt$t_error$normal"
+					echo "$redt$t_byname_no_files$normal"
 					echo ""
-					read -p "Press ENTER to continue"
+					read -p "$t_enter_continue"
 					rm -rf $deviceloc/superr_byname
 					get_byname
 					return 1
@@ -5345,11 +5271,11 @@ get_byname() {
 			${usesudo}rm -rf $romdir/bootimg $romdir/recoveryimg
 			if [[ $byname = "" ]]; then
 				banner
-				echo "${redb}${yellowt}ERROR:$normal"
-				echo "${redt}by-name could not be detected from the boot.img."
-				echo "Try detecting mmc partitions from recovery.img$normal"
+				echo "$redb$yellowt$t_error$normal"
+				echo "$redt$t_byname_boot_fail"
+				echo "$t_byname_try_recovery$normal"
 				echo ""
-				read -p "Press ENTER to continue"
+				read -p "$t_enter_continue"
 				rm -rf $deviceloc/superr_byname
 				get_byname
 				return 1
@@ -5358,19 +5284,19 @@ get_byname() {
 		# START Enter it manually
 		if [[ $choice = "3" ]]; then
 			banner
-			echo "Please enter your by-name directory and press ENTER"
+			echo "$t_byname_detect_manual"
 			echo ""
-			echo "${greenb}Example:$normal"
+			echo "$greenb$t_example$normal"
 			echo ""
 			echo "${yellowt}/dev/block/bootdevice/by-name$normal"
 			echo ""
 			read -e byname2
 			if [[ $byname2 = "" ]]; then
 				banner
-				echo "$redb$yellowt${bold}ERROR:$normal"
-				echo "${redt}by-name directory is empty.$normal"
+				echo "$redb$yellowt$bold$t_error$normal"
+				echo "$redt$t_byname_no_byname$normal"
 				echo ""
-				read -p "Press ENTER to continue"
+				read -p "$t_enter_continue"
 				get_byname
 				return 1
 			else
@@ -5383,7 +5309,7 @@ get_byname() {
 		# START Create mmc from recovery.img
 		if [[ $choice = "4" ]]; then
 			banner
-			echo "${bluet}Creating mmc from recovery.img ...$normal"
+			echo "$bluet$t_byname_create_mmc$normal"
 			if [[ ! -d $romdir/recoveryimg/ramdisk ]]; then
 				if [[ -f $romdir/recovery.img ]]; then
 					bootext="1"
@@ -5391,10 +5317,10 @@ get_byname() {
 					boot_unpack
 				else
 					banner
-					echo "${redb}${yellowt}ERROR:$normal"
-					echo "${redt}You need a recovery.img for this process.$normal"
+					echo "$redb$yellowt$t_error$normal"
+					echo "$redt$t_byname_need_recovery$normal"
 					echo ""
-					read -p "Press ENTER to continue"
+					read -p "$t_enter_continue"
 					get_byname
 					return 1
 				fi
@@ -5419,10 +5345,10 @@ get_byname() {
 				grep "/vendor" $fstab | gawk '{ print $3,$1 }' | sed 's/\//\\\//g' >> $deviceloc/superr_mmc
 			else
 				banner
-				echo "${redb}${yellowt}ERROR:$normal"
-				echo "${redt}The kitchen can't find the mmc blocks.$normal"
+				echo "$redb$yellowt$t_error$normal"
+				echo "$redt$t_byname_no_mmc$normal"
 				echo ""
-				read -p "Press ENTER to continue"
+				read -p "$t_enter_continue"
 				get_byname
 				return 1
 			fi
@@ -5432,11 +5358,11 @@ get_byname() {
 			else
 				rm -rf $deviceloc/superr_mmc
 				banner
-				echo "${redb}${yellowt}ERROR:$normal"
-				echo "${redt}mmc could not be detected from the recovery.img."
-				echo "Try detecting by-name partitions from boot.img$normal"
+				echo "$redb$yellowt$t_error$normal"
+				echo "$redt$t_byname_recovery_fail"
+				echo "$t_byname_try_boot$normal"
 				echo ""
-				read -p "Press ENTER to continue"
+				read -p "$t_enter_continue"
 				get_byname
 				return 1
 			fi
@@ -5474,14 +5400,10 @@ get_devicename() {
 get_sig() {
 	if [[ ! -f $prfiles/signature ]]; then
 		banner
-		echo "${bluet}The answer to this question will show when flashing"
-		echo "the zip and will be converted into the zip name when"
-		echo "the zip is built.$normal"
-		echo ""
-		echo "What is the name of your zip?"
+		echo -e "$bluet$t_sig_info$normal"
 		echo ""
 		read -e signature1
-		echo $signature1 | sed 's/ /_/g; s:/:\\/:g' > $prfiles/signature
+		echo "$signature1" | sed 's/ /_/g; s:/:\\/:g' > $prfiles/signature
 		signature1=$(sed 's/_/ /g' $prfiles/signature)
 		signature=$(cat $prfiles/signature)
 	else
@@ -5533,12 +5455,11 @@ grab_devices() {
 	reply=""
 	timestamp=$(date +%m-%d-%Y-%H:%M:%S)
 	banner
-	echo "${bluet}This option will zip new devices in your kitchen."
-	echo "It will create a zip in the following location:"
+	echo -e "$bluet$t_zipdev_info"
 	echo ""
 	echo "$yellowt$base$normal"
 	echo ""
-	read -n 1 -p "Would you like to continue? y/n " reply
+	read -n 1 -p "$t_general_continue_q" reply
 	if [[ ! $reply = "y" ]]; then
 		cd $base
 		exec ./superr
@@ -5553,30 +5474,29 @@ grab_devices() {
 	done
 	if [[ ! $(ls tempdevices) = "" ]]; then
 		banner
-		echo "${bluet}Building devices zip ...$normal"
+		echo "$bluet$t_zipdev_building$normal"
 		cd tempdevices
 		$p7z a -mx7 DEVICES-$timestamp.zip * 2>/dev/null >> $logs/zip.log
 		mv DEVICES-$timestamp.zip $base/
 		cd $base
 		rm -rf tempdevices
 		banner
-		echo "${greent}The devices zip has been created:"
+		echo "$greent$t_zipdev_finished"
 		echo ""
 		echo "$yellowt$base/DEVICES-$timestamp.zip"
 		echo ""
-		echo "${greent}Please upload it to the forum so the new devices"
-		echo "can be added to the database for others to use.$normal"
+		echo -e "$greent$t_zipdev_upload$normal"
 		echo ""
-		read -p "Press ENTER to return to Main menu"
+		read -p "$t_enter_main_menu"
 		exec ./superr
 		return 1
 	else
 		rm -rf tempdevices
 		banner
-		echo "${redb}${yellowt}${bold}INFO:$normal"
-		echo "${redt}There are no new devices in the devices directory.$normal"
+		echo "$redb$yellowt$bold$t_info$normal"
+		echo "$redt$t_zipdev_no_new$normal"
 		echo ""
-		read -p "Press ENTER to return to main menu"
+		read -p "$t_enter_main_menu"
 		exec ./superr
 		return 1
 	fi
@@ -5584,12 +5504,10 @@ grab_devices() {
 imgextract() {
 	if [[ ! $bashwin = "" ]]; then
 		banner
-		echo "${redb}${yellowt}${bold}WARNING:$normal"
-		echo "${redt}You may not be able to mount/extract images"
-		echo "while running in Windows Subsystem for Linux (WSL)."
-		echo "There may be unexpected results$normal"
+		echo "$redb$yellowt$bold$t_warning$normal"
+		echo -e "$redt$t_wsl_warn$normal"
 		echo ""
-		read -n 1 -p "Would you like to continue?  y/n  " reply
+		read -n 1 -p "$t_general_continue_q  " reply
 		if [[ ! $reply = "y" ]]; then
 			cd $base
 			exec ./superr
@@ -5598,7 +5516,7 @@ imgextract() {
 	fi
 	myuser=$(echo "$(whoami | gawk '{ print $1 }')")
 	banner
-	echo "${bluet}Checking/Converting if ${extractimg}.img is sparse ...$normal"
+	echo "$bluet$t_extract_sparse_convert$normal"
 	$tools/simg2img${cyg} ${extractimg}.img ${extractimg}.img-2 2>/dev/null
 	if [[ ! -s ${extractimg}.img-2 ]]; then
 		rm -rf ${extractimg}.img-2
@@ -5606,12 +5524,12 @@ imgextract() {
 		mv ${extractimg}.img-2 ${extractimg}.img
 	fi
 	banner
-	echo "${bluet}Mounting ${extractimg}.img ...$normal"
+	echo "$bluet$t_extract_mount_e ${extractimg}.img ...$normal"
 	mkdir output
 	echo ""
 	${usesudo2}mount -t ext4 -o loop ${extractimg}.img output/
 	banner
-	echo "${bluet}Copying files to ${extractimg} directory ...$normal"
+	echo "$bluet$t_extract_copy_e ${extractimg} ...$normal"
 	mkdir ${extractimg}
 	${usesudo2}cp -r output/* ${extractimg}/
 	${usesudo2}umount output/
@@ -5626,16 +5544,14 @@ install_binaries() {
 	cd $base
 	dlurl="https://bitbucket.org/superr/superrs-kitchen/downloads"
 	osbit=$(getconf LONG_BIT)
-	echo "${bold}NOTE: You should only install the binaries if you can't get the"
-	echo "      kitchen to build them. It is recommended to have the kitchen"
-	echo "      build the binaries if possible$normal"
+	echo -e "$bold$t_binary_note$normal"
 	echo ""
-	read -n 1 -p "Would you like to install the $osbit-bit binaries anyway? y/n  "
+	read -n 1 -p "$t_binary_q"
 	if [[ ! $REPLY = "y" ]]; then
-		exitk
+		exit
 	fi
 	banner
-	echo "${bluet}Installing $osbit-bit binaries ...$normal"
+	echo "$bluet$t_binary_osbit_installing $osbit-bit ...$normal"
 	rm -rf $tools/mkbootimg
 	rm -rf $tools/unpackbootimg
 	rm -rf $tools/boot/mtk-tools/mkbootimg
@@ -5645,9 +5561,9 @@ install_binaries() {
 	$p7z x -y $osbit-bit_binaries.zip 2>&1 >/dev/null
 	rm -rf $osbit-bit_binaries.zip
 	banner
-	echo "${greent}$osbit-bit binaries have been installed$normal"
+	echo "$greent$osbit-bit $t_binary_osbit_installed$normal"
 	echo ""
-	read -p "Press ENTER to return to main menu"
+	read -p "$t_enter_main_menu"
 	exec ./superr
 	return 1
 }
@@ -5655,12 +5571,12 @@ install_cygwin_binaries() {
 	cd $base
 	dlurl="https://bitbucket.org/superr/superrs-kitchen/downloads"
 	echo ""
-	read -n 1 -p "Would you like to install the cygwin binaries now? y/n  "
+	read -n 1 -p "$t_binary_cygwin_q"
 	if [[ ! $REPLY = "y" ]]; then
-		exitk
+		exit
 	fi
 	banner
-	echo "${bluet}Installing cygwin binaries ...$normal"
+	echo "$bluet$t_binary_cygwin_installing$normal"
 	rm -rf $tools/mkbootimg.exe
 	rm -rf $tools/unpackbootimg.exe
 	rm -rf $tools/simg2img.exe
@@ -5674,9 +5590,9 @@ install_cygwin_binaries() {
 	rm -rf cygwin_binaries.zip
 	ln -s $tools/mkbootimg.exe $tools/boot/mtk-tools/mkbootimg.exe
 	banner
-	echo "${greent}cygwin binaries have been installed$normal"
+	echo "$greent$t_binary_cygwin_installed$normal"
 	echo ""
-	read -p "Press ENTER to return to main menu"
+	read -p "$t_enter_main_menu"
 	exec ./superr
 	return 1
 }
@@ -5685,7 +5601,7 @@ isassertdevices() {
 		assertdevices=$(grep -m 1 abort $usdir/updater-script | gawk '{ print $5 }' | sed 's/\"//g' | sed 's/\\//g')
 		assertcustom1=$(grep "assert(getprop" $usdir/updater-script | grep -v "ro.product.device" | cut -d '"' -f2 | tr '\n' ',' | sed 's/,$//')
 		if [[ $assertcustom1 = "" ]]; then
-			assertcustom1="None"
+			assertcustom1="$t_none"
 		fi
 	fi
 }
@@ -5695,10 +5611,10 @@ isbusyboxstatus() {
 			if [[ ! -f $prfiles/busybox ]]; then
 				touch $prfiles/busybox
 			fi
-			busyboxstatus1=$(echo "${greent}Enabled${normal}")
+			busyboxstatus1=$(echo "$greent$t_enabled$normal")
 		else
 			rm -rf $prfiles/busybox
-			busyboxstatus1=$(echo "${redt}Disabled${normal}")
+			busyboxstatus1=$(echo "$redt$t_disabled$normal")
 		fi
 	fi
 }
@@ -5711,15 +5627,15 @@ isdataappstatus() {
 		fi
 		dataapp="Yes"
 		if [[ -f $prfiles/data-set_metadata ]]; then
-			dataapp1=$(echo "${greent}Enabled: set_metadata${normal}")
+			dataapp1=$(echo "$greent$t_enabled: set_metadata${normal}")
 		elif [[ -f $prfiles/data-sparse_dat ]]; then
-			dataapp1=$(echo "${greent}Enabled: sparse_dat${normal}")
+			dataapp1=$(echo "$greent$t_enabled: sparse_dat${normal}")
 		elif [[ -f $prfiles/data-raw_img ]]; then
-			dataapp1=$(echo "${greent}Enabled: raw_img${normal}")
+			dataapp1=$(echo "$greent$t_enabled: raw_img${normal}")
 		fi
 	else
 		dataapp="No"
-		dataapp1=$(echo "${redt}Add support${normal}")
+		dataapp1=$(echo "$redt$t_add_support$normal")
 	fi
 }
 isdebloatstatus() {
@@ -5731,11 +5647,11 @@ isdebloatstatus() {
 		done
 	fi
 	if [[ ! -s $prfiles/debloat_list ]]; then
-		debloatstatus="Debloated"
-		debloatstatus1=$(echo "${greent}Debloated${normal}")
+		debloatstatus="$t_debloated"
+		debloatstatus1=$(echo "${greent}$t_debloated${normal}")
 	else
-		debloatstatus="Bloated"
-		debloatstatus1=$(echo "${redt}Bloated${normal}")
+		debloatstatus="$t_bloated"
+		debloatstatus1=$(echo "${redt}$t_bloated${normal}")
 	fi
 }
 isdebloatcustomstatus() {
@@ -5751,15 +5667,15 @@ isdebloatcustomstatus() {
 			done
 		fi
 		if [[ ! -s $prfiles/debloat_custom ]]; then
-			debloatcustomstatus="Debloated"
-			debloatcustomstatus1=$(echo "${greent}Debloated${normal}")
+			debloatcustomstatus="$t_debloated"
+			debloatcustomstatus1=$(echo "${greent}$t_debloated${normal}")
 		else
-			debloatcustomstatus="Bloated"
-			debloatcustomstatus1=$(echo "${redt}Bloated${normal}")
+			debloatcustomstatus="$t_bloated"
+			debloatcustomstatus1=$(echo "${redt}$t_bloated${normal}")
 		fi
 	else
-		debloatcustomstatus="Debloated"
-		debloatcustomstatus1=$(echo "${redt}/tools/root/bloat_custom is EMPTY${normal}")
+		debloatcustomstatus="$t_debloated"
+		debloatcustomstatus1=$(echo "$redt$t_bloat_dir_emply$normal")
 	fi
 }
 isdmverity() {
@@ -5768,10 +5684,10 @@ isdmverity() {
 		findfstab
 		if [[ ! $(${usesudo}grep "verify" $fstab) = "" ]]; then
 			dmveritystatus="Yes"
-			dmveritystatus1="${redt}Enabled$normal"
+			dmveritystatus1="${redt}$t_enabled$normal"
 		else
 			dmveritystatus="No"
-			dmveritystatus1="${greent}Disabled$normal"
+			dmveritystatus1="${greent}$t_disabled$normal"
 		fi
 	fi
 }
@@ -5779,12 +5695,12 @@ isforcee() {
 	if [[ -d $romdir/bootimg/ramdisk ]]; then
 		cd $romdir/bootimg/ramdisk
 		findfstab
-		if [[ ! $(${usesudo}grep "forceencrypt\|forcefdeorfbe" $fstab | grep "/data") = "" ]]; then
+		if [[ ! $(${usesudo}grep "/data" $fstab | grep "forceencrypt\|forcefdeorfbe") = "" ]]; then
 			forceestatus="Yes"
-			forceestatus1="${redt}Enabled$normal"
+			forceestatus1="${redt}$t_enabled$normal"
 		else
 			forceestatus="No"
-			forceestatus1="${greent}Disabled$normal"
+			forceestatus1="${greent}$t_disabled$normal"
 		fi
 	fi
 }
@@ -5794,10 +5710,10 @@ isfullrom() {
 	if [[ -d $romdir/system ]]; then
 		if [[ $(ls $romdir/system | grep "lib") = "" || $(ls $romdir/system | grep "etc") = "" || $(ls $romdir/system | grep "bin") = "" || $(ls $romdir/system | grep "xbin") = "" || $(ls $romdir | grep "META-INF") = "" || $(ls $romdir | grep "system") = "" || $(ls $romdir | grep "boot.img") = "" ]]; then
 			fullrom="No"
-			fullrom1=$(echo "${redt}No${normal}")
+			fullrom1=$(echo "$redt$t_no$normal")
 		else
 			fullrom="Yes"
-			fullrom1=$(echo "${greent}Yes${normal}")
+			fullrom1=$(echo "$greent$t_yes$normal")
 		fi
 	fi
 }
@@ -5806,10 +5722,10 @@ isinitd() {
 		cd $romdir/bootimg/ramdisk
 		if [[ ! $(${usesudo}grep -r "init\.d" . | grep -v "lge_fota\|chargerlogo") = "" ]]; then
 			initdstatus="Yes"
-			initdstatus1="${greent}Enabled$normal"
+			initdstatus1="$greent$t_enabled$normal"
 		else
 			initdstatus="No"
-			initdstatus1="${redt}Disabled$normal"
+			initdstatus1="${redt}$t_disabled$normal"
 		fi
 	fi
 }
@@ -5817,10 +5733,10 @@ isinsecure() {
 	if [[ -f $romdir/bootimg/ramdisk/default.prop ]]; then
 		if [[ $(${usesudo}grep "ro.secure=0" $romdir/bootimg/ramdisk/default.prop) = "" ]]; then
 			insecurestatus="No"
-			insecurestatus1=$(echo "${redt}Secure$normal")
+			insecurestatus1=$(echo "$redt$t_secure$normal")
 		else
 			insecurestatus="Yes"
-			insecurestatus1=$(echo "${greent}Insecure$normal")
+			insecurestatus1=$(echo "$greent$t_insecure$normal")
 		fi
 	fi
 }
@@ -5834,10 +5750,10 @@ isknoxstatus() {
 	fi
 	if [[ ! -s $prfiles/debloat_knox ]]; then
 		knoxstatus="No"
-		knoxstatus1=$(echo "${greent}No Knox${normal}")
+		knoxstatus1=$(echo "$greent$t_no_knox$normal")
 	else
 		knoxstatus="Yes"
-		knoxstatus1=$(echo "${redt}Knox Exists${normal}")
+		knoxstatus1=$(echo "$redt$t_knox$normal")
 	fi
 }
 isodexstatus() {
@@ -5852,10 +5768,10 @@ isodexstatus() {
 				fi
 			fi
 			odexstatus="Deodexed"
-			odexstatus1=$(echo "${greent}Deodexed$mmode$normal")
+			odexstatus1=$(echo "$greent$t_deodexed$mmode$normal")
 		else
 			odexstatus="Odexed"
-			odexstatus1=$(echo "${redt}Odexed$normal")
+			odexstatus1=$(echo "$redt$t_odexed$normal")
 		fi
 	fi
 }
@@ -5866,21 +5782,21 @@ isrootstatus() {
 				touch $prfiles/root
 			fi
 			rootstatus="Yes"
-			rootstatus1=$(echo "${greent}Rooted${normal}")
+			rootstatus1=$(echo "$greent$t_rooted$normal")
 		else
 			rm -rf $prfiles/root
 			rootstatus="No"
-			rootstatus1=$(echo "${redt}No Root${normal}")
+			rootstatus1=$(echo "$redt$t_no_root$normal")
 		fi
 	fi
 }
 issud() {
 	if [[ ! $(grep "su\.d" $usdir/updater-script) = "" && -d $romdir/system/su.d ]]; then
 		sudstatus="Yes"
-		sudstatus1="${greent}Enabled$normal"
+		sudstatus1="$greent$t_enabled$normal"
 	else
 		sudstatus="No"
-		sudstatus1="${redt}Disabled$normal"
+		sudstatus1="${redt}$t_disabled$normal"
 	fi
 }
 kitchen_update() {
@@ -5888,7 +5804,7 @@ kitchen_update() {
 	internet=$(wget -q --tries=10 --timeout=20 --spider http://google.com; echo $?)
 	if [[ $internet = "0" ]]; then
 		banner
-		echo "${bluet}Checking for updates ...$normal"
+		echo "$bluet$t_update_check_kitchen$normal"
 		dlurl="https://bitbucket.org/superr/superrs-kitchen/downloads/changelog_standard"
 		newinfo=$(wget -qO- $dlurl)
 		newv=$(echo "$newinfo" | head -n 1)
@@ -5897,11 +5813,10 @@ kitchen_update() {
 		currentv=$(echo "$superrv" | cut -d"-" -f1 | cut -d"_" -f1 | sed 's/v//; s/\.//g; s/^0//')
 		if [[ $newinfo = "" ]]; then
 			banner
-			echo "${redb}${yellowt}${bold}ERROR:$normal"
-			echo "${redt}The file server must be down temporarily."
-			echo "Please try again later.$normal"
+			echo "$redb$yellowt$bold$t_error$normal"
+			echo -e "$redt$t_update_down.$normal"
 			echo ""
-			read -p "Press ENTER to return to the Main Menu"
+			read -p "$t_enter_main_menu"
 			exec ./superr
 			return 1
 		fi
@@ -5909,17 +5824,17 @@ kitchen_update() {
 			choice=""
 			while [[ ! ${choice} =~ ^[1-2]$ ]] && [[ ! $choice = "m" && ! $choice = "q" ]]; do
 				banner
-				echo "${greenb}An update is available$normal"
+				echo -e "$t_update_update_avail"
 				echo ""
-				echo "${bluet}CURRENT VERSION: $redt$superrv"
-				echo "${bluet}NEW VERSION: $greent$newv$normal"
+				echo "$t_update_update_cv $superrv"
+				echo "$t_update_update_nv $newv"
 				echo ""
-				echo "1) Update now"
-				echo "2) View changelog"
-				echo "${yellowt}m = Main Menu"
-				echo "${magentat}q = Quit$normal"
+				echo "1) $t_update_update_now"
+				echo "2) $t_update_update_view"
+				echo "${yellowt}m = $t_title_main"
+				echo "${magentat}q = $t_menu_quit$normal"
 				echo ""
-				read -n 1 -p "Please enter your choice: " choice
+				read -n 1 -p "$t_select" choice
 			done
 
 			if [[ $choice = "m" ]]; then
@@ -5932,18 +5847,18 @@ kitchen_update() {
 			# START View changelog
 			elif [[ $choice = "2" ]]; then
 				banner
-				echo "${greenb}Changelog (last 3 versions):$normal"
+				echo "$greenb$t_update_changelog$normal"
 				echo ""
 				echo "$yellowt$changelog$normal"
 				echo ""
-				read -p "Press ENTER to return to Kitchen updater"
+				read -p "$t_enter_kitchen_updater"
 				kitchen_update
 				return 1
 			# START Update now
 			elif [[ $choice = "1" ]]; then
 				if [[ -d ".git" ]]; then
 					banner
-					echo "${bluet}Updating ...$normal"
+					echo "$bluet$t_update_updating$normal"
 					echo ""
 					rm -rf $tools/depmet
 					rm -rf $tools/depbuild
@@ -5954,28 +5869,34 @@ kitchen_update() {
 					rm -rf $tools/simg2img
 					rm -rf $tools/make_ext4fs
 					git pull
+					if [[ ! $(ls $tools | grep "\-srk" | grep -v "english") = "" ]]; then
+						lang=$(ls $tools | grep "\-srk" | grep -v "english" | sed 's/-chosen//')
+						language_check
+					else
+						lang="english-srk"
+					fi
+					source $tools/language/$lang
 					banner
-					echo "${greent}SuperR's Kitchen has been updated$normal"
+					echo "$greent$t_update_finished$normal"
 					echo ""
-					read -p "Press ENTER to continue"
+					read -p "$t_enter_continue"
 				else
 					banner
-					echo "${redb}${yellowt}${bold}ERROR:$normal"
-					echo "${redt}Could not find .git in your kitchen directory."
-					echo "The kitchen must be git cloned to use this updater.$normal"
+					echo "$redb$yellowt$bold$t_error$normal"
+					echo -e "$redt$t_update_no_git$normal"
 					echo ""
-					read -p "Press ENTER to continue"
+					read -p "$t_enter_continue"
 				fi
 			fi
 		else
 			banner
-			echo "${greent}SuperR's Kitchen is already up to date$normal"
+			echo "$greent$t_update_already$normal"
 			echo ""
-			read -p "Press ENTER to continue"
+			read -p "$t_enter_continue"
 		fi
 		if [[ -f $HOME/Desktop/SuperRs-Kitchen ]]; then
 			banner
-			echo "${bluet}Checking for Kitchen Launcher updates ...$normal"
+			echo "$bluet$t_update_check_launcher$normal"
 			dlurl="https://bitbucket.org/superr/superrs-kitchen/downloads"
 			newzip=$(wget -qO- $dlurl | cat | grep "SRK-Install-Launch" | grep -m 1 .zip | cut -d">" -f2 | cut -d"<" -f1)
 			srkil=$(cat $HOME/Desktop/SuperRs-Kitchen | head -n 3 | grep "#v" | sed 's/^#//')
@@ -5984,30 +5905,30 @@ kitchen_update() {
 			currentv=$(echo "$srkil" | sed 's/v//; s/\.//g')
 			if [[ "$currentv" -lt "$upcheck" || "$currentv" = "" ]]; then
 				banner
-				echo "${greenb}Launcher update available$normal"
+				echo -e "$t_update_launcher_avail"
 				echo ""
-				echo "${bluet}CURRENT VERSION: $redt$srkil"
-				echo "${bluet}NEW VERSION: $greent$newv$normal"
+				echo "$t_update_launcher_cv $redt$srkil"
+				echo "$t_update_launcher_nv $greent$newv$normal"
 				echo ""
-				read -n 1 -p "Would you like to update now? y/n  "
+				read -n 1 -p "$t_update_q"
 				if [[ $REPLY = "y" ]]; then
 					banner
-					echo "${bluet}Updating ...$normal"
+					echo "$bluet$t_update_updating$normal"
 					cd $HOME/Desktop
 					( wget $dlurl/$newzip 2>&1 ) >/dev/null
 					if [[ -f $newzip ]]; then
 						$p7z x -y $newzip 2>&1 >/dev/null
 						rm -rf $newzip
 						banner
-						echo "${greent}Installer/Launcher has been updated$normal"
+						echo "$greent$t_update_launcher_finished$normal"
 						echo ""
-						read -p "Press ENTER to continue"
+						read -p "$t_enter_continue"
 					else
 						banner
-						echo "${redb}${yellowt}${bold}ERROR:$normal"
-						echo "${redt}There was a problem downloading the update.$normal"
+						echo "$redb$yellowt$bold$t_error$normal"
+						echo "$redt$t_update_problem_download$normal"
 						echo ""
-						read -p "Press ENTER to continue"
+						read -p "$t_enter_continue"
 					fi
 					cd $base
 				fi
@@ -6017,7 +5938,7 @@ kitchen_update() {
 		if [[ ! -f $tools/updatecheck-yes && ! -f $tools/updatecheck-no ]]; then
 			banner
 			choice=""
-			read -n 1 -p "Do you want to check for updates when the kitchen starts?  y/n" choice
+			read -n 1 -p "$t_update_auto_q" choice
 			if [[ $choice = "y" ]]; then
 				touch $tools/updatecheck-yes
 			else
@@ -6026,16 +5947,78 @@ kitchen_update() {
 		fi
 	else
 		banner
-		echo "${redb}${yellowt}${bold}ERROR:$normal"
-		echo "${redt}The Kitchen could not detect an internet connection.$normal"
+		echo "$redb$yellowt$bold$t_error$normal"
+		echo "$redt$t_update_no_internet$normal"
 		echo ""
-		read -p "Press ENTER to return to main menu"
+		read -p "$t_enter_main_menu"
 	fi
 	exec ./superr
 	return 1
 }
+language_check() {
+	banner
+	echo "$bluet$t_checking_language $lang ...$normal"
+	grep "^export" $tools/language/english-srk | while read line; do
+		line2=$(echo "$line" | cut -d"=" -f1 | gawk '{print $2}')
+		if [[ $(grep "$line2" $tools/language/$lang | grep -v "$line2\_") = "" ]]; then
+			echo "$line" >> $tools/language/$lang
+		fi
+	done
+	if [[ $lang_add = "1" ]]; then
+		banner
+		echo -e "$redt$t_lang_added $lang"
+		echo "$t_lang_translate$normal"
+		echo ""
+		echo "$t_enter_continue"
+	fi
+}
+misc_tools() {
+	choice=""
+	while [[ ! ${choice} =~ ^[1-2]$ ]] && [[ ! $choice = "m" && ! $choice = "q" ]]; do
+		banner
+		echo "$bluet$t_startup_project $greent$romname$normal"
+		if [[ -f $romdir/system/build.prop ]]; then
+			echo "$bluet$t_startup_version $greent$androidversion$normal"
+		else
+			echo "$bluet$t_startup_title_no_rom$normal"
+		fi
+		echo ""
+		echo "$yellowb$redt$t_title_misc$normal"
+		echo ""
+		echo "1) $t_menu_zip_devices"
+		echo "2) $t_menu_language"
+		echo "${yellowt}m = $t_title_main"
+		echo "${magentat}q = $t_menu_quit$normal"
+		echo ""
+		read -n 1 -p "$t_select" choice
+		echo ""
+		echo ""
+	done
+	# START Main menu
+	if [[ $choice = "m" ]]; then
+		cd $base
+		exec ./superr
+		return 1
+	# START Quit
+	elif [[ $choice = "q" ]]; then
+		exit
+	# START Zip new devices to share
+	elif [[ $choice = "1" ]]; then
+		grab_devices
+		return 1
+	# START Reset Languages
+	elif [[ $choice = "2" ]]; then
+		rm -f $tools/*-srk-chosen
+		banner
+		echo -e "$greent$t_reset_language$normal"
+		echo ""
+		read -p "$t_enter_exit"
+		exit
+	fi
+}
 moveoldfiles() {
-	if [[ -d $romdir/system || -d $romdir/META-INF || -d $romdir/supersu || -d $romdir/rootzip || -d $romdir/busybox || -d $romdir/data || -d $romdir/vendor ]]; then
+	if [[ -d $romdir/system || -d $romdir/META-INF || -d $romdir/supersu || -d $romdir/rootzip
+	 || -d $romdir/busybox || -d $romdir/data || -d $romdir/vendor ]]; then
 		echo $timestamp > $prfiles/temptime
 		temptime=$(cat $prfiles/temptime)
 		mkdir -p $prfiles/old_rom_files/$romname.$temptime
@@ -6077,13 +6060,13 @@ moveoldfiles() {
 	if [[ -d $prfiles/old_rom_files/$romname.$temptime ]]; then
 		movelist=$(ls $prfiles/old_rom_files/$romname.$temptime)
 		banner
-		echo "${bluet}The following have been moved to:"
+		echo "$bluet$t_extract_moved_old_rom"
 		echo "$yellowt$prfiles/old_rom_files/$romname.$temptime $normal"
 		echo ""
 		echo "$yellowt$movelist$normal"
 		echo ""
 		rm -rf $prfiles/temptime
-		read -p "Press ENTER to continue extracting $romzip$romtar$romimg ..."
+		read -p "$t_enter_continue_extracting $romzip$romtar$romimg ..."
 	fi
 }
 new_project() {
@@ -6091,17 +6074,17 @@ new_project() {
 	banner
 	romname=""
 	romname1=""
-	echo "Enter new project name (${yellowt}spaces will be replaced with _$normal):"
+	echo "$t_new_q"
 	read -e romname1
 	export romname=$(echo "$romname1" | sed 's/ /_/g')
 	if [[ $(ls -d */ | grep "superr_$romname/") = "" ]]; then
 		mkdir -p superr_$romname/00_project_files/logs
 	else
 		banner
-		echo "${redb}${yellowt}${bold}ERROR:$normal"
-		echo "${redt}You already have a project with that name$normal"
+		echo "$redb$yellowt$bold$t_error$normal"
+		echo "$redt$t_new_already$normal"
 		echo ""
-		read -p "Press ENTER to try again"
+		read -p "$t_enter_try_again"
 		new_project
 		return 1
 	fi
@@ -6110,7 +6093,7 @@ new_project() {
 }
 partadd() {
 	banner
-	echo "${bluet}Adding $whatpart to the rom ...$normal"
+	echo "$bluet$t_img_add $whatpart ...$normal"
 	permtype=$(cat $prfiles/permtype)
 	needpart=""
 	partbyname=""
@@ -6169,12 +6152,12 @@ partadd() {
 				choice=""
 				while [[ ! ${choice} =~ ^[1-2]$ ]]; do
 					banner
-					echo "${yellowb}${redt}Data perm type:$normal"
+					echo "$yellowb$redt$t_extra_data$normal"
 					echo ""
 					echo "1) $permtype"
 					echo "2) set_metadata"
 					echo ""
-					read -n 1 -p "Please choose /data perm type: " choice
+					read -n 1 -p "$t_extra_data_perm" choice
 				done
 				# START sparse_dat/raw_img data
 				if [[ $choice = "1" ]]; then
@@ -6214,12 +6197,11 @@ partadd() {
 		fi
 	else
 		banner
-		echo "$redb$yellowt${bold}WARNING:$normal"
+		echo "$redb$yellowt$bold$t_warning$normal"
 		echo ""
-		echo "${redt}The flashable will not work because there is no $whatpart"
-		echo "partition info.$normal"
+		echo -e "$redt$t_img_flash_fail $whatpart$normal"
 		echo ""
-		read -p "Press ENTER to continue"
+		read -p "$t_enter_continue"
 		if [[ $whatpart = "data" ]]; then
 			needpart="1"
 		fi
@@ -6228,7 +6210,7 @@ partadd() {
 }
 partsdat() {
 	banner
-	echo "${bluet}Creating $whatpart sparse dat image ...$normal"
+	echo "$bluet$t_img_create_dat $whatpart ...$normal"
 	mkdir -p $romdir/tmpsparse
 	mv ${whatpart}_new.img $romdir/tmpsparse/${whatpart}_new.img
 	cd $romdir/tmpsparse
@@ -6244,7 +6226,7 @@ partsdat() {
 }
 partimg() {
 	banner
-	echo "${bluet}Creating symlinks for $whatpart.img ...$normal"
+	echo "$bluet$t_img_create_symlinks $whatpart.img ...$normal"
 	cd $romdir
 	line=""
 	cat $prfiles/symlinks | while read line; do
@@ -6258,7 +6240,7 @@ partimg() {
 	done
 	banner
 	if [[ -f $prfiles/file_contexts ]]; then
-		echo "${bluet}Creating raw $whatpart.img ...$normal"
+		echo "$bluet$t_img_create_raw $whatpart.img ...$normal"
 		if [[ $whatpart = "system" ]]; then
 			( $tools/make_ext4fs${cyg} -T 0 -S $prfiles/file_contexts -l $syssize -a $whatpart ${whatpart}_new.img ${whatpart}/ 2>&1 ) >> $logs/main.log
 		elif [[ $whatpart = "vendor" ]]; then
@@ -6267,7 +6249,7 @@ partimg() {
 			( $tools/make_ext4fs${cyg} -T 0 -S $prfiles/file_contexts -l $datsize -a $whatpart ${whatpart}_new.img ${whatpart}/ 2>&1 ) >> $logs/main.log
 		fi
 	else
-		echo "${bluet}Creating raw $whatpart.img ...$normal"
+		echo "$bluet$t_img_create_raw$normal"
 		if [[ $whatpart = "system" ]]; then
 			( $tools/make_ext4fs${cyg} -T 0 -l $syssize -a $whatpart ${whatpart}_new.img ${whatpart}/ 2>&1 ) >> $logs/main.log
 		elif [[ $whatpart = "vendor" ]]; then
@@ -6283,13 +6265,10 @@ partimg() {
 	fi
 	if [[ ! -f ${whatpart}_new.img ]]; then
 		banner
-		echo "$redb$yellowt${bold}ERROR:$normal"
-		echo "${redt}Something went wrong building the $whatpart image."
+		echo "$redb$yellowt$bold$t_error$normal"
+		echo -e "$t_img_fail"
 		echo ""
-		echo "${bluet}Make sure your $whatpart partition size is correct and"
-		echo "that the $whatpart directory is not too big to fit.$normal"
-		echo ""
-		read -p "Press ENTER to return to the Main Menu"
+		read -p "$t_enter_main_menu"
 		cd $base
 		exec ./superr
 		return 1
@@ -6305,13 +6284,11 @@ part_setup() {
 			sed -i "s/#BYNAME\/boot/$mmcboot/g" $usdir/updater-script
 		else
 			banner
-			echo "$redb$yellowt${bold}WARNING:$normal"
+			echo "$redb$yellowt$bold$t_warning$normal"
 			echo ""
-			echo "${redt}The flashable will not work because there is no"
-			echo "partition info. Please create a device directory or enter the"
-			echo "info manually after the zip is created$normal"
+			echo -e "$redt$t_img_flash_fail2$normal"
 			echo ""
-			read -p "Press ENTER to continue"
+			read -p "$t_enter_continue"
 		fi
 		mmcsystem=$(grep "system" $deviceloc/superr_mmc | gawk '{ print $1 }')
 		sed -i "s/#BYNAME\/system/$mmcsystem/g" $usdir/updater-script
@@ -6330,7 +6307,7 @@ part_setup() {
 }
 pullimga() {
 	banner
-	echo "${bluet}Extracting $pullimg partition to /sdcard ...$normal"
+	echo "$bluet$t_general_extracting $pullimg ...$normal"
 	echo ""
 	if [[ -f $base/tools/devices/$devicename/superr_mmc ]]; then
 		partbyname=$(grep "$pullimg" $base/tools/devices/$devicename/superr_mmc | gawk '{ print $1 }' | sed 's/\\//g')
@@ -6339,14 +6316,14 @@ pullimga() {
 		$adb shell su -C "dd if=$byname/$pullimg of=/sdcard/$pullimg.img"
 	fi
 	echo ""
-	echo "${bluet}Pulling $pullimg.img from your device ...$normal"
+	echo "$bluet$t_general_extracting $pullimg ...$normal"
 	$adb pull /sdcard/$pullimg.img $romdir/$pullimg.img > $logs/main.log
 	$adb shell rm /sdcard/$pullimg.img
 	pullimg=""
 }
 pullimgr() {
 	banner
-	echo "${bluet}Extracting $pullimg.img from your device ...$normal"
+	echo "$bluet$t_general_extracting $pullimg ...$normal"
 	echo ""
 	if [[ -f $base/tools/devices/$devicename/superr_mmc ]]; then
 		partbyname=$(grep "$pullimg" $base/tools/devices/$devicename/superr_mmc | gawk '{ print $1 }' | sed 's/\\//g')
@@ -6359,17 +6336,17 @@ pullimgr() {
 }
 rom_tools() {
 	banner
-	echo "${bluet}Checking status ...$normal"
+	echo "$bluet$t_boot_status$normal"
 	odexstatus=""
 	odexstatus1=""
 	dataapp=""
 	dataapp1=""
 	if [[ ! -f $romdir/system/build.prop ]]; then
 		banner
-		echo "${redb}${yellowt}${bold}ERROR:$normal"
-		echo "${redt}There is no ROM to work on.$normal"
+		echo "$redb$yellowt$bold$t_error$normal"
+		echo "$redt$t_startup_no_rom$normal"
 		echo ""
-		read -p "Press ENTER to return to the main menu"
+		read -p "$t_enter_main_menu"
 		cd $base
 		exec ./superr
 		return 1
@@ -6379,36 +6356,35 @@ rom_tools() {
 		rom_tools
 		return 1
 	fi
-	isdataappstatus
 	isodexstatus
 	permtype=$(cat $prfiles/permtype)
 	debloatstatus1=""
 	if [[ -f $prfiles/debloat_test ]]; then
 		if [[ ! -s $prfiles/debloat_test ]]; then
-			debloatstatus1=$(echo "${greent}Debloated${normal}")
+			debloatstatus1=$(echo "${greent}$t_debloated${normal}")
 		else
-			debloatstatus1=$(echo "${redt}Bloated${normal}")
+			debloatstatus1=$(echo "${redt}$t_bloated${normal}")
 		fi
 	fi
 	choice=""
 	while [[ ! ${choice} =~ ^[1-7]$ ]] && [[ ! $choice = "m" && ! $choice = "q" ]]; do
 		banner
-		echo "${bluet}CURRENT PROJECT: $greent$romname$normal"
-		echo "${bluet}ANDROID VERSION: $greent$androidversion$normal"
+		echo "$bluet$t_startup_project $greent$romname$normal"
+		echo "$bluet$t_startup_version $greent$androidversion$normal"
 		echo ""
-		echo "${yellowb}${redt}ROM Tools Menu$normal"
+		echo "$yellowb$redt$t_menu_rom_tools$normal"
 		echo ""
-		echo "1) Deodex ROM (${bluet}CURRENT: $greent$odexstatus1$normal)"
-		echo "2) Change perm type (${bluet}CURRENT: $greent$permtype$normal)"
-		echo "3) /data/app support (${bluet}CURRENT: $greent$dataapp1$normal)"
-		echo "${yellowt}4) Root Menu"
-		echo "5) Asserts Menu"
-		echo "6) Debloat Menu"
-		echo "7) Build Menu"
-		echo "m = Main menu"
-		echo "${magentat}q = Quit$normal"
+		echo "1) $t_menu_deodex ($bluet$t_title_current$greent$odexstatus1$normal)"
+		echo "2) $t_menu_perm_type ($bluet$t_title_current$greent$permtype$normal)"
+		echo "${yellowt}3) $t_menu_root"
+		echo "4) $t_menu_asserts"
+		echo "5) $t_menu_extra_dir"
+		echo "6) $t_menu_rom_debloat"
+		echo "7) $t_menu_build_menu"
+		echo "m = $t_title_main"
+		echo "${magentat}q = $t_menu_quit$normal"
 		echo ""
-		read -n 1 -p "Please enter your choice: " choice
+		read -n 1 -p "$t_select" choice
 	done
 
 	# START Deodex ROM
@@ -6419,52 +6395,17 @@ rom_tools() {
 	elif [[ $choice = "2" ]]; then
 		change_permtype
 		return 1
-	# START /data/app support
-	elif [[ $choice = "3" ]]; then
-		if [[ ! $dataapp = "Yes" ]]; then
-			banner
-			read -n 1 -p "Would you like to add /data/app support? y/n  "
-			echo ""
-			echo ""
-			if [[ $REPLY = "y" ]]; then
-				data_app
-				if [[ $needpart = "1" ]]; then
-					rm -rf $romdir/data
-				else
-					banner
-					echo "${greent}/data/app support has been added. Place apps in:"
-					echo ""
-					echo "$yellowt$romdir/data/app$normal"
-					echo ""
-					read -p "Press ENTER to return to ROM Tools"
-				fi
-			fi
-		else
-			banner
-			echo "${greent}You already have /data/app support$normal"
-			echo ""
-			echo "${bluet}The /data directory in your project will remain.$normal"
-			echo ""
-			read -n 1 -p "Should we remove it? y/n  "
-			echo ""
-			echo ""
-			if [[ $REPLY = "y" ]]; then
-				data_apprem
-				banner
-				echo "${greent}User app support has been removed$normal"
-				echo ""
-				read -p "Press ENTER to return to ROM Tools"
-			fi
-		fi
-		rom_tools
-		return 1
 	# START Root Menu
-	elif [[ $choice = "4" ]]; then
+	elif [[ $choice = "3" ]]; then
 		root_tools
 		return 1
 	# START Asserts: Add/Change devices
-	elif [[ $choice = "5" ]]; then
+	elif [[ $choice = "4" ]]; then
 		assert_devices
+		return 1
+	# START Extra Directory Menu
+	elif [[ $choice = "5" ]]; then
+		ext_dirmenu
 		return 1
 	# START Debloat Menu
 	elif [[ $choice = "6" ]]; then
@@ -6483,7 +6424,7 @@ rom_tools() {
 	elif [[ $choice = "q" ]]; then
 		echo ""
 		echo ""
-		exitk
+		exit
 	fi
 }
 root() {
@@ -6496,7 +6437,7 @@ root() {
 	elif [[ $countroot -gt "1" ]]; then
 		while [[ $rootzip = "" ]]; do
 			banner
-			echo "${greenb}Choose Root Zip:$normal"
+			echo "$greenb$t_title_cho_root_zip$normal"
 			echo ""
 			findrootzip=""
 			findrootzip=$(find $tools/root/root_zips -name *.zip | rev | cut -d"/" -f1 | rev)
@@ -6515,17 +6456,17 @@ root() {
 		choice=""
 		while [[ ! ${choice} =~ ^[1-3]$ ]]; do
 			banner
-			echo "Which root method would you like?"
+			echo "$t_menu_root_method"
 			echo ""
-			echo "1) Let SuperSU decide"
-			echo "2) System install (SYSTEMLESS=false)"
+			echo "1) $t_menu_supersucho"
+			echo "2) $t_menu_system_install"
 			if [[ -d $tools/inject-sepolicy ]]; then
-				echo "3) Inject sepolicy changes and system install"
+				echo "3) $t_menu_inject"
 			else
-				echo "3) Download/Install inject-sepolicy-addon"
+				echo "3) $t_menu_download_inject"
 			fi
 			echo ""
-			read -n 1 -p "Please make your selection:  " choice
+			read -n 1 -p "$t_select" choice
 			echo ""
 			echo ""
 		done
@@ -6662,6 +6603,16 @@ root_busyboxrem() {
 	rm -rf $romdir/busybox
 	rm -rf $romdir/system/xbin/busybox
 }
+root_sud() {
+	mkdir -p $romdir/system/su.d
+	sed -i 's/#ROOT/#SUD\n#ROOT/' $usdir/updater-script
+	sed -i "/#SUD/ r $tools/boot/sud_perms" $usdir/updater-script
+}
+root_sudrem() {
+	rm -rf $romdir/system/su.d
+	grep -v "#SUD\|su\.d" $usdir/updater-script > $usdir/updater-script2
+	mv $usdir/updater-script2 $usdir/updater-script
+}
 root_tools() {
 	rootstatus=""
 	rootstatus1=""
@@ -6673,34 +6624,33 @@ root_tools() {
 	choice=""
 	while [[ ! ${choice} =~ ^[1-4]$ ]] && [[ ! $choice = "m" && ! $choice = "q" ]]; do
 		banner
-		echo "${bluet}CURRENT PROJECT: $greent$romname$normal"
-		echo "${bluet}ANDROID VERSION: $greent$androidversion$normal"
+		echo "$bluet$t_startup_project $greent$romname$normal"
+		echo "$bluet$t_startup_version $greent$androidversion$normal"
 		echo ""
-		echo "${yellowb}${redt}Root Menu$normal"
+		echo "$yellowb$redt$t_menu_root$normal"
 		echo ""
-		echo "1) Root/Unroot ROM (${bluet}CURRENT: $greent$rootstatus1$normal)"
-		echo "2) Busybox Add/Remove (${bluet}CURRENT: $greent$busyboxstatus1$normal)"
-		echo "3) Add/Remove su.d support (${bluet}CURRENT: $sudstatus1$normal)"
-		echo "${yellowt}4) ROM Tools Menu"
-		echo "m = Main Menu"
-		echo "${magentat}q = Quit$normal"
+		echo "1) $t_menu_root_unroot ($bluet$t_title_current$greent$rootstatus1$normal)"
+		echo "2) $t_menu_busybox ($bluet$t_title_current$greent$busyboxstatus1$normal)"
+		echo "3) $t_menu_add_remove_sud ($bluet$t_title_current$sudstatus1$normal)"
+		echo "${yellowt}4) $t_menu_rom_tools"
+		echo "m = $t_title_main"
+		echo "${magentat}q = $t_menu_quit$normal"
 		echo ""
-		read -n 1 -p "Make your selection:  " choice
+		read -n 1 -p "$t_select" choice
 	done
 	# START Root/Unroot ROM
 	if [[ $choice = "1" ]]; then
 		if [[ ! -f $prfiles/root ]]; then
 			banner
-			read -n 1 -p "Should we root the ROM? y/n  "
+			read -n 1 -p "$t_root_q"
 			if [[ $REPLY = "y" ]]; then
 				root
-				banner
 			fi
 		else
 			banner
-			echo "${greent}You already have root.$normal"
+			echo "$greent$t_root_already$normal"
 			echo ""
-			read -n 1 -p "Should we remove it? y/n  "
+			read -n 1 -p "$t_general_remove_q"
 			echo ""
 			echo ""
 			if [[ $REPLY = "y" ]]; then
@@ -6715,22 +6665,22 @@ root_tools() {
 		if [[ ! -f $prfiles/busybox ]]; then
 			if [[ -f $prfiles/root ]]; then
 				banner
-				read -n 1 -p "Should we add Busybox to the ROM? y/n  "
+				read -n 1 -p "$t_busybox_q"
 				if [[ $REPLY = "y" ]]; then
 					root_busybox
 				fi
 			else
 				banner
-				echo "$redb${yellowt}ERROR:$normal"
-				echo "${redt}You must add root first.$normal"
+				echo "$redb$yellowt$bold$t_error$normal"
+				echo "$redt$t_root_must_add$normal"
 				echo ""
-				read -p "Press ENTER to return to the Root Menu"
+				read -p "$t_enter_root_menu"
 			fi
 		else
 			banner
-			echo "${greent}You already have Busybox.$normal"
+			echo "$greent$t_busybox_already$normal"
 			echo ""
-			read -n 1 -p "Should we remove it? y/n  "
+			read -n 1 -p "$t_general_remove_q"
 			echo ""
 			echo ""
 			if [[ $REPLY = "y" ]]; then
@@ -6741,7 +6691,32 @@ root_tools() {
 		return 1
 	# START Add/Remove su.d support
 	elif [[ $choice = "3" ]]; then
-		boot_sud
+		if [[ $rootstatus = "Yes" ]]; then
+			if [[ ! $sudstatus = "Yes" ]]; then
+				banner
+				read -n 1 -p "$t_root_sud_add_q" reply
+				if [[ ! $reply = "y" ]]; then
+					root_tools
+					return 1
+				fi
+				root_sud
+			else
+				banner
+				read -n 1 -p "$t_root_sud_rem_q" reply
+				if [[ ! $reply = "y" ]]; then
+					root_tools
+					return 1
+				fi
+				root_sudrem
+			fi
+		else
+			banner
+			echo "$redb$yellowt$bold$t_error$normal"
+			echo "$redt$t_root_must_add$normal"
+			echo ""
+			read -p "$t_enter_boot_menu"
+		fi
+		root_tools
 		return 1
 	# START ROM Tools Menu
 	elif [[ $choice = "4" ]]; then
@@ -6756,7 +6731,7 @@ root_tools() {
 	elif [[ $choice = "q" ]]; then
 		echo ""
 		echo ""
-		exitk
+		exit
 	fi
 }
 signzip() {
@@ -6764,10 +6739,10 @@ signzip() {
 		signzipname="$signature2"
 	fi
 	reply=""
-	read -n 1 -p "Would you like to sign $signzipname.zip?  y/n  " reply
+	read -n 1 -p "$t_sign_q" reply
 	if [[ $reply = "y" ]]; then
 		banner
-		echo "${bluet}Checking ram ...$normal"
+		echo "$bluet$t_sign_ram_check$normal"
 		cd $romdir
 		zipbyte=$(wc -c $signzipname.zip | gawk '{ print $1 }')
 		zipmb=$(echo | gawk "{ print $zipbyte/1024/1024+1 }" | cut -d"." -f1)
@@ -6776,11 +6751,11 @@ signzip() {
 		ramest=$(echo | gawk "{ print ${zipmb}*3.48+1 }" | cut -d"." -f1)
 		if [[ $ramest -gt $heapsize ]]; then
 			banner
-			echo "${redt}${yellowb}WARNING:$normal"
-			echo "${redt}You may not have enough ram to sign this zip.$normal"
+			echo "$redb$yellowt$bold$t_warning$normal"
+			echo "$redt$t_sign_no_ram$normal"
 			echo ""
 			choice=""
-			read -n 1 -p "Would you like to try anyway?  y/n  " choice
+			read -n 1 -p "$t_deodex_try_anyway" choice
 			echo ""
 			echo ""
 			if [[ ! $choice = "y" ]]; then
@@ -6788,19 +6763,27 @@ signzip() {
 			fi
 		fi
 		banner
-		echo "${bluet}Signing $signzipname.zip ...$normal"
+		echo "$bluet$t_sign_signing $signzipname.zip ...$normal"
 		java -Xmx${heapsize}m -jar $tools/signapk/signapk.jar -w $tools/signapk/testkey.x509.pem $tools/signapk/testkey.pk8 $signzipname.zip $signzipname-signed.zip
+		$p7z e $signzipname.zip META-INF/com/google/android/update-binary 2>/dev/null >> $logs/zip.log
+		if [[ ! $(file update-binary | grep /sbin/sh) = "" ]]; then
+			$tools/signapk/zipadjust $signzipname-signed.zip $signzipname-signed-fixed.zip 2>&1 >/dev/null
+			java -Xmx${heapsize}m -jar $tools/signapk/minsignapk.jar $tools/signapk/testkey.x509.pem $tools/signapk/testkey.pk8 $signzipname-signed-fixed.zip $signzipname-signed2.zip
+			rm -rf $signzipname-signed.zip $signzipname-signed-fixed.zip
+			mv $signzipname-signed2.zip $signzipname-signed.zip
+		fi
+		rm -rf update-binary
 		banner
 		if [[ -f $signzipname-signed.zip ]]; then
-			echo "$greent$signzipname-signed.zip has been created in $romname. Enjoy!$normal"
+			echo "$greent$signzipname-signed.zip $t_sign_signed$normal"
 			echo ""
 		else
-			echo "${redt}${yellowb}ERROR:$normal"
-			echo "${redt}Something went wrong with the signing.$normal"
+			echo "$redb$yellowt$bold$t_error$normal"
+			echo "$redt$t_sign_fail$normal"
 			echo ""
 		fi
 		if [[ ! $signext = "" ]]; then
-			read -p "Press ENTER to return to Build Menu"
+			read -p "$t_enter_build_menu"
 		fi
 	else
 		if [[ ! $signext = "" ]]; then
@@ -6844,30 +6827,30 @@ update_project() {
 			choice=""
 			while [[ ! ${choice} =~ ^[1-4]$ ]]; do
 				banner
-				echo "Which perm type would you like to use?"
+				echo "$t_perm_which"
 				echo ""
 				if [[ ! $api -ge "19" ]]; then
-					echo "${redt}1) set_metadata (For KitKat+ only)$normal"
+					echo "$redt$t_perm_set_metadata$normal"
 				else
-					echo "1) set_metadata (For KitKat+)"
+					echo "$t_perm_set_metadata"
 				fi
-				echo "2) set_perm"
+				echo "$t_perm_set_perm"
 				if [[ ! $api -ge "21" || ! $(getconf LONG_BIT) = "64" ]]; then
-					echo "${redt}3) Sparse dat (For 64bit Linux and Lollipop+ only)$normal"
+					echo "$redt$t_perm_sparse_red$normal"
 				else
-					echo "3) Sparse dat"
+					echo "$t_perm_sparse"
 				fi
-				echo "4) raw_img"
+				echo "$t_perm_raw_img"
 				echo ""
-				read -n 1 -p "Please enter your choice:" choice
+				read -n 1 -p "$t_select" choice
 			done
 			# set_metadata chosen
 			if [[ $choice = "1" ]]; then
 				if [[ ! $api -ge "19" ]]; then
 					banner
-					echo "${redt}This ROM is NOT KitKat or beyond.$normal"
+					echo "$redt$t_perm_set_metadata_error$normal"
 					echo ""
-					read -p "Press ENTER to continue"
+					read -p "$t_enter_continue"
 					update_project
 					return 1
 				fi
@@ -6881,9 +6864,9 @@ update_project() {
 			elif [[ $choice = "3" ]]; then
 				if [[ ! $api -ge "21" || ! $(getconf LONG_BIT) = "64" ]]; then
 					banner
-					echo "${redt}This ROM is NOT Lollipop+ or you are running 32bit Linux.$normal"
+					echo "$redt$t_perm_sparse_error$normal"
 					echo ""
-					read -p "Press ENTER to continue"
+					read -p "$t_enter_continue"
 					update_project
 					return 1
 				fi
@@ -6917,7 +6900,7 @@ update_project() {
 			rm -rf $prfiles/permtype_old
 		fi
 		banner
-		echo "${bluet}Preparing updater-script ...$normal"
+		echo "$bluet$t_startup_prep_updater_script$normal"
 		cd $usdir
 		if [[ $(grep -o "#ASSERT" updater-script) = "" ]]; then
 			sed -i '1i#ASSERT' updater-script
@@ -6970,10 +6953,10 @@ update_project() {
 						${usesudo}rm -rf $romdir/bootimg
 					else
 						banner
-						echo "${redb}${yellowt}ERROR:$normal"
-						echo "${redt}You need a boot.img for this process.$normal"
+						echo "$redb$yellowt$t_error$normal"
+						echo "$redt$t_build_need_boot_img$normal"
 						echo ""
-						read -p "Press ENTER to continue"
+						read -p "$t_enter_continue"
 						rm -rf permtype
 						permtype=""
 						update_project
@@ -6981,16 +6964,10 @@ update_project() {
 					fi
 					if [[ ! -f $prfiles/file_contexts ]]; then
 						banner
-						echo "${redb}${yellowt}ERROR:$normal"
-						echo "${redt}Either your kernel does not support selinux, or"
-						echo "the kitchen can't find what it needs. If you are sure"
-						echo "your device supports selinux, you can copy the file_contexts"
-						echo "file from the ramdisk to your 00_project_files directory"
-						echo "to use this feature."
+						echo "$redb$yellowt$t_error$normal"
+						echo -e "$t_build_selinux_error"
 						echo ""
-						echo "${bluet}For now, you will need to use set_perm or raw_img.$normal"
-						echo ""
-						read -p "Press ENTER to continue"
+						read -p "$t_enter_continue"
 						rm -rf $prfiles/permtype
 						permtype=""
 						update_project
@@ -7005,7 +6982,6 @@ update_project() {
 			fi
 			sed 's/\\././g; s/(\/\.\*)?//g' file_contexts2 | gawk '{ print $1, $2 }' | sort > file_contexts3
 			mv file_contexts3 file_contexts2
-			line=""
 			line=""
 			for line in $(gawk '{ print $1 }' file_contexts2); do
 			        if [[ $(grep -m 1 "^$line$" all_files.txt) = "$line" ]]; then
@@ -7060,10 +7036,10 @@ update_project() {
 	cd $prfiles
 	if [[ $byname = "" ]]; then
 		banner
-		echo "${redb}${yellowt}${bold}ERROR:$normal"
-		echo "${redt}You will need to enter the partition info in the udater-script manually.$normal"
+		echo "$redb$yellowt$bold$t_error$normal"
+		echo -e "$redt$t_byname_manual_info$normal"
 		echo ""
-		read -p "Press ENTER to continue the rest of the process"
+		read -p "$t_enter_continue_rest"
 	else
 		chosenimg="boot"
 		part_setup
@@ -7083,6 +7059,7 @@ update_project() {
 		sed -i '/#ASSERT/ r assert' $usdir/updater-script
 	fi
 	sed -i "s/#SIGNATURE/$signature1/g" $usdir/updater-script
+	sed -i "s/#SIGCUST/$sigcust1/g" $usdir/updater-script
 	sed -i "s/#DEVICENAME/$devicename/g" $usdir/updater-script
 	sed -i "s/#DEVICECHK/$devicechk/g" $usdir/updater-script
 	sed -i '/#SYM/ r symlinks' $usdir/updater-script
@@ -7113,18 +7090,47 @@ normal=$(tput sgr0)
 clears=$(tput clear)
 if [[ ! $(echo $(pwd) | grep " ") = "" ]]; then
 	banner
-	echo "${redb}${yellowt}${bold}ERROR:$normal"
-	echo "${redt}The kitchen must be run in a path without spaces.$normal"
+	echo "$redb$yellowt$bold$t_error$normal"
+	echo -e "$t_startup_no_spaces"
+	echo "$yellowt$(pwd)$normal"
 	echo ""
-	echo "${bluet}CURRENT PATH:"
-	echo "${yellowt}$(pwd)$normal"
-	echo ""
-	read -p "Press ENTER to exit"
-	exitk
+	read -p "$t_enter_exit"
+	exit
 fi
 export base=$(pwd)
 tools=$base/tools
-superrv=$(grep "SuperR's Kitchen v" README.md | gawk '{ print $4 }')
+if [[ $t_select = "" ]]; then
+	if [[ ! $(ls $tools | grep "srk-chosen") = "" ]]; then
+		langfile=$(ls $tools | grep "srk-chosen" | sed 's/-chosen//')
+		if [[ ! -f $tools/language/$langfile ]]; then
+			rm -rf $tools/$langfile-chosen
+			langfile="english-srk"
+		fi
+		source "$tools/language/$langfile"
+	elif [[ $(ls $tools/language | wc -l) -gt "1" ]]; then
+		source $tools/language/english-srk
+		lang=""
+		while [[ $lang = "" ]]; do
+			banner
+			echo "$greenb$t_title_cho_lang$normal"
+			echo ""
+			findlang=""
+			findlang=$(ls $tools/language | grep "\-srk")
+			choosepr langcho in ${findlang[@]}
+			if [[ $REPLY = "q" ]]; then
+				exit
+			else
+				lang="$langcho"
+				language_check
+				source $tools/language/$lang
+				touch $tools/$lang-chosen
+			fi
+		done
+	else
+		source $tools/language/english-srk
+	fi
+fi
+superrv=$(grep "SuperR's Kitchen v" README.md | gawk '{ print $4 }' | sed 's/*//g')
 if [[ ! $firstrun = "1" ]]; then
 	export firstrun="1"
 	chkstat &
@@ -7170,25 +7176,23 @@ if [[ $cyg = "" && $bashwin = "" ]]; then
 	fi
 	if [[ $userid = "root" ]]; then
 		banner
-		echo "${redb}${yellowt}${bold}ERROR:$normal"
-		echo "${redt}The kitchen should not be run as root$normal"
+		echo "$redb$yellowt$bold$t_error$normal"
+		echo "$redt$t_startup_no_root$normal"
 		echo ""
-		read -p "Press ENTER to exit"
-		exitk
+		read -p "$t_enter_exit"
+		exit
 	fi
 fi
 if [[ ! $(echo $SHELL | grep -o -m 1 bash$) = "bash" ]]; then
 	banner
-	echo "${redb}${yellowt}${bold}SHELL ERROR:$normal"
-	echo "${redt}Bash is required to use this kitchen.$normal"
-	echo "The kitchen is currently running in $SHELL."
+	echo -e "$t_startup_shell_error"
 	echo ""
-	read -p "Press ENTER to exit"
-	exitk
+	read -p "$t_enter_exit"
+	exit
 fi
 if [[ ! -f $tools/depmet ]]; then
 	banner
-	echo "${bluet}Checking dependencies ...$normal"
+	echo "$bluet$t_startup_dep_check$normal"
 	cd $tools
 	depcheck=""
 	line=""
@@ -7206,8 +7210,7 @@ if [[ ! -f $tools/depmet ]]; then
 		fi
 		depinstall=$(cat depinstall)
 		banner
-		echo "${redb}${yellowt}${bold}MISSING DEPENDENCY:$normal"
-		echo "${redt}The following dependencies are missing:"
+		echo -e "$t_startup_dep_missing"
 		echo ""
 		echo "$yellowt$depinstall$normal"
 		echo ""
@@ -7215,17 +7218,14 @@ if [[ ! -f $tools/depmet ]]; then
 			debinstall
 		else
 			banner
-			read -p "Press ENTER to exit"
-			exitk
+			read -p "$t_enter_exit"
+			exit
 		fi
 	fi
 	if [[ $(which java) = "" || $(java -version 2>&1 | grep "java version\|openjdk version" | cut -d'"' -f2 | cut -c 1,3) -lt "18" ]]; then
 		debpkg="default-jre"
 		banner
-		echo "${redb}${yellowt}${bold}MISSING DEPENDENCY:$normal"
-		echo "${redt}You need at least Java 8 to use this kitchen.$normal"
-		echo ""
-		echo "${bluet}The following package is recommended:"
+		echo -e "$t_startup_need_java"
 		echo ""
 		echo "${yellowt}$debpkg$normal"
 		echo ""
@@ -7233,23 +7233,22 @@ if [[ ! -f $tools/depmet ]]; then
 			debinstall
 		else
 			banner
-			read -p "Press ENTER to exit"
-			exitk
+			read -p "$t_enter_exit"
+			exit
 		fi
 	fi
 	if [[ $cyg = "" && ! $(ldd rimg2sdat | grep "not found") = "" ]]; then
 		banner
-		echo "${redb}${yellowt}${bold}WARNING:$normal"
-		echo "${redt}sparse_dat will not work properly on 32-bit Linux.$normal"
+		echo -e "$t_startup_sparse_warn"
 		echo ""
-		read -p "Press ENTER to continue"
+		read -p "$t_enter_continue"
 	fi
 	touch depmet
 	cd $base
 fi
 if [[ $cyg = "" ]] && [[ ! -x $tools/mkbootimg || ! -x $tools/unpackbootimg || ! -x $tools/simg2img || ! -x $tools/make_ext4fs ]]; then
 	banner
-	echo "${bluet}Preparing tools ...$normal"
+	echo "$bluet$t_startup_tool_prep$normal"
 	echo ""
 	cd $tools/source/img_tools
 	unset CROSS_COMPILE
@@ -7262,11 +7261,11 @@ if [[ $cyg = "" ]] && [[ ! -x $tools/mkbootimg || ! -x $tools/unpackbootimg || !
 	if [[ ! -x $tools/mkbootimg || ! -x $tools/unpackbootimg || ! -x $tools/simg2img || ! -x $tools/make_ext4fs ]]; then
 		banner
 		debpkg="bison gperf build-essential zlib1g-dev zlib1g-dev:i386 g++-multilib libxml2-utils bzip2 libbz2-dev libbz2-1.0 libghc-bzlib-dev libsepol1-dev dpkg-dev make ccache automake squashfs-tools schedtool"
-		echo "${redb}${yellowt}${bold}ERROR:$normal"
-		echo "${redt}One or more tools could not be built.$normal"
+		echo "$redb$yellowt$bold$t_error$normal"
+		echo "$redt$t_startup_tool_fail$normal"
 		echo ""
 		if [[ ! -f $tools/depbuild ]]; then
-			echo "${bluet}Installing the following packages may help:"
+			echo "$bluet$t_startup_install_info"
 			echo ""
 			echo "${yellowt}$debpkg$normal"
 			echo ""
@@ -7281,8 +7280,8 @@ if [[ $cyg = "" ]] && [[ ! -x $tools/mkbootimg || ! -x $tools/unpackbootimg || !
 fi
 if [[ ! $cyg = "" ]] && [[ ! -f $tools/mkbootimg.exe || ! -f $tools/unpackbootimg.exe || ! -f $tools/simg2img.exe || ! -f $tools/make_ext4fs.exe || ! -f $tools/rimg2sdat.exe || ! -f $tools/adb.exe || ! -f $tools/zipalign.exe ]]; then
 	banner
-	echo "${redb}${yellowt}${bold}ERROR:$normal"
-	echo "${redt}You need to add the following cygwin compatible binaries to"
+	echo "$redb$yellowt$bold$t_error$normal"
+	echo "$redt$t_startup_cygwin_bin"
 	echo "${yellowt}$tools$normal"
 	echo ""
 	echo "mkbootimg.exe, unpackbootimg.exe, simg2img.exe, make_ext4fs.exe,"
@@ -7304,14 +7303,14 @@ if [[ ! $(ls -d */ | grep 'superr_') = "" ]]; then
 	if [[ "$romname" = "" ]]; then
 		while [[ $romname = "" ]]; do
 			banner
-			echo "${greenb}Choose project:$normal"
+			echo "$greenb$t_title_choose$normal"
 			echo ""
 			findproject=""
 			findproject=( $(ls -d */ | grep 'superr_' | sed 's/superr_//; s/\///') )
 			prchoice="first"
 			choosepr project in ${findproject[@]}
 			if [[ $REPLY = "q" ]]; then
-				exitk
+				exit
 			elif [[ $REPLY = "n" ]]; then
 				new_project
 			else
@@ -7345,8 +7344,7 @@ if [[ -f $romdir/system/build.prop ]]; then
 	fi
 else
 	androidversion=$(
-		echo "${redt}Copy your firmware to the following"
-		echo "directory and choose ${bold}option 4$normal ${redt}to extract it:$normal"
+		echo -e "$t_startup_copy_extract"
 		echo "$yellowt$base/superr_$romname$normal"
 	)
 fi
@@ -7363,25 +7361,25 @@ choice=""
 while [[ ! ${choice} =~ ^[1-8]$ ]] && [[ ! $choice = "q" ]]; do
 	banner
 	if [[ ! $(ls -d */ | grep 'superr_') = "" ]]; then
-		echo "${bluet}CURRENT PROJECT: $greent$romname$normal"
-		echo "${bluet}ANDROID VERSION: $greent$androidversion$normal"
+		echo "$bluet$t_startup_project $greent$romname$normal"
+		echo "$bluet$t_startup_version $greent$androidversion$normal"
 	else
-		echo "${bluet}CURRENT PROJECT:$normal ${redb}${yellowt}${bold}There are no projects.$normal"
+		echo "$bluet$t_startup_title_no_projects$normal"
 	fi
 	echo ""
-	echo "${yellowb}${redt}Main Menu$normal"
+	echo "$yellowb$redt$t_title_main$normal"
 	echo ""
-	echo "1) Create new project"
-	echo "2) Choose a different project"
-	echo "3) Delete a project"
-	echo "4) Extract for new ROM"
-	echo "5) Check for updates (${bluet}CURRENT: $greent$superrv$normal)"
-	echo "6) Zip new devices to share"
-	echo "${yellowt}7) Boot/Recovery Tools"
-	echo "8) ROM Tools$normal"
-	echo "${magentat}q = Quit$normal"
+	echo "1) $t_menu_create"
+	echo "2) $t_menu_choose"
+	echo "3) $t_menu_delete"
+	echo "4) $t_menu_extract"
+	echo "5) $t_menu_updates ($bluet$t_title_current$greent$superrv$normal)"
+	echo "${yellowt}6) $t_menu_misc"
+	echo "7) $t_menu_boot_recovery"
+	echo "8) $t_menu_rom_tools"
+	echo "${magentat}q = $t_menu_quit$normal"
 	echo ""
-	read -n 1 -p "Please enter your choice:" choice
+	read -n 1 -p "$t_select" choice
 done
 
 # START Create new project directory
@@ -7406,9 +7404,9 @@ elif [[ $choice = "4" ]]; then
 elif [[ $choice = "5" ]]; then
 	kitchen_update
 	return 1
-# START Zip new devices to share
+# START Misc Tools
 elif [[ $choice = "6" ]]; then
-	grab_devices
+	misc_tools
 	return 1
 # START Boot Tools
 elif [[ $choice = "7" ]]; then
@@ -7422,5 +7420,5 @@ elif [[ $choice = "8" ]]; then
 elif [[ $choice = "q" ]]; then
 	echo ""
 	echo ""
-	exitk
+	exit
 fi

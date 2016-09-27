@@ -4,7 +4,11 @@
 /tools/open_bump.py
 /tools/root/bloat_custom
 /tools/root/root_zips/*
-!/tools/root/root_zips/SuperSU-v2.78.zip
+!/tools/root/root_zips/SuperSU-v2.78-SR1.zip
+/tools/*srk-chosen
+/tools/language/*
+!/tools/language/english-srk
+/tools/bituser
 /tools/depmet
 /tools/depbuild
 /tools/dependencies2
@@ -53,8 +57,8 @@
 !/tools/devices/surnia_cdma
 !/tools/devices/tre3g
 !/tools/devices/trelte
-!/tools/devices/w5c
 !/tools/devices/w3c
+!/tools/devices/w5c
 !/tools/devices/warp2
 !/tools/devices/warp4
 !/tools/devices/warplte
