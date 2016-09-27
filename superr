@@ -1325,12 +1325,6 @@ build_rom_zip() {
 	fi
 	cd $romdir
 	permtype=$(cat $prfiles/permtype)
-	banner
-	echo "$bluet$t_cust_prep$normal"
-	cp -R META-INF META-INF1
-	cd $usdir
-	grep -v "#ASSERT\|#SYM\|#PERM\|#ROOT\|#BUSYBOX\|#VENDOR\|#CUSTOM\|#SUD\|#DATA" updater-script > updater-script2
-	mv updater-script2 updater-script
 	cd $romdir
 	if [[ $permtype = "sparse_dat" ]]; then
 		if [[ ! -f $prfiles/file_contexts ]]; then
