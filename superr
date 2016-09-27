@@ -752,7 +752,6 @@ boot_tools() {
 		grep -v "#ASSERT" $usdir/updater-script > $usdir/updater-script2
 		mv $usdir/updater-script2 $usdir/updater-script
 		sed -i "s/#SIGNATURE/$signature3/g" $usdir/updater-script
-		sed -i "s/#SIGCUST/$sigcust1/g" $usdir/updater-script
 		sed -i "s/#DEVICENAME/$devicename/g" $usdir/updater-script
 		sed -i "s/#DEVICECHK/$devicechk/g" $usdir/updater-script
 		banner
@@ -1014,7 +1013,6 @@ build_custom_zip() {
 		grep -v "#ASSERT" $usdir/updater-script > $usdir/updater-script2
 		mv $usdir/updater-script2 $usdir/updater-script
 		sed -i "s/#SIGNATURE/$signature1/g" $usdir/updater-script
-		sed -i "s/#SIGCUST/$sigcust1/g" $usdir/updater-script
 		sed -i "s/#DEVICENAME/$devicename/g" $usdir/updater-script
 		sed -i "s/#DEVICECHK/$devicechk/g" $usdir/updater-script
 		if [[ $choice = "1" || $choice = "2" || $choice = "4" ]]; then
@@ -7051,7 +7049,6 @@ update_project() {
 		sed -i '/#ASSERT/ r assert' $usdir/updater-script
 	fi
 	sed -i "s/#SIGNATURE/$signature1/g" $usdir/updater-script
-	sed -i "s/#SIGCUST/$sigcust1/g" $usdir/updater-script
 	sed -i "s/#DEVICENAME/$devicename/g" $usdir/updater-script
 	sed -i "s/#DEVICECHK/$devicechk/g" $usdir/updater-script
 	sed -i '/#SYM/ r symlinks' $usdir/updater-script
