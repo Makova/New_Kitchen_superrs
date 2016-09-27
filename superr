@@ -1451,8 +1451,6 @@ build_rom_zip() {
 		echo "$bluet$signature.zip $t_general_build $romname ...$normal"
 		$p7z a -mx7 $signature.zip boot.img META-INF system vendor data supersu rootzip busybox 2>/dev/null >> $logs/zip.log
 	fi
-	rm -rf META-INF
-	mv META-INF1 META-INF
 	banner
 	if [[ -f $signature.zip ]]; then
 		echo "$greent$signature.zip $t_general_create $romname$normal"
