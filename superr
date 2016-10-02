@@ -4274,7 +4274,9 @@ extract_new() {
 	romwin=""
 	find . -maxdepth 1 -type f | grep ".tgz\|.zip$\|.tar$\|.tar.a$\|.tar.md5$\|.win\|chunk\|.img$\|system.ext4$\|system.img.ext4\|" | grep -v "boot\|recovery" | sed 's/^\.\///' > $prfiles/findextract
 	if [[ ! $(cat $prfiles/findextract | wc -l) -gt "1" ]]; then
-		if [[ ! $(grep .zip$ $prfiles/findextract) = "" ]]; then
+		if [[ ! $(grep *-*-factory-*.tgz $prfiles/findextract) = "" || ! $(grep *-*-factory-*.zip $prfiles/findextract) = "" || ! $(grep *-*-preview-*.tgz $prfiles/findextract) = "" || ! $(grep *-*-preview-*.zip $prfiles/findextract) = "" ]]; then
+			romtgz=$(cat $prfiles/findextract)
+		elif [[ ! $(grep .zip$ $prfiles/findextract) = "" ]]; then
 			romzip=$(cat $prfiles/findextract)
 		elif [[ ! $(grep .tar$ $prfiles/findextract) = "" ]]; then
 			romtar=$(cat $prfiles/findextract)
@@ -4298,10 +4300,6 @@ extract_new() {
 				mv system.img.ext4 system.img
 			fi
 			romimg="system.img"
-		elif [[ ! $(grep *-*-factory-*.tgz $prfiles/findextract) = "" ]]; then
-			romtgz=$(cat $prfiles/findextract)
-		elif [[ ! $(grep *-*-preview-*.tgz $prfiles/findextract) = "" ]]; then
-			romtgz=$(cat $prfiles/findextract)
 		fi
 		rm -rf $prfiles/findextract
 	else
@@ -4322,7 +4320,9 @@ extract_new() {
 				rm -rf $prfiles/findextract
 				exit
 			else
-				if [[ ! $(echo $project | grep .zip$) = "" ]]; then
+				if [[ ! $(echo $project | grep *-*-factory-*.tgz) = "" || ! $(echo $project | grep *-*-factory-*.zip) = "" || ! $(echo $project | grep *-*-preview-*.tgz) = "" || ! $(echo $project | grep *-*-preview-*.zip) = "" ]]; then
+					romtgz="$project"
+				elif [[ ! $(echo $project | grep .zip$) = "" ]]; then
 					romzip="$project"
 				elif [[ ! $(echo $project | grep .tar$) = "" ]]; then
 					romtar="$project"
@@ -4346,8 +4346,6 @@ extract_new() {
 						mv $romdir/system.img.ext4 $romdir/system.img
 					fi
 					romimg="system.img"
-				elif [[ ! $(echo $project | grep .tgz$) = "" ]]; then
-					romtgz="$project"
 				fi
 				rm -rf $prfiles/findextract
 			fi
@@ -4573,6 +4571,7 @@ extract_new() {
 			echo -e "$redt$t_extract_zip_fail$normal"
 			echo ""
 			read -p "$t_enter_main_menu"
+			cd $base
 			exec ./superr
 			return 1
 		fi
@@ -4797,7 +4796,14 @@ extract_new() {
 	if [[ ! $romtgz = "" ]]; then
 		banner
 		echo "$bluet$t_extract_check_firm$normal"
-		tar -tzf $romtgz 2>&1 > $logs/tarlist
+		if [[ ! $(echo "$romtgz" | grep .tgz) = "" ]]; then
+			tar -tzf $romtgz 2>&1 > $logs/tarlist
+			extype="tgz"
+		elif [[ ! $(echo "$romtgz" | grep .zip) = "" ]]; then
+			tgzdevice=$(echo "$romtgz" | cut -d"-" -f1)
+			$p7z l $romtgz | grep "$tgzdevice" | gawk '{print $6}' 2<&1 > $logs/tarlist
+			extype="zip"
+		fi
 		if [[ $(cat $logs/tarlist | grep "image-") = "" ]]; then
 			rm -rf $logs/tarlist
 			banner
@@ -4813,12 +4819,16 @@ extract_new() {
 		exdir=$(dirname $eximage)
 		banner
 		echo "$bluet$t_extract_files$normal"
-		tar -xf $romtgz $eximage 2>&1 > $logs/zip.log
+		if [[ $extype = "tgz" ]]; then
+			tar -xf $romtgz $eximage 2>&1 > $logs/zip.log
+		elif [[ $extype = "zip" ]]; then
+			$p7z x $romtgz $eximage 2>&1 > $logs/zip.log
+		fi
 		mv $romdir/$exdir/* $romdir/
 		rm -rf $exdir
 		imagezip=$(ls | grep image-*.zip)
 		banner
-		echo "$t_extract_img"
+		echo "$bluet$t_extract_img$normal"
 		$p7z e $imagezip system.img boot.img vendor.img 2>&1 > $logs/zip.log
 		rm -rf $imagezip $logs/tarlist
 		romtgz=""
