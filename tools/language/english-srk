@@ -335,6 +335,8 @@ export t_deodex_try_anyway="Would you like to try anyway?  y/n  "
 export t_deodex_dl_q="Would you like to download/install it now?  y/n  "
 export t_deodex_continue_q="Would you like to continue deodexing?  y/n  "
 export t_deodex_del_frame_q="Would you like to delete framework odex files anyway?  y/n  "
+export t_deodex_del_meta_inf_q="${bluet}Android Nougat uses APK Signature Scheme v2, and\nthis can cause problems when deodexing. Deleting\nMETA-INF from the apk files should fix this problem.$normal\n\nWould you like to delete the META-INF directory from\nall the apk files in your ROM?  y/n  "
+export t_deodex_del_meta_inf="Deleting META-INF from apk's ..."
 
 # Dependencies
 export t_dep_install_q="Would you like to install now?  y/n  "
