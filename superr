@@ -7414,7 +7414,7 @@ if [[ $cyg = "" && $bashwin = "" ]]; then
 		exit
 	fi
 fi
-if [[ ! $(echo "$BASH") = "bash" ]]; then
+if [[ $(echo "$BASH" | grep bash$) = "" ]]; then
 	banner
 	echo -e "$t_startup_shell_error"
 	echo ""
