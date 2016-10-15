@@ -32,7 +32,7 @@ assert_devices() {
 		return 1
 	fi
 	assertch=""
-	while [[ ! ${assertch} =~ ^[1-4]$ ]] && [[ ! $assertch = "m" && ! $assertch = "q" ]]; do
+	while [[ ! ${assertch} =~ ^[1-2]$ ]] && [[ ! $assertch = "m" && ! $assertch = "q" ]]; do
 		banner
 		echo "$bluet$t_startup_project $greent$romname$normal"
 		echo "$bluet$t_startup_version $greent$androidversion$normal"
@@ -40,16 +40,14 @@ assert_devices() {
 		echo "$yellowb$redt$t_menu_asserts$normal"
 		echo ""
 		echo "1) $t_menu_add_assert ($bluet$t_title_current$greent$assertdevices$normal)"
-		echo "2) $t_menu_asserts_custom ($bluet$t_title_current$greent$assertcustom1$normal)"
-		echo "3) $t_menu_asserts_reset"
-		echo "${yellowt}4) $t_menu_rom_tools"
+		echo "${yellowt}2) $t_menu_rom_tools"
 		echo "m = $t_title_main"
 		echo "${magentat}q = $t_menu_quit$normal"
 		echo ""
 		read -n 1 -p "$t_select" assertch
 	done
 	# START ROM Tools menu
-	if [[ $assertch = "4" ]]; then
+	if [[ $assertch = "2" ]]; then
 		rom_tools
 		return 1
 	# START Main menu
@@ -96,38 +94,6 @@ assert_devices() {
 		cat $tools/updater/custom/abort2 >> assert
 		sed -i "s/#DEVICECHK/$devicechk/g" assert
 		sed -i "s/#ASSERTDEVICE/$assertdevice/g" assert
-	# START Add Custom assert
-	elif [[ $assertch = "2" ]]; then
-		banner
-		echo -e "$t_asserts_type"
-		echo ""
-		echo "${yellowt}ro.baseband=1.09.20.1112$normal"
-		echo ""
-		read -e -p "" assertcustom
-		banner
-		echo "$bluet$t_asserts_prep_cust$normal"
-		propname=$(echo "$assertcustom" | cut -d"=" -f1)
-		propvalue=$(echo "$assertcustom" | cut -d"=" -f2)
-		cd $assertdir
-		cat $tools/updater/custom/assertcustom >> assertcustom
-		sed -i "s/#PROPNAME/$propname/g; s/#PROPVALUE/$propvalue/g" assertcustom
-	# START Reset asserts to default
-	elif [[ $assertch = "3" ]]; then
-		cd $assertdir
-		rm -rf assert assertcustom assertdevice
-		cat $tools/updater/custom/assert >> assert
-		cat $tools/updater/custom/abort >> assert
-		sed -i "s/#DEVICENAME/$devicename/g" assert
-		sed -i "s/#DEVICECHK/$devicechk/g" assert
-		sed -i '/#ASSERT/ r assert' $usdir/updater-script
-		assertch=""
-		assert_devices
-		return 1
-	fi
-	if [[ -f assertcustom ]]; then
-		grep "ro.product.device" assert > assert-2
-		mv assert-2 assert
-		cat assertcustom >> assert
 	fi
 	sed -i '/#ASSERT/ r assert' $usdir/updater-script
 	assertch=""
@@ -739,7 +705,6 @@ boot_tools() {
 		part_setup
 		if [[ ! -f $prfiles/assert ]]; then
 			cd $prfiles/boot
-			cat $tools/updater/custom/assert >> assert
 			cat $tools/updater/custom/abort >> assert
 			sed -i "s/#DEVICENAME/$devicename/g" assert
 			sed -i "s/#DEVICECHK/$devicechk/g" assert
@@ -1001,7 +966,6 @@ build_custom_zip() {
 		chosenimg="boot"
 		part_setup
 		if [[ ! -f assert ]]; then
-			cat $tools/updater/custom/assert >> assert
 			cat $tools/updater/custom/abort >> assert
 			sed -i "s/#DEVICENAME/$devicename/g" assert
 			sed -i "s/#DEVICECHK/$devicechk/g" assert
@@ -1501,8 +1465,25 @@ build_zip() {
 		fi
 		whatimg="system"
 		findimgsize
+		while [[ ! $choice =~ ^[1-2]$ ]] && [[ ! $choice = "b" ]]; do
+			banner
+			echo "$yellowb$redt$t_img_sparse_q$normal"
+			echo ""
+			echo "1) raw"
+			echo "2) sparse"
+			echo "${yellowt}b = $t_menu_back$normal"
+			echo ""
+			read -n 1 -p "$t_select" choice
+		done
+		if [[ $choice = "b" ]]; then
+			build_zip
+			return 1
+		elif [[ $choice = "2" ]]; then
+			sparseimg=" -s"
+		fi
 		whatpart="system"
 		partimg
+		sparseimg=""
 		if [[ -f system_new.img && ! -f system.img ]]; then
 			mv system_new.img system.img
 			imgname="system.img"
@@ -2592,7 +2573,6 @@ deodex_l() {
 		fi
 	done
 	deoappdir="$appdir"
-	classdump="app"
 	deoarch="$arch"
 	deoarch2="$arch"
 	dodeodexl
@@ -2631,7 +2611,6 @@ deodex_l() {
 		fi
 	done
 	deoappdir="$privdir"
-	classdump="priv-app"
 	deoarch="$arch"
 	deoarch2="$arch"
 	dodeodexl
@@ -2899,7 +2878,6 @@ deodex_m() {
 		fi
 	done
 	deoappdir="$appdir"
-	classdump="app"
 	deoarch="oat/$arch"
 	deoarch2="$arch"
 	dodeodexm
@@ -2938,7 +2916,6 @@ deodex_m() {
 		fi
 	done
 	deoappdir="$privdir"
-	classdump="priv-app"
 	deoarch="oat/$arch"
 	deoarch2="$arch"
 	dodeodexm
@@ -3280,25 +3257,27 @@ deodex_m2() {
 		java -Xmx${heapsize}m -jar $smali assemble $framedir/smali -o $framedir/$line$dexclass >> $logs/deodex.log
 		rm -rf $framedir/smali
         done
-	frame=""
-	for frame in $(ls $framedir/$deoarch | grep .odex$ | sort); do
-                echo ""
-                echo "$t_deodex_deodexing $frame"
-                echo ""
-		classes=$(java -Xmx${heapsize}m -jar $baksmali list dex $framedir/$deoarch/$frame)
-		echo "$classes" >> $logs/deodex.log
-		echo "$classes" | while read line; do
-			apkdex=$(basename $(echo "$line"))
-			if [[ $(echo "$apkdex" | grep classes) = "" ]]; then
-				dexclass="$apkdex:classes.dex"
-			else
-				dexclass="$apkdex"
-			fi
-			java -Xmx${heapsize}m -jar $baksmali deodex -b $framedir/$deoarch2/boot.oat $framedir/$deoarch/$frame/$apkdex -o $framedir/$deoarch/smali >> $logs/deodex.log
-			java -Xmx${heapsize}m -jar $smali assemble $framedir/$deoarch/smali -o $framedir/$dexclass >> $logs/deodex.log
-			rm -rf $framedir/$deoarch/smali
+	if [[ -d $framedir/$deoarch ]]; then
+		frame=""
+		for frame in $(ls $framedir/$deoarch | grep .odex$ | sort); do
+	                echo ""
+	                echo "$t_deodex_deodexing $frame"
+	                echo ""
+			classes=$(java -Xmx${heapsize}m -jar $baksmali list dex $framedir/$deoarch/$frame)
+			echo "$classes" >> $logs/deodex.log
+			echo "$classes" | while read line; do
+				apkdex=$(basename $(echo "$line"))
+				if [[ $(echo "$apkdex" | grep classes) = "" ]]; then
+					dexclass="$apkdex:classes.dex"
+				else
+					dexclass="$apkdex"
+				fi
+				java -Xmx${heapsize}m -jar $baksmali deodex -b $framedir/$deoarch2/boot.oat $framedir/$deoarch/$frame/$apkdex -o $framedir/$deoarch/smali >> $logs/deodex.log
+				java -Xmx${heapsize}m -jar $smali assemble $framedir/$deoarch/smali -o $framedir/$dexclass >> $logs/deodex.log
+				rm -rf $framedir/$deoarch/smali
+			done
 		done
-	done
+	fi
 	banner
 	echo "$bluet$t_deodex_pack_jar$normal"
 	ls $framedir | grep "jar:classes.dex" | sort | while read line; do
@@ -3490,7 +3469,6 @@ deodex_m3() {
 		fi
 	done
 	deoappdir="$appdir"
-	classdump="app"
 	deoarch="oat/$arch"
 	deoarch2="$arch"
 	dodeodexm3
@@ -3529,7 +3507,6 @@ deodex_m3() {
 		fi
 	done
 	deoappdir="$privdir"
-	classdump="priv-app"
 	deoarch="oat/$arch"
 	deoarch2="$arch"
 	dodeodexm3
@@ -3553,12 +3530,14 @@ deodex_m3() {
 		echo ""
 		$oattools/oatdump --oat-file="$framedir/$deoarch2/$frame" --export-dex-to="$framedir/temp" >> $logs/deodex.log
 	done
-	for frame in $(ls $framedir/$deoarch | grep .odex$); do
-		echo ""
-		echo "$t_deodex_deodexing $frame"
-		echo ""
-		$oattools/oatdump --oat-file="$framedir/$deoarch/$frame" --export-dex-to="$framedir/temp" >> $logs/deodex.log
-	done
+	if [[ -d $framedir/$deoarch ]]; then
+		for frame in $(ls $framedir/$deoarch | grep .odex$); do
+			echo ""
+			echo "$t_deodex_deodexing $frame"
+			echo ""
+			$oattools/oatdump --oat-file="$framedir/$deoarch/$frame" --export-dex-to="$framedir/temp" >> $logs/deodex.log
+		done
+	fi
 	$oattools/dexrepair -I $framedir/temp >> $logs/deodex.log
 	ls $framedir/temp | grep "export.dex_repaired.dex" | while read line; do
 		if [[ $(echo "$line" | grep classes) = "" ]]; then
@@ -3760,7 +3739,6 @@ deodex_n() {
 		fi
 	done
 	deoappdir="$appdir"
-	classdump="app"
 	deoarch="oat/$arch"
 	deoarch2="$arch"
 	dodeodexn
@@ -3799,7 +3777,6 @@ deodex_n() {
 		fi
 	done
 	deoappdir="$privdir"
-	classdump="priv-app"
 	deoarch="oat/$arch"
 	deoarch2="$arch"
 	dodeodexn
@@ -3823,12 +3800,14 @@ deodex_n() {
 		echo ""
 		$oattools/oatdump --oat-file="$framedir/$deoarch2/$frame" --export-dex-to="$framedir/temp" >> $logs/deodex.log
 	done
-	for frame in $(ls $framedir/$deoarch | grep .odex$); do
-		echo ""
-		echo "$t_deodex_deodexing $frame"
-		echo ""
-		$oattools/oatdump --oat-file="$framedir/$deoarch/$frame" --export-dex-to="$framedir/temp" >> $logs/deodex.log
-	done
+	if [[ -d $framedir/$deoarch ]]; then
+		for frame in $(ls $framedir/$deoarch | grep .odex$); do
+			echo ""
+			echo "$t_deodex_deodexing $frame"
+			echo ""
+			$oattools/oatdump --oat-file="$framedir/$deoarch/$frame" --export-dex-to="$framedir/temp" >> $logs/deodex.log
+		done
+	fi
 	$oattools/dexrepair -I $framedir/temp >> $logs/deodex.log
 	ls $framedir/temp | grep "export.dex_repaired.dex" | while read line; do
 		if [[ $(echo "$line" | grep classes) = "" ]]; then
@@ -4102,25 +4081,27 @@ deodex_n2() {
 			rm -rf $framedir/$deoarch2/smali
 		done
 	done
-	frame=""
-	for frame in $(ls $framedir/$deoarch | grep .odex$ | sort); do
-                echo ""
-                echo "$t_deodex_deodexing $frame"
-                echo ""
-		classes=$(java -Xmx${heapsize}m -jar $baksmali list dex $framedir/$deoarch/$frame)
-		echo "$classes" >> $logs/deodex.log
-		echo "$classes" | while read line; do
-			apkdex=$(basename $(echo "$line"))
-			if [[ $(echo "$apkdex" | grep classes) = "" ]]; then
-				dexclass="$apkdex:classes.dex"
-			else
-				dexclass="$apkdex"
-			fi
-			java -Xmx${heapsize}m -jar $baksmali deodex -b $framedir/$deoarch2/boot.oat $framedir/$deoarch/$frame/$apkdex -o $framedir/$deoarch/smali >> $logs/deodex.log
-			java -Xmx${heapsize}m -jar $smali assemble $framedir/$deoarch/smali -o $framedir/$dexclass >> $logs/deodex.log
-			rm -rf $framedir/$deoarch/smali
+	if [[ -d $framedir/$deoarch ]]; then
+		frame=""
+		for frame in $(ls $framedir/$deoarch | grep .odex$ | sort); do
+	                echo ""
+	                echo "$t_deodex_deodexing $frame"
+	                echo ""
+			classes=$(java -Xmx${heapsize}m -jar $baksmali list dex $framedir/$deoarch/$frame)
+			echo "$classes" >> $logs/deodex.log
+			echo "$classes" | while read line; do
+				apkdex=$(basename $(echo "$line"))
+				if [[ $(echo "$apkdex" | grep classes) = "" ]]; then
+					dexclass="$apkdex:classes.dex"
+				else
+					dexclass="$apkdex"
+				fi
+				java -Xmx${heapsize}m -jar $baksmali deodex -b $framedir/$deoarch2/boot.oat $framedir/$deoarch/$frame/$apkdex -o $framedir/$deoarch/smali >> $logs/deodex.log
+				java -Xmx${heapsize}m -jar $smali assemble $framedir/$deoarch/smali -o $framedir/$dexclass >> $logs/deodex.log
+				rm -rf $framedir/$deoarch/smali
+			done
 		done
-	done
+	fi
 	banner
 	echo "$bluet$t_deodex_pack_jar$normal"
 	ls $framedir | grep "jar:classes.dex" | sort | while read line; do
@@ -4410,11 +4391,6 @@ elf_unpack() {
 }
 ext_dirmenu() {
 	isdataappstatus
-	if [[ -f $prfiles/custom_dir ]]; then
-		cctr=$(echo "$greent$(cat $prfiles/custom_dir)")
-	else
-		cctr=$(echo "$t_menu_cctr")
-	fi
 	choice=""
 	while [[ ! ${choice} =~ ^[1-2]$ ]] && [[ ! $choice = "m" && ! $choice = "q" ]]; do
 		banner
@@ -5829,10 +5805,6 @@ install_cygwin_binaries() {
 isassertdevices() {
 	if [[ -f $usdir/updater-script ]]; then
 		assertdevices=$(grep -m 1 abort $usdir/updater-script | gawk '{ print $5 }' | sed 's/\"//g' | sed 's/\\//g')
-		assertcustom1=$(grep "assert(getprop" $usdir/updater-script | grep -v "ro.product.device" | cut -d '"' -f2 | tr '\n' ',' | sed 's/,$//')
-		if [[ $assertcustom1 = "" ]]; then
-			assertcustom1="$t_none"
-		fi
 	fi
 }
 isbusyboxstatus() {
@@ -6474,20 +6446,20 @@ partimg() {
 	if [[ -f $prfiles/file_contexts ]]; then
 		echo "$bluet$t_img_create_raw $whatpart.img ...$normal"
 		if [[ $whatpart = "system" ]]; then
-			( $tools/make_ext4fs${cyg} -T 0 -S $prfiles/file_contexts -l $syssize -a $whatpart ${whatpart}_new.img ${whatpart}/ 2>&1 ) >> $logs/main.log
+			( $tools/make_ext4fs${cyg} -T 0 -S $prfiles/file_contexts -l $syssize -a $whatpart$sparseimg ${whatpart}_new.img ${whatpart}/ 2>&1 ) >> $logs/main.log
 		elif [[ $whatpart = "vendor" ]]; then
-			( $tools/make_ext4fs${cyg} -T 0 -S $prfiles/file_contexts -l $vensize -a $whatpart ${whatpart}_new.img ${whatpart}/ 2>&1 ) >> $logs/main.log
+			( $tools/make_ext4fs${cyg} -T 0 -S $prfiles/file_contexts -l $vensize -a $whatpart$sparseimg ${whatpart}_new.img ${whatpart}/ 2>&1 ) >> $logs/main.log
 		elif [[ $whatpart = "data" ]]; then
-			( $tools/make_ext4fs${cyg} -T 0 -S $prfiles/file_contexts -l $datsize -a $whatpart ${whatpart}_new.img ${whatpart}/ 2>&1 ) >> $logs/main.log
+			( $tools/make_ext4fs${cyg} -T 0 -S $prfiles/file_contexts -l $datsize -a $whatpart$sparseimg ${whatpart}_new.img ${whatpart}/ 2>&1 ) >> $logs/main.log
 		fi
 	else
 		echo "$bluet$t_img_create_raw$normal"
 		if [[ $whatpart = "system" ]]; then
-			( $tools/make_ext4fs${cyg} -T 0 -l $syssize -a $whatpart ${whatpart}_new.img ${whatpart}/ 2>&1 ) >> $logs/main.log
+			( $tools/make_ext4fs${cyg} -T 0 -l $syssize -a $whatpart$sparseimg ${whatpart}_new.img ${whatpart}/ 2>&1 ) >> $logs/main.log
 		elif [[ $whatpart = "vendor" ]]; then
-			( $tools/make_ext4fs${cyg} -T 0 -l $vensize -a $whatpart ${whatpart}_new.img ${whatpart}/ 2>&1 ) >> $logs/main.log
+			( $tools/make_ext4fs${cyg} -T 0 -l $vensize -a $whatpart$sparseimg ${whatpart}_new.img ${whatpart}/ 2>&1 ) >> $logs/main.log
 		elif [[ $whatpart = "data" ]]; then
-			( $tools/make_ext4fs${cyg} -T 0 -l $datsize -a $whatpart ${whatpart}_new.img ${whatpart}/ 2>&1 ) >> $logs/main.log
+			( $tools/make_ext4fs${cyg} -T 0 -l $datsize -a $whatpart$sparseimg ${whatpart}_new.img ${whatpart}/ 2>&1 ) >> $logs/main.log
 		fi
 	fi
 	if [[ -d vendor ]]; then
@@ -7281,11 +7253,6 @@ update_project() {
 		cat $tools/updater/custom/abort >> assert
 		sed -i "s/#DEVICENAME/$devicename/g" assert
 		sed -i "s/#DEVICECHK/$devicechk/g" assert
-		if [[ -f assertcustom ]]; then
-			grep "ro.product.device" assert > assert-2
-			mv assert-2 assert
-			cat assertcustom >> assert
-		fi
 	fi
 	if [[ $(grep "getprop(" $usdir/updater-script) = "" ]]; then
 		sed -i '/#ASSERT/ r assert' $usdir/updater-script

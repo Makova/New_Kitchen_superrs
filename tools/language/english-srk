@@ -489,9 +489,10 @@ export t_img_add="Adding"
 export t_img_flash_fail="The flashable will not work because there\nis no partition info for"
 export t_img_create_dat="Creating sparse dat image for"
 export t_img_create_symlinks="Creating symlinks for"
-export t_img_create_raw="Creating raw"
+export t_img_create_raw="Creating"
 export t_img_fail="${redt}Something went wrong building the image.\n\n${bluet}Make sure your partition size is correct and\nthat the directory is not too big to fit.$normal"
 export t_img_flash_fail2="The flashable will not work because there is no\npartition info. Please create a device directory or enter the\ninfo manually after the zip is created"
+export t_img_sparse_q="What type of system.img should we create?"
 
 # Language
 export t_title_cho_lang="Choose language:"
