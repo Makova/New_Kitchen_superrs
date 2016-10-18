@@ -111,7 +111,7 @@ export t_bloat_dir_emply="/tools/root/bloat_custom is EMPTY"
 
 # Root
 export t_title_cho_root_zip="Choose Root Zip:"
-export t_title_root_method="Which root method would you like?"
+export t_menu_root_method="Which root method would you like?"
 export t_menu_supersucho="Let SuperSU decide"
 export t_menu_system_install="System install (SYSTEMLESS=false)"
 export t_menu_inject="Inject sepolicy changes and system install"
