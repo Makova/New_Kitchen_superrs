@@ -1207,9 +1207,9 @@ build_custom_zip() {
 				echo "$bluet$signature2.zip $t_general_build $romname ...$normal"
 				cd $usdir
 				if [[ -d $romdir/system/lib64 ]]; then
-					grep -v "\"/system/app\"\|\"/system/framework\"\|\"/system/media\"\|\"/system/priv-app\"\|\"/system/lib64\"" updater-script > updater-script2
+					grep -v "\"/system/app\"\|\"/system/framework\"\|\"/system/media\"\|\"/system/priv-app\"" updater-script > updater-script2
 				else
-					grep -v "\"/system/media\"\|\"/system/lib64\"" updater-script > updater-script2
+					grep -v "\"/system/app\"\|\"/system/framework\"\|\"/system/media\"\|\"/system/priv-app\"\|\"/system/lib64\"" updater-script > updater-script2
 				fi
 				mv updater-script2 updater-script
 				cd $romdir
