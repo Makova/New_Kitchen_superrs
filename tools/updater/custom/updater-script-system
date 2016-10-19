@@ -23,6 +23,7 @@ ui_print(" ");
 set_perm_recursive(0, 0, 0755, 0644, "/system/app");
 set_perm_recursive(0, 0, 0755, 0644, "/system/framework");
 set_perm_recursive(0, 0, 0755, 0644, "/system/lib");
+set_perm_recursive(0, 0, 0755, 0644, "/system/lib64");
 set_perm_recursive(0, 0, 0755, 0644, "/system/media");
 set_perm_recursive(0, 0, 0755, 0644, "/system/priv-app");
 set_progress(0.900000);

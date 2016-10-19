@@ -761,7 +761,7 @@ boot_tools() {
 			if [[ -f $signature2.zip ]]; then
 				mv $signature2.zip ${signature2}_$timestamp.zip
 			fi
-			$p7z a -mx7 $signature2.zip recovery.img META-INF 2>/dev/null >> $logs/zip.log
+			$p7z a -tzip -mx5 $signature2.zip recovery.img META-INF 2>/dev/null >> $logs/zip.log
 		elif [[ $chosenimg = "boot" ]]; then
 			echo "$bluet$signature2.zip $t_general_build $romname ...$normal"
 			cd $romdir
@@ -769,9 +769,9 @@ boot_tools() {
 				mv $signature2.zip ${signature2}_$timestamp.zip
 			fi
 			if [[ -d $romdir/system/etc/init.d ]]; then
-				$p7z a -mx7 $signature2.zip boot.img system/etc/init.d META-INF 2>/dev/null >> $logs/zip.log
+				$p7z a -tzip -mx5 $signature2.zip boot.img system/etc/init.d META-INF 2>/dev/null >> $logs/zip.log
 			else
-				$p7z a -mx7 $signature2.zip boot.img META-INF 2>/dev/null >> $logs/zip.log
+				$p7z a -tzip -mx5 $signature2.zip boot.img META-INF 2>/dev/null >> $logs/zip.log
 			fi
 		else
 			rm -rf $romdir/META-INF
@@ -1078,13 +1078,13 @@ build_custom_zip() {
 				signature2=$(echo "$signature-afp")
 				echo "$bluet$signature2.zip $t_general_build $romname ...$normal"
 				cd $usdir
-				grep -v "\"/system/lib\"\|\"/system/media\"" updater-script > updater-script2
+				grep -v "\"/system/lib\"\|\"/system/lib64\"\|\"/system/media\"" updater-script > updater-script2
 				mv updater-script2 updater-script
 				cd $romdir
 				if [[ -f $signature2.zip ]]; then
 					mv $signature2.zip ${signature2}_$timestamp.zip
 				fi
-				$p7z a -mx7 $signature2.zip system/app system/framework system/priv-app META-INF 2>/dev/null >> $logs/zip.log
+				$p7z a -tzip -mx5 $signature2.zip system/app system/framework system/priv-app META-INF 2>/dev/null >> $logs/zip.log
 				rm -rf $romdir/META-INF
 				if [[ -d $romdir/META-INF1 ]]; then
 					mv $romdir/META-INF1 $romdir/META-INF
@@ -1109,13 +1109,17 @@ build_custom_zip() {
 				signature2=$(echo "$signature-aflp")
 				echo "$bluet$signature2.zip $t_general_build $romname ...$normal"
 				cd $usdir
-				grep -v "\"/system/media\"" updater-script > updater-script2
+				if [[ -d $romdir/system/lib64 ]]; then
+					grep -v "\"/system/media\"" updater-script > updater-script2
+				else
+					grep -v "\"/system/media\"\|\"/system/lib64\"" updater-script > updater-script2
+				fi
 				mv updater-script2 updater-script
 				cd $romdir
 				if [[ -f $signature2.zip ]]; then
 					mv $signature2.zip ${signature2}_$timestamp.zip
 				fi
-				$p7z a -mx7 $signature2.zip system/app system/framework system/lib system/priv-app META-INF 2>/dev/null >> $logs/zip.log
+				$p7z a -tzip -mx5 $signature2.zip system/app system/framework system/lib system/lib64 system/priv-app META-INF 2>/dev/null >> $logs/zip.log
 				rm -rf $romdir/META-INF
 				if [[ -d $romdir/META-INF1 ]]; then
 					mv $romdir/META-INF1 $romdir/META-INF
@@ -1140,13 +1144,13 @@ build_custom_zip() {
 				signature2=$(echo "$signature-framework")
 				echo "$bluet$signature2.zip $t_general_build $romname ...$normal"
 				cd $usdir
-				grep -v "\"/system/app\"\|\"/system/lib\"\|\"/system/media\"\|\"/system/priv-app\"" updater-script > updater-script2
+				grep -v "\"/system/app\"\|\"/system/lib\"\|\"/system/lib64\"\|\"/system/media\"\|\"/system/priv-app\"" updater-script > updater-script2
 				mv updater-script2 updater-script
 				cd $romdir
 				if [[ -f $signature2.zip ]]; then
 					mv $signature2.zip ${signature2}_$timestamp.zip
 				fi
-				$p7z a -mx7 $signature2.zip system/framework META-INF 2>/dev/null >> $logs/zip.log
+				$p7z a -tzip -mx5 $signature2.zip system/framework META-INF 2>/dev/null >> $logs/zip.log
 				rm -rf $romdir/META-INF
 				if [[ -d $romdir/META-INF1 ]]; then
 					mv $romdir/META-INF1 $romdir/META-INF
@@ -1171,13 +1175,13 @@ build_custom_zip() {
 				signature2=$(echo "$signature-ap")
 				echo "$bluet$signature2.zip $t_general_build $romname ...$normal"
 				cd $usdir
-				grep -v "\"/system/framework\"\|\"/system/lib\"\|\"/system/media\"" updater-script > updater-script2
+				grep -v "\"/system/framework\"\|\"/system/lib\"\|\"/system/lib64\"\|\"/system/media\"" updater-script > updater-script2
 				mv updater-script2 updater-script
 				cd $romdir
 				if [[ -f $signature2.zip ]]; then
 					mv $signature2.zip ${signature2}_$timestamp.zip
 				fi
-				$p7z a -mx7 $signature2.zip system/app system/priv-app META-INF 2>/dev/null >> $logs/zip.log
+				$p7z a -tzip -mx5 $signature2.zip system/app system/priv-app META-INF 2>/dev/null >> $logs/zip.log
 				rm -rf $romdir/META-INF
 				if [[ -d $romdir/META-INF1 ]]; then
 					mv $romdir/META-INF1 $romdir/META-INF
@@ -1202,13 +1206,17 @@ build_custom_zip() {
 				signature2=$(echo "$signature-lib")
 				echo "$bluet$signature2.zip $t_general_build $romname ...$normal"
 				cd $usdir
-				grep -v "\"/system/app\"\|\"/system/framework\"\|\"/system/media\"\|\"/system/priv-app\"" updater-script > updater-script2
+				if [[ -d $romdir/system/lib64 ]]; then
+					grep -v "\"/system/app\"\|\"/system/framework\"\|\"/system/media\"\|\"/system/priv-app\"\|\"/system/lib64\"" updater-script > updater-script2
+				else
+					grep -v "\"/system/media\"\|\"/system/lib64\"" updater-script > updater-script2
+				fi
 				mv updater-script2 updater-script
 				cd $romdir
 				if [[ -f $signature2.zip ]]; then
 					mv $signature2.zip ${signature2}_$timestamp.zip
 				fi
-				$p7z a -mx7 $signature2.zip system/lib META-INF 2>/dev/null >> $logs/zip.log
+				$p7z a -tzip -mx5 $signature2.zip system/lib META-INF 2>/dev/null >> $logs/zip.log
 				rm -rf $romdir/META-INF
 				if [[ -d $romdir/META-INF1 ]]; then
 					mv $romdir/META-INF1 $romdir/META-INF
@@ -1233,13 +1241,13 @@ build_custom_zip() {
 				signature2=$(echo "$signature-media")
 				echo "$bluet$signature2.zip $t_general_build $romname ...$normal"
 				cd $usdir
-				grep -v "\"/system/app\"\|\"/system/framework\"\|\"/system/lib\"\|\"/system/priv-app\"" updater-script > updater-script2
+				grep -v "\"/system/app\"\|\"/system/framework\"\|\"/system/lib\"\|\"/system/lib64\"\|\"/system/priv-app\"" updater-script > updater-script2
 				mv updater-script2 updater-script
 				cd $romdir
 				if [[ -f $signature2.zip ]]; then
 					mv $signature2.zip ${signature2}_$timestamp.zip
 				fi
-				$p7z a -mx7 $signature2.zip system/media META-INF 2>/dev/null >> $logs/zip.log
+				$p7z a -tzip -mx5 $signature2.zip system/media META-INF 2>/dev/null >> $logs/zip.log
 				rm -rf $romdir/META-INF
 				if [[ -d $romdir/META-INF1 ]]; then
 					mv $romdir/META-INF1 $romdir/META-INF
@@ -1384,9 +1392,9 @@ build_rom_zip() {
 		echo "$yellowt$t_build_patient$normal"
 		echo ""
 		if [[ -f $prfiles/data-set_metadata ]]; then
-			$p7z a -mx7 $signature.zip install boot.img META-INF system.new.dat system.patch.dat system.transfer.list vendor.new.dat vendor.patch.dat vendor.transfer.list data supersu rootzip busybox $prfiles/file_contexts 2>/dev/null >> $logs/zip.log
+			$p7z a -tzip -mx5 $signature.zip install boot.img META-INF system.new.dat system.patch.dat system.transfer.list vendor.new.dat vendor.patch.dat vendor.transfer.list data supersu rootzip busybox $prfiles/file_contexts 2>/dev/null >> $logs/zip.log
 		else
-			$p7z a -mx7 $signature.zip install boot.img META-INF system.new.dat system.patch.dat system.transfer.list vendor.new.dat vendor.patch.dat vendor.transfer.list data.new.dat data.patch.dat data.transfer.list supersu rootzip busybox $prfiles/file_contexts 2>/dev/null >> $logs/zip.log
+			$p7z a -tzip -mx5 $signature.zip install boot.img META-INF system.new.dat system.patch.dat system.transfer.list vendor.new.dat vendor.patch.dat vendor.transfer.list data.new.dat data.patch.dat data.transfer.list supersu rootzip busybox $prfiles/file_contexts 2>/dev/null >> $logs/zip.log
 		fi
 		rm -rf vendor.new.dat vendor.transfer.list vendor.patch.dat data.new.dat data.patch.dat data.transfer.list system.new.dat system.transfer.list system.patch.dat
 	elif [[ $permtype = "raw_img" ]]; then
@@ -1439,15 +1447,15 @@ build_rom_zip() {
 		echo "$yellowt$t_build_patient$normal"
 		echo ""
 		if [[ -f $prfiles/data-set_metadata ]]; then
-			$p7z a -mx7 $signature.zip boot.img META-INF system_new.img vendor_new.img data supersu rootzip busybox  2>/dev/null >> $logs/zip.log
+			$p7z a -tzip -mx5 $signature.zip boot.img META-INF system_new.img vendor_new.img data supersu rootzip busybox  2>/dev/null >> $logs/zip.log
 		else
-			$p7z a -mx7 $signature.zip boot.img META-INF system_new.img vendor_new.img data_new.img supersu rootzip busybox 2>/dev/null >> $logs/zip.log
+			$p7z a -tzip -mx5 $signature.zip boot.img META-INF system_new.img vendor_new.img data_new.img supersu rootzip busybox 2>/dev/null >> $logs/zip.log
 		fi
 		rm -rf system_new.img vendor_new.img data_new.img
 	else
 		banner
 		echo "$bluet$signature.zip $t_general_build $romname ...$normal"
-		$p7z a -mx7 $signature.zip boot.img META-INF system vendor data supersu rootzip busybox 2>/dev/null >> $logs/zip.log
+		$p7z a -tzip -mx5 $signature.zip boot.img META-INF system vendor data supersu rootzip busybox 2>/dev/null >> $logs/zip.log
 	fi
 	banner
 	if [[ -f $signature.zip ]]; then
@@ -5724,7 +5732,7 @@ grab_devices() {
 		banner
 		echo "$bluet$t_zipdev_building$normal"
 		cd tempdevices
-		$p7z a -mx7 DEVICES-$timestamp.zip * 2>/dev/null >> $logs/zip.log
+		$p7z a -tzip -mx5 DEVICES-$timestamp.zip * 2>/dev/null >> $logs/zip.log
 		mv DEVICES-$timestamp.zip $base/
 		cd $base
 		rm -rf tempdevices
