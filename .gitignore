@@ -5,6 +5,8 @@
 /tools/root/bloat_custom
 /tools/root/root_zips/*
 !/tools/root/root_zips/SuperSU-v2.78-SR1.zip
+/tools/smali/current/oat2dex*
+!/tools/smali/current/oat2dex-a2dc9ce1.jar
 /tools/*srk-chosen
 /tools/language/*
 !/tools/language/english-srk
@@ -12,6 +14,7 @@
 /tools/depmet
 /tools/depbuild
 /tools/dependencies2
+/tools/heapsize
 /tools/updatecheck*
 /tools/boot/mtk-tools/mkbootimg
 /tools/mkbootimg

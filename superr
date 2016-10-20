@@ -2286,8 +2286,7 @@ deodex_start() {
 		grep -v "odex.app\|odex.priv-app\|odex.framework\|orig.applications" $prfiles/symlinks.orig > $prfiles/symlinks.orig2
 		mv $prfiles/symlinks.orig2 $prfiles/symlinks.orig
 	fi
-	totalmem=$(grep MemTotal /proc/meminfo | gawk '{ print $2 }')
-	heapsize=$(echo | gawk "{ print $totalmem/1024-500 }" | cut -d"." -f1)
+	get_heapsize
 	if [[ ! $(grep "deodex_type =" $prfiles/AR-config | cut -d'"' -f2) = "" ]]; then
 		$(grep "deodex_type =" $prfiles/AR-config | cut -d'"' -f2)
 		return 1
@@ -2331,7 +2330,24 @@ deodex_start() {
 			if [[ $choice = "1" ]]; then
 				oat2dex=$(find $tools/smali/old -name *oat2dex*)
 			elif [[ $choice = "2" ]]; then
-				oat2dex=$(find $tools/smali/current -name *oat2dex*)
+				oat2dex=""
+				counto2d=$(find $tools/smali/current -name oat2dex*.jar | wc -l)
+				if [[ $counto2d = "1" ]]; then
+				        oat2dex=$(find $tools/smali/current -name oat2dex*.jar)
+				elif [[ $counto2d -gt "1" ]]; then
+				        while [[ $oat2dex = "" ]]; do
+				                banner
+				                echo "$greenb$t_title_cho_oat2dex$normal"
+				                echo ""
+				                findo2d=$(find $tools/smali/current -name oat2dex*.jar | rev | cut -d"/" -f1 | rev)
+				                choosepr o2dcho in ${findo2d[@]}
+				                if [[ $REPLY = "q" ]]; then
+				                        exit
+				                else
+				                        oat2dex="$tools/smali/current/$o2dcho"
+				                fi
+				        done
+				fi
 			fi
 			deodex_m
 		# START M smali/baksmali
@@ -4397,6 +4413,7 @@ dozipalign() {
 	cd $romdir
 	echo ""
 	choice=""
+	banner
 	read -n 1 -p "$t_zipalign_frame_q" choice
 	echo ""
 	echo ""
@@ -5653,6 +5670,14 @@ get_devicename() {
 		fi
 	fi
 }
+get_heapsize() {
+	if [[ -f $tools/heapsize ]]; then
+		heapsize=$(cat $tools/heapsize)
+	else
+		totalmem=$(grep MemTotal /proc/meminfo | gawk '{ print $2 }')
+		heapsize=$(echo | gawk "{ print $totalmem/1024-500 }" | cut -d"." -f1)
+	fi
+}
 get_sig() {
 	if [[ ! -f $prfiles/signature ]]; then
 		banner
@@ -6231,8 +6256,13 @@ language_check() {
 	fi
 }
 misc_tools() {
+	if [[ ! -f $tools/heapsize ]]; then
+		heapstatus="$t_disabled"
+	else
+		heapstatus=$(cat $tools/heapsize)
+	fi
 	choice=""
-	while [[ ! ${choice} =~ ^[1-2]$ ]] && [[ ! $choice = "m" && ! $choice = "q" ]]; do
+	while [[ ! ${choice} =~ ^[1-3]$ ]] && [[ ! $choice = "m" && ! $choice = "q" ]]; do
 		banner
 		echo "$bluet$t_startup_project $greent$romname$normal"
 		if [[ -f $romdir/system/build.prop ]]; then
@@ -6245,6 +6275,7 @@ misc_tools() {
 		echo ""
 		echo "1) $t_menu_zip_devices"
 		echo "2) $t_menu_language"
+		echo "3) $t_menu_heapsize ($bluet$t_title_current$greent$heapstatus$normal)"
 		echo "${yellowt}m = $t_title_main"
 		echo "${magentat}q = $t_menu_quit$normal"
 		echo ""
@@ -6272,6 +6303,39 @@ misc_tools() {
 		echo ""
 		read -p "$t_enter_exit"
 		exit
+	# START Use custom heapsize for java apps
+	elif [[ $choice = "3" ]]; then
+		choice=""
+		while [[ ! $choice =~ ^[1-2]$ ]] && [[ ! $choice = "b" ]]; do
+			banner
+			echo "$yellowb$redt$t_heapsize_choose$normal"
+			echo ""
+			echo "1) $t_heapsize_custom ($bluet$t_title_current$greent$heapstatus$normal)"
+			echo "2) $t_heapsize_reset"
+			echo "${yellowt}b = $t_menu_back$normal"
+			echo ""
+			read -n 1 -p "$t_select" choice
+		done
+		if [[ $choice = "1" ]]; then
+			banner
+			echo "$t_heapsize_q"
+			read -p "" reply
+			if [[ $reply == ?(-)+([0-9]) ]]; then
+				echo "$reply" > $tools/heapsize
+			else
+				banner
+				echo "$redb$yellowt$bold$t_error$normal"
+				echo "$redt$t_heapsize_error$normal"
+				echo ""
+				read -p "$t_enter_misc_tools_menu"
+				misc_tools
+				return 1
+			fi
+		elif [[ $choice = "2" ]]; then
+			rm -rf $tools/heapsize
+		fi
+		misc_tools
+		return 1
 	fi
 }
 moveoldfiles() {
@@ -7004,8 +7068,7 @@ signzip() {
 		cd $romdir
 		zipbyte=$(wc -c $signzipname.zip | gawk '{ print $1 }')
 		zipmb=$(echo | gawk "{ print $zipbyte/1024/1024+1 }" | cut -d"." -f1)
-		totalmem=$(grep MemTotal /proc/meminfo | gawk '{ print $2 }')
-		heapsize=$(echo | gawk "{ print $totalmem/1024-500 }" | cut -d"." -f1)
+		get_heapsize
 		ramest=$(echo | gawk "{ print ${zipmb}*3.48+1 }" | cut -d"." -f1)
 		if [[ $ramest -gt $heapsize ]]; then
 			banner
