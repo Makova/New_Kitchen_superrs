@@ -11,6 +11,7 @@ dirname
 du
 echo
 find
+free
 gawk
 gcc
 grep

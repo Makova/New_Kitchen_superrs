@@ -5674,8 +5674,7 @@ get_heapsize() {
 	if [[ -f $tools/heapsize ]]; then
 		heapsize=$(cat $tools/heapsize)
 	else
-		totalmem=$(grep MemTotal /proc/meminfo | gawk '{ print $2 }')
-		heapsize=$(echo | gawk "{ print $totalmem/1024-500 }" | cut -d"." -f1)
+		heapsize=$(free -m | gawk '/^Mem:/{print $2-500}')
 	fi
 }
 get_sig() {
@@ -6256,10 +6255,11 @@ language_check() {
 	fi
 }
 misc_tools() {
+	get_heapsize
 	if [[ ! -f $tools/heapsize ]]; then
-		heapstatus="$t_disabled"
+		heapstatus="${heapsize}MB $t_heapsize_auto"
 	else
-		heapstatus=$(cat $tools/heapsize)
+		heapstatus="${heapsize}MB $t_menu_cust_dir"
 	fi
 	choice=""
 	while [[ ! ${choice} =~ ^[1-3]$ ]] && [[ ! $choice = "m" && ! $choice = "q" ]]; do
@@ -6318,9 +6318,21 @@ misc_tools() {
 		done
 		if [[ $choice = "1" ]]; then
 			banner
-			echo "$t_heapsize_q"
+			totalmem=$(free -m | gawk '/^Mem:/{print $2}')
+			echo -e "$t_heapsize_q $yellowt$totalmem$normal"
 			read -p "" reply
 			if [[ $reply == ?(-)+([0-9]) ]]; then
+				if [[ $reply -gt $totalmem ]]; then
+					banner
+					echo "$redb$yellowt$bold$t_error$normal"
+					echo -e "$redt$t_heapsize_error2$normal"
+					echo ""
+					echo "$yellowt$t_physical_ram$totalmem$normal"
+					echo ""
+					read -p "$t_enter_misc_tools_menu"
+					misc_tools
+					return 1
+				fi
 				echo "$reply" > $tools/heapsize
 			else
 				banner
@@ -7441,7 +7453,9 @@ if [[ $t_select = "" ]]; then
 				exit
 			else
 				lang="$langcho"
-				language_check
+				if [[ ! $lang = "english-srk" ]]; then
+					language_check
+				fi
 				source $tools/language/$lang
 				touch $tools/$lang-chosen
 			fi
