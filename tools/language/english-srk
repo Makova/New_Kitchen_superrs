@@ -216,7 +216,7 @@ export t_heapsize_choose="What would you like to do?"
 export t_heapsize_custom="Add/change heapsize for java"
 export t_heapsize_reset="Return to default heapsize detection"
 export t_heapsize_error="You must enter a number in MB (Ex. 1024)"
-export t_heapsize_error2="Heapsize must me equal to or less than the amount of\nphysical ram installed."
+export t_heapsize_error2="Heapsize must be equal to or less than the amount of\nphysical ram installed."
 export t_physical_ram="Physical ram: "
 export t_heapsize_auto="Default"
 

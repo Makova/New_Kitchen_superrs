@@ -2222,7 +2222,7 @@ deodex_start() {
 		banner
 		echo "$bluet$t_deodex_del_meta_inf$normal"
 		find system -name *.apk 2>/dev/null | grep -v "system\/framework\/" | while read line; do
-			$p7z d "$line" META-INF >> $logs/zip.log
+			$aapt remove "$line" META-INF/CERT.RSA META-INF/CERT.SF META-INF/MANIFEST.MF
 		done
 	}
 	rm -rf $logs/extraodex.txt
@@ -2547,7 +2547,7 @@ deodex_l() {
 				        classname=$(echo "$appclassdex" | cut -d"-" -f2)
 				        mv $line $appclassdir/$classname
 				done
-				$p7z u -tzip $deoappdir/$app/$app.apk $deoappdir/$app/$deoarch/classes*.dex 2>/dev/null >> $logs/zip.log
+				$aapt add -fk $deoappdir/$app/$app.apk $deoappdir/$app/$deoarch/classes*.dex >> $logs/zip.log
 				rm -rf $deoappdir/$app/$deoarch
 			else
 				echo ""
@@ -2560,14 +2560,14 @@ deodex_l() {
 	rm -rf $prfiles/deodex_*
 	touch $prfiles/deodex_l
 	rm -rf $logs/*.log
-	if [[ ! $(find $appdir $privdir $framedir -name *odex.* | grep ".gz\|.xz") = "" ]]; then
+	if [[ ! $(find $appdir $privdir $framedir -name *odex.* 2>/dev/null | grep ".gz\|.xz") = "" ]]; then
 		echo "$clears"
 		echo ""
 		echo "----------------------------------------------------"
 		echo "$t_deodex_extract_txt"
 		echo "----------------------------------------------------"
 		echo ""
-		find $appdir $privdir $framedir -name *odex.gz | while read line; do
+		find $appdir $privdir $framedir -name *odex.gz 2>/dev/null | while read line; do
 			gzdir=$(dirname $line)
 			gzfile=$(basename $line)
 			echo ""
@@ -2575,7 +2575,7 @@ deodex_l() {
 			echo ""
 			$p7z e -o$gzdir $line 2>/dev/null >> $logs/zip.log
 		done
-		find $appdir $privdir $framedir -name *odex.xz | while read line; do
+		find $appdir $privdir $framedir -name *odex.xz 2>/dev/null | while read line; do
 			xzdir=$(dirname $line)
 			xzfile=$(basename $line)
 			echo ""
@@ -2708,9 +2708,9 @@ deodex_l() {
 			        mv $line $frameclassdir/$classname
 			done
 			if [[ ! -f $framedir/$frame.apk ]]; then
-				$p7z u -tzip $framedir/$frame.jar $framedir/$deoarch/classes*.dex 2>/dev/null >> $logs/zip.log
+				$aapt add -fk $framedir/$frame.jar $framedir/$deoarch/classes*.dex >> $logs/zip.log
 			else
-				$p7z u -tzip $framedir/$frame.apk $framedir/$deoarch/classes*.dex 2>/dev/null >> $logs/zip.log
+				$aapt add -fk $framedir/$frame.apk $framedir/$deoarch/classes*.dex >> $logs/zip.log
 			fi
 			rm -rf $framedir/$deoarch/classes*.dex
 		else
@@ -2733,9 +2733,9 @@ deodex_l() {
 			        mv $line $frameclassdir/$classname
 			done
 			if [[ $(ls $framedir | grep $frame2.apk) = "" ]]; then
-				$p7z u -tzip $framedir/$frame2.jar $framedir/$deoarch2/dex/classes*.dex 2>/dev/null >> $logs/zip.log
+				$aapt add -fk $framedir/$frame2.jar $framedir/$deoarch2/dex/classes*.dex >> $logs/zip.log
 			else
-				$p7z u -tzip $framedir/$frame2.apk $framedir/$deoarch2/dex/classes*.dex 2>/dev/null >> $logs/zip.log
+				$aapt add -fk $framedir/$frame2.apk $framedir/$deoarch2/dex/classes*.dex >> $logs/zip.log
 			fi
 			rm -rf $framedir/$deoarch2/dex/classes*.dex
 		else
@@ -2848,7 +2848,7 @@ deodex_m() {
 					        classname=$(echo "$appclassdex" | cut -d"-" -f2)
 					        mv $line $appclassdir/$classname
 					done
-					$p7z u -tzip $deoappdir/$app/$app.apk $deoappdir/$app/$deoarch/classes*.dex 2>/dev/null >> $logs/zip.log
+					$aapt add -fk $deoappdir/$app/$app.apk $deoappdir/$app/$deoarch/classes*.dex >> $logs/zip.log
 					rm -rf $deoappdir/$app/oat
 				else
 					echo "${redt}${app} $t_deodex_fail$normal"
@@ -2865,14 +2865,14 @@ deodex_m() {
 	rm -rf $prfiles/deodex_* $logs/deodex_fail_list
 	touch $prfiles/deodex_m
 	rm -rf $logs/*.log
-	if [[ ! $(find $appdir $privdir $framedir -name *odex.* | grep ".gz\|.xz") = "" ]]; then
+	if [[ ! $(find $appdir $privdir $framedir -name *odex.* 2>/dev/null | grep ".gz\|.xz") = "" ]]; then
 		echo "$clears"
 		echo ""
 		echo "----------------------------------------------------"
 		echo "$t_deodex_extract_txt"
 		echo "----------------------------------------------------"
 		echo ""
-		find $appdir $privdir $framedir -name *odex.gz | while read line; do
+		find $appdir $privdir $framedir -name *odex.gz 2>/dev/null | while read line; do
 			gzdir=$(dirname $line)
 			gzfile=$(basename $line)
 			echo ""
@@ -2880,7 +2880,7 @@ deodex_m() {
 			echo ""
 			$p7z e -o$gzdir $line 2>/dev/null >> $logs/zip.log
 		done
-		find $appdir $privdir $framedir -name *odex.xz | while read line; do
+		find $appdir $privdir $framedir -name *odex.xz 2>/dev/null | while read line; do
 			xzdir=$(dirname $line)
 			xzfile=$(basename $line)
 			echo ""
@@ -3014,9 +3014,9 @@ deodex_m() {
 				        mv $line $frameclassdir/$classname
 				done
 				if [[ ! -f $framedir/$frame.apk ]]; then
-					$p7z u -tzip $framedir/$frame.jar $framedir/$deoarch/classes*.dex 2>/dev/null >> $logs/zip.log
+					$aapt add -fk $framedir/$frame.jar $framedir/$deoarch/classes*.dex >> $logs/zip.log
 				else
-					$p7z u -tzip $framedir/$frame.apk $framedir/$deoarch/classes*.dex 2>/dev/null >> $logs/zip.log
+					$aapt add -fk $framedir/$frame.apk $framedir/$deoarch/classes*.dex >> $logs/zip.log
 				fi
 				rm -rf $framedir/$deoarch/classes*.dex
 			else
@@ -3043,9 +3043,9 @@ deodex_m() {
 			        mv $line $frameclassdir/$classname
 			done
 			if [[ $(ls $framedir | grep $frame2.apk) = "" ]]; then
-				$p7z u -tzip $framedir/$frame2.jar $framedir/$deoarch2/dex/classes*.dex 2>/dev/null >> $logs/zip.log
+				$aapt add -fk $framedir/$frame2.jar $framedir/$deoarch2/dex/classes*.dex >> $logs/zip.log
 			else
-				$p7z u -tzip $framedir/$frame2.apk $framedir/$deoarch2/dex/classes*.dex 2>/dev/null >> $logs/zip.log
+				$aapt add -fk $framedir/$frame2.apk $framedir/$deoarch2/dex/classes*.dex >> $logs/zip.log
 			fi
 			rm -rf $framedir/$deoarch2/dex/classes*.dex
 		else
@@ -3175,7 +3175,7 @@ deodex_m2() {
 					java -Xmx${heapsize}m -jar $smali assemble $deoappdir/$app/$deoarch/smali -o $deoappdir/$app/$deoarch/$dexclass >> $logs/deodex.log
 					rm -rf $deoappdir/$app/$deoarch/smali
 				done
-				$p7z u -tzip $deoappdir/$app/$app.apk $deoappdir/$app/$deoarch/classes*.dex 2>/dev/null >> $logs/zip.log
+				$aapt add -fk $deoappdir/$app/$app.apk $deoappdir/$app/$deoarch/classes*.dex >> $logs/zip.log
 				rm -rf $deoappdir/$app/oat
 			else
 				echo ""
@@ -3348,11 +3348,15 @@ deodex_m2() {
 	echo "$bluet$t_deodex_pack_jar$normal"
 	ls $framedir | grep "jar:classes.dex" | sort | while read line; do
 		line2=$(echo "$line" | cut -d":" -f1)
-		ls $framedir | grep .dex$ | grep "$line2" | while read line3; do
+		ls $framedir | grep .dex$ | grep "^$line2" | while read line3; do
 			line4=$(echo "$line3" | cut -d":" -f2)
 			mv $framedir/$line3 $framedir/$line4
 		done
-		$p7z u -tzip $framedir/$line2 $framedir/classes*.dex 2>/dev/null >> $logs/zip.log
+		if [[ -f $framedir/classes.dex ]]; then
+			$aapt add -fk $framedir/$line2 $framedir/classes*.dex >> $logs/zip.log
+		else
+			echo "ERROR: $line2 has no classes.dex" >> $logs/deodex.log
+		fi
 		rm -rf $framedir/classes*.dex
 	done
 	echo "$clears"
@@ -3457,7 +3461,14 @@ deodex_m3() {
 				        classname=$(echo "$appclassdex" | cut -d":" -f2 | cut -d"_" -f1)
 				        mv $line $appclassdir/$classname
 				done
-				$p7z u -tzip $deoappdir/$app/$app.apk $deoappdir/$app/$deoarch/classes*.dex 2>/dev/null >> $logs/zip.log
+				if [[ -f $deoappdir/$app/$deoarch/classes.dex ]]; then
+					$aapt add -fk $deoappdir/$app/$app.apk $deoappdir/$app/$deoarch/classes*.dex >> $logs/zip.log
+				else
+					echo ""
+					echo "$redt$app $t_deodex_fail$normal"
+					echo ""
+					continue
+				fi
 				rm -rf $deoappdir/$app/oat
 			else
 				echo ""
@@ -3617,11 +3628,15 @@ deodex_m3() {
 	echo "$bluet$t_deodex_pack_jar$normal"
 	ls $framedir | grep "jar:classes.dex" | sort | while read line; do
 		line2=$(echo "$line" | cut -d":" -f1)
-		ls $framedir | grep .dex$ | grep "$line2" | while read line3; do
+		ls $framedir | grep .dex$ | grep "^$line2" | while read line3; do
 			line4=$(echo "$line3" | cut -d":" -f2)
 			mv $framedir/$line3 $framedir/$line4
 		done
-		$p7z u -tzip $framedir/$line2 $framedir/classes*.dex 2>/dev/null >> $logs/zip.log
+		if [[ -f $framedir/classes.dex ]]; then
+			$aapt add -fk $framedir/$line2 $framedir/classes*.dex >> $logs/zip.log
+		else
+			echo "ERROR: $line2 has no classes.dex" >> $logs/deodex.log
+		fi
 		rm -rf $framedir/classes*.dex
 	done
 	echo "$clears"
@@ -3727,7 +3742,7 @@ deodex_n() {
 				        classname=$(echo "$appclassdex" | cut -d":" -f2 | cut -d"_" -f1)
 				        mv $line $appclassdir/$classname
 				done
-				$p7z u -tzip $deoappdir/$app/$app.apk $deoappdir/$app/$deoarch/classes*.dex 2>/dev/null >> $logs/zip.log
+				$aapt add -fk $deoappdir/$app/$app.apk $deoappdir/$app/$deoarch/classes*.dex >> $logs/zip.log
 				rm -rf $deoappdir/$app/oat
 			else
 				echo ""
@@ -3887,11 +3902,15 @@ deodex_n() {
 	echo "$bluet$t_deodex_pack_jar$normal"
 	ls $framedir | grep "jar:classes.dex" | sort | while read line; do
 		line2=$(echo "$line" | cut -d":" -f1)
-		ls $framedir | grep .dex$ | grep "$line2" | while read line3; do
+		ls $framedir | grep .dex$ | grep "^$line2" | while read line3; do
 			line4=$(echo "$line3" | cut -d":" -f2)
 			mv $framedir/$line3 $framedir/$line4
 		done
-		$p7z u -tzip $framedir/$line2 $framedir/classes*.dex 2>/dev/null >> $logs/zip.log
+		if [[ -f $framedir/classes.dex ]]; then
+			$aapt add -fk $framedir/$line2 $framedir/classes*.dex >> $logs/zip.log
+		else
+			echo "ERROR: $line2 has no classes.dex" >> $logs/deodex.log
+		fi
 		rm -rf $framedir/classes*.dex
 	done
 	echo "$clears"
@@ -3996,7 +4015,7 @@ deodex_n2() {
 					java -Xmx${heapsize}m -jar $smali assemble $deoappdir/$app/$deoarch/smali -o $deoappdir/$app/$deoarch/$dexclass >> $logs/deodex.log
 					rm -rf $deoappdir/$app/$deoarch/smali
 				done
-				$p7z u -tzip $deoappdir/$app/$app.apk $deoappdir/$app/$deoarch/classes*.dex 2>/dev/null >> $logs/zip.log
+				$aapt add -fk $deoappdir/$app/$app.apk $deoappdir/$app/$deoarch/classes*.dex >> $logs/zip.log
 				rm -rf $deoappdir/$app/oat
 			else
 				echo ""
@@ -4172,11 +4191,15 @@ deodex_n2() {
 	echo "$bluet$t_deodex_pack_jar$normal"
 	ls $framedir | grep "jar:classes.dex" | sort | while read line; do
 		line2=$(echo "$line" | cut -d":" -f1)
-		ls $framedir | grep .dex$ | grep "$line2" | while read line3; do
+		ls $framedir | grep .dex$ | grep "^$line2" | while read line3; do
 			line4=$(echo "$line3" | cut -d":" -f2)
 			mv $framedir/$line3 $framedir/$line4
 		done
-		$p7z u -tzip $framedir/$line2 $framedir/classes*.dex 2>/dev/null >> $logs/zip.log
+		if [[ -f $framedir/classes.dex ]]; then
+			$aapt add -fk $framedir/$line2 $framedir/classes*.dex >> $logs/zip.log
+		else
+			echo "ERROR: $line2 has no classes.dex" >> $logs/deodex.log
+		fi
 		rm -rf $framedir/classes*.dex
 	done
 	echo "$clears"
@@ -4229,7 +4252,7 @@ deodex_old() {
 				echo ""
 				java -Xmx${heapsize}m -jar $baksmalio -a $api -d $framedir -x $deoappdir/$app.odex -o $deoappdir/smali  >> $logs/deodex.log
 				java -Xmx${heapsize}m -jar $smalio -a $api $deoappdir/smali -o $deoappdir/classes.dex >> $logs/deodex.log
-				$p7z u -tzip $deoappdir/$app.$deoext $deoappdir/classes.dex 2>/dev/null >> $logs/zip.log
+				$aapt add -fk $deoappdir/$app.$deoext $deoappdir/classes.dex 2>/dev/null >> $logs/zip.log
 				rm -rf $deoappdir/$app.odex
 				rm -rf $deoappdir/smali
 				rm -rf $deoappdir/classes.dex
@@ -7465,6 +7488,7 @@ if [[ $t_select = "" ]]; then
 	fi
 fi
 superrv=$(grep "SuperR's Kitchen v" README.md | gawk '{ print $4 }' | sed 's/*//g')
+aapt="$tools/aapt"
 if [[ ! $firstrun = "1" ]]; then
 	export firstrun="1"
 	chkstat &
