@@ -1050,11 +1050,12 @@ build_custom_zip() {
 			if [[ -d $romdir/system/app || -d $romdir/system/priv-app ]]; then
 				if [[ "$odexstatus" = "Deodexed" ]]; then
 					banner
-					read -n 1 -p "$t_zipalign_q"
+					read -n 1 -p "$t_zipalign_q" reply
 					echo ""
 					echo ""
-					if [[ $REPLY = "y" ]]; then
+					if [[ $reply = "y" ]]; then
 						dozipalign
+						cd $usdir
 					fi
 				fi
 			else
@@ -1305,10 +1306,10 @@ build_rom_zip() {
 	fi
 	if [[ "$odexstatus" = "Deodexed" ]]; then
 		banner
-		read -n 1 -p "$t_zipalign_q"
+		read -n 1 -p "$t_zipalign_q" reply
 		echo ""
 		echo ""
-		if [[ $REPLY = "y" ]]; then
+		if [[ $reply = "y" ]]; then
 			dozipalign
 		fi
 	fi
@@ -2225,6 +2226,40 @@ deodex_start() {
 			$aapt remove "$line" META-INF/CERT.RSA META-INF/CERT.SF META-INF/MANIFEST.MF
 		done
 	}
+	choose_oat2dex() {
+		choice=""
+		while [[ ! ${choice} =~ ^[1-2]$ ]]; do
+			banner
+			echo "$t_deodex_oat2dex_ver"
+			echo ""
+			echo "1) $t_deodex_oat2dex_official"
+			echo "2) $t_deodex_oat2dex_latest"
+			echo ""
+			read -n 1 -p "$t_select" choice
+		done
+		if [[ $choice = "1" ]]; then
+			oat2dex=$(find $tools/smali/old -name *oat2dex*)
+		elif [[ $choice = "2" ]]; then
+			oat2dex=""
+			counto2d=$(find $tools/smali/current -name oat2dex*.jar | wc -l)
+			if [[ $counto2d = "1" ]]; then
+				oat2dex=$(find $tools/smali/current -name oat2dex*.jar)
+			elif [[ $counto2d -gt "1" ]]; then
+				while [[ $oat2dex = "" ]]; do
+					banner
+					echo "$greenb$t_title_cho_oat2dex$normal"
+					echo ""
+					findo2d=$(find $tools/smali/current -name oat2dex*.jar | rev | cut -d"/" -f1 | rev)
+					choosepr o2dcho in ${findo2d[@]}
+					if [[ $REPLY = "q" ]]; then
+						exit
+					else
+						oat2dex="$tools/smali/current/$o2dcho"
+					fi
+				done
+			fi
+		fi
+	}
 	rm -rf $logs/extraodex.txt
 	if [[ ! -d "$framedir" || ! -f $romdir/system/build.prop ]]; then
 		banner
@@ -2296,7 +2331,7 @@ deodex_start() {
 		deodex_old
 		return 1
 	elif [[ $api -eq 21 || $api -eq 22 ]]; then
-		oat2dex=$(find $tools/smali/old -name *oat2dex*)
+		choose_oat2dex
 		deodex_l
 		return 1
 	elif [[ $api -eq 23 && ! $androidversion = "N" ]]; then
@@ -2317,38 +2352,7 @@ deodex_start() {
 		done
 		# START M oat2dex
 		if [[ $choice = "1" ]]; then
-			choice=""
-			while [[ ! ${choice} =~ ^[1-2]$ ]]; do
-				banner
-				echo "$t_deodex_oat2dex_ver"
-				echo ""
-				echo "1) $t_deodex_oat2dex_official"
-				echo "2) $t_deodex_oat2dex_latest"
-				echo ""
-				read -n 1 -p "$t_select" choice
-			done
-			if [[ $choice = "1" ]]; then
-				oat2dex=$(find $tools/smali/old -name *oat2dex*)
-			elif [[ $choice = "2" ]]; then
-				oat2dex=""
-				counto2d=$(find $tools/smali/current -name oat2dex*.jar | wc -l)
-				if [[ $counto2d = "1" ]]; then
-				        oat2dex=$(find $tools/smali/current -name oat2dex*.jar)
-				elif [[ $counto2d -gt "1" ]]; then
-				        while [[ $oat2dex = "" ]]; do
-				                banner
-				                echo "$greenb$t_title_cho_oat2dex$normal"
-				                echo ""
-				                findo2d=$(find $tools/smali/current -name oat2dex*.jar | rev | cut -d"/" -f1 | rev)
-				                choosepr o2dcho in ${findo2d[@]}
-				                if [[ $REPLY = "q" ]]; then
-				                        exit
-				                else
-				                        oat2dex="$tools/smali/current/$o2dcho"
-				                fi
-				        done
-				fi
-			fi
+			choose_oat2dex
 			deodex_m
 		# START M smali/baksmali
 		elif [[ $choice = "2" ]]; then
@@ -2540,6 +2544,10 @@ deodex_l() {
 				echo "$t_deodex_deodexing $app"
 				echo ""
 				java -Xmx${heapsize}m -jar $oat2dex $deoappdir/$app/$deoarch/$app.odex $framedir/$deoarch2/odex >> $logs/deodex.log
+				if [[ ! -f $deoappdir/$app/$deoarch/$app.dex ]]; then
+					rm -rf $deoappdir/$app/$deoarch/$app-classes*.dex
+					continue
+				fi
 				mv $deoappdir/$app/$deoarch/$app.dex $deoappdir/$app/$deoarch/classes.dex
 				find $deoappdir/$app/$deoarch -name $app-classes*.dex | while read line; do
 				        appclassdex=$(basename $line)
@@ -2693,60 +2701,42 @@ deodex_l() {
 	echo "$t_deodex_start_frame"
 	echo "----------------------------------------------------"
 	echo ""
-	frame=""
-	for frame in $(ls $framedir/$deoarch | grep .odex | rev | cut -c 6- | rev); do
-		if [[ $(echo $frame | grep classes) = "" && $($p7z l $framedir/$frame.jar | grep classes.dex) = "" ]]; then
+	if [[ -d $framedir/$deoarch ]]; then
+		for frame in $(ls $framedir/$deoarch | grep .odex$ | sort); do
 			echo ""
 			echo "$t_deodex_deodexing $frame"
 			echo ""
-			java -Xmx${heapsize}m -jar $oat2dex $framedir/$deoarch/$frame.odex $framedir/$deoarch2/odex >> $logs/deodex.log
-			mv $framedir/$deoarch/$frame.dex $framedir/$deoarch/classes.dex
-			find $framedir/$deoarch -name $frame2-classes*.dex | while read line; do
-			        frameclassdex=$(basename $line)
-			        frameclassdir=$(dirname $line)
-			        classname=$(echo "$frameclassdex" | cut -d"-" -f2)
-			        mv $line $frameclassdir/$classname
-			done
-			if [[ ! -f $framedir/$frame.apk ]]; then
-				$aapt add -fk $framedir/$frame.jar $framedir/$deoarch/classes*.dex >> $logs/zip.log
-			else
-				$aapt add -fk $framedir/$frame.apk $framedir/$deoarch/classes*.dex >> $logs/zip.log
-			fi
-			rm -rf $framedir/$deoarch/classes*.dex
+			errtest=$(echo "$frame" | rev | cut -d"." -f2- | rev)
+			java -Xmx${heapsize}m -jar $oat2dex $framedir/$deoarch/$frame $framedir/$deoarch2/odex >> $logs/deodex.log
+		done
+	fi
+	mv $framedir/$deoarch2/dex/* $framedir/$deoarch/
+	ls $framedir/$deoarch | grep "\.dex$" | while read line; do
+		if [[ $(echo "$line" | grep classes) = "" ]]; then
+			frame=$(echo "$(echo "$line" | sed 's/\.dex//').jar:classes.dex")
 		else
-			echo ""
-			echo "$greent$frame $t_deodex_app_already$normal"
-			echo ""
+			dexclass=$(echo "$line" | rev | cut -d"-" -f1 | rev)
+			frame=$(echo "$(echo "$line" | sed "s/-$dexclass//").jar:$dexclass")
 		fi
+		mv $framedir/$deoarch/$line $framedir/$frame
 	done
-	frame2=""
-	for frame2 in $(ls $framedir/$deoarch2/dex | grep .dex | rev | cut -c 5- | rev); do
-		if [[ $(echo $frame2 | grep classes) = "" && $($p7z l $framedir/$frame2.jar | grep classes.dex) = "" ]]; then
-			echo ""
-			echo "$t_deodex_deodexing $frame2"
-			echo ""
-			mv $framedir/$deoarch2/dex/$frame2.dex $framedir/$deoarch2/dex/classes.dex
-			find $framedir/$deoarch2/dex -name $frame2-classes*.dex | while read line; do
-			        frameclassdex=$(basename $line)
-			        frameclassdir=$(dirname $line)
-			        classname=$(echo "$frameclassdex" | cut -d"-" -f2)
-			        mv $line $frameclassdir/$classname
-			done
-			if [[ $(ls $framedir | grep $frame2.apk) = "" ]]; then
-				$aapt add -fk $framedir/$frame2.jar $framedir/$deoarch2/dex/classes*.dex >> $logs/zip.log
-			else
-				$aapt add -fk $framedir/$frame2.apk $framedir/$deoarch2/dex/classes*.dex >> $logs/zip.log
-			fi
-			rm -rf $framedir/$deoarch2/dex/classes*.dex
-		else
-			if [[ $frame2 != *"classes"* ]]; then
-				echo ""
-				echo "$greent$frame2 $t_deodex_app_already$normal"
-				echo ""
-				rm -rf $framedir/$deoarch2/dex/$frame2.dex
-			fi
-		fi
+	banner
+	echo "$bluet$t_deodex_pack_jar$normal"
+	ls $framedir | grep "jar:classes.dex" | sort | while read line; do
+		line2=$(echo "$line" | cut -d":" -f1)
+		ls $framedir | grep .dex$ | grep "^$line2" | while read line3; do
+			line4=$(echo "$line3" | cut -d":" -f2)
+			mv $framedir/$line3 $framedir/$line4
+		done
+		$aapt add -fk $framedir/$line2 $framedir/classes*.dex >> $logs/zip.log
+		rm -rf $framedir/classes*.dex
 	done
+	rm -rf $framedir/$arch/odex
+	rm -rf $framedir/$arch/dex
+	if [[ ! $arch2 = "" ]]; then
+		rm -rf $framedir/$arch2/odex
+		rm -rf $framedir/$arch2/dex
+	fi
 	echo "$clears"
 	echo ""
 	echo "----------------------------------------------------"
@@ -2757,6 +2747,14 @@ deodex_l() {
 	rm -rf $framedir/$arch
 	if [[ ! $arch2 = "" ]]; then
 		rm -rf $framedir/$arch2
+	fi
+	deodex_fail_list=$(grep "convertToDex: skip" $logs/deodex.log | cut -d"/" -f2- | sort -u)
+	if [[ ! $deodex_fail_list = "" ]]; then
+		banner
+		echo -e "$t_deodex_problems"
+		echo "$yellowt$deodex_fail_list$normal"
+		echo ""
+		read -p "$t_enter_continue"
 	fi
 	cd $romdir
 	stillodexed=$(find system vendor -name *.odex 2>/dev/null)
@@ -4397,9 +4395,8 @@ deodex_sqsh() {
 dozipalign() {
 	cd $romdir
 	echo ""
-	choice=""
 	banner
-	read -n 1 -p "$t_zipalign_frame_q" choice
+	read -n 1 -p "$t_zipalign_frame_q" reply
 	echo ""
 	echo ""
 	line=""
@@ -4409,7 +4406,7 @@ dozipalign() {
 		$zipalign -f 4 $line $line-2 >/dev/null 2>&1
 		mv $line-2 $line
 	done
-	if [[ $choice = "y" ]]; then
+	if [[ $reply = "y" ]]; then
 		line=""
 		find system/framework -type f | grep -v "00_project_files" | grep .apk | sed 's/^\.\///' | while read line; do
 			app=$(basename $line)
@@ -4709,7 +4706,7 @@ extract_new() {
 				echo "$bluet$t_extract_detect_part$normal"
 				echo ""
 				$adb "wait-for-device"
-				$adb pull /system/build.prop $romdir/build.prop
+				$adb pull /system/build.prop $romdir/build.prop >/dev/null
 				get_devicename
 				deviceloc="$base/tools/devices/$devicename"
 				rm -rf $romdir/build.prop
@@ -4726,38 +4723,6 @@ extract_new() {
 					echo "$byname1" | gawk '{ print $1 }' | rev | cut -d'/' -f2- | rev | sed 's:/:\\/:g' > $deviceloc/superr_byname
 				fi
 				byname=$(cat $deviceloc/superr_byname | sed 's:\\::g')
-				banner
-				echo "$bluet$t_extract_check_space$normal"
-				freedetect=""
-				if [[ ! $($adb shell su -C "df | grep /sdcard") = "" ]]; then
-					freespace=$($adb shell su -C "df | grep /sdcard" | gawk '{ print $4 }')
-				elif [[ ! $($adb shell su -C "df | grep /data") = "" ]]; then
-					freespace=$($adb shell su -C "df | grep /data" | gawk '{ print $4 }')
-				else
-					banner
-					echo "$redt$t_extract_space_error$normal"
-					echo ""
-					reply=""
-					read -n 1 -p "$t_general_continue_q" reply
-					if [[ ! $reply = "y" ]]; then
-						cd $base
-						exec ./superr
-						return 1
-					fi
-					freedetect="no"
-				fi
-				if [[ ! $freedetect = "no" ]]; then
-					reply=""
-					banner
-					echo "$bluet$t_extract_space_info $freespace$normal"
-					echo ""
-					read -n 1 -p "$t_general_continue_q" reply
-					if [[ ! $reply = "y" ]]; then
-						cd $base
-						exec ./superr
-						return 1
-					fi
-				fi
 				pullimg="system"
 				pullimga
 				pullimg="boot"
@@ -4767,7 +4732,7 @@ extract_new() {
 				if [[ -f $deviceloc/superr_mmc && ! $(grep "vendor" $deviceloc/superr_mmc) = "" ]]; then
 					pullimg="vendor"
 					pullimga
-				elif [[ ! $(grep "by-name" $deviceloc/superr_byname) = "" && ! $($adb shell ls -la $byname | grep vendor) = "" ]]; then
+				elif [[ -s $deviceloc/superr_byname && ! $($adb shell su -c "ls -la $byname" | grep vendor) = "" ]]; then
 					pullimg="vendor"
 					pullimga
 				fi
@@ -5304,10 +5269,10 @@ findimgsize() {
 					newname="$whatimg"
 				fi
 				$adb "wait-for-device"
-				imgblock=$($adb shell su -C "ls -al $byname2" | grep $newname | tr " " "\n" | grep mmcblk | cut -d"/" -f4)
+				imgblock=$($adb shell su -c "ls -al $byname2" | grep $newname | tr " " "\n" | grep mmcblk | cut -d"/" -f4)
 			fi
 			$adb "wait-for-device"
-			rawsize=$($adb shell su -C "cat /proc/partitions" | grep "$imgblock" | gawk '{ print $3 }')
+			rawsize=$($adb shell su -c "cat /proc/partitions" | grep "$imgblock" | gawk '{ print $3 }')
 			if [[ $rawsize = "" ]]; then
 				banner
 				echo "$redt$t_error_mess$normal"
@@ -6625,19 +6590,54 @@ part_setup() {
 	fi
 }
 pullimga() {
+	choice=""
+	while [[ ! $choice =~ ^[1-3]$ ]]; do
+		banner
+		echo -e "$t_pullimg_info"
+		echo ""
+		echo "1) /sdcard ($bluet$t_extract_free_space$greent$($adb shell su -c "df -h /sdcard 2>/dev/null" | grep "/" | gawk '{ print $4 }')$normal)"
+		echo "2) /storage/sdcard1 ($bluet$t_extract_free_space$greent$($adb shell su -c "df -h /storage/sdcard1 2>/dev/null" | grep "/" | gawk '{ print $4 }')$normal)"
+		echo "3) $t_extract_manual"
+		echo ""
+		read -n 1 -p "$t_select" choice
+	done
+	if [[ $choice = "1" ]]; then
+		pullpath="/sdcard"
+	elif [[ $choice = "2" ]]; then
+		pullpath="/storage/sdcard1"
+	elif [[ $choice = "3" ]]; then
+		banner
+		echo "$t_pullimg_q"
+		echo ""
+		echo "$greenb$t_example$normal"
+		echo "${yellowt}/storage/sdcard1$normal"
+		echo ""
+		read pullpath
+		echo "$pullpath" > $prfiles/pullimgpath
+	fi
+	if [[ $($adb shell su -c "df -h $pullpath 2>/dev/null" | grep "/" | gawk '{ print $4 }') = "" ]]; then
+		banner
+		echo -e "$redt$t_extract_space_error$normal"
+		echo ""
+		reply=""
+		read -n 1 -p "$t_general_cont_anyway_q" reply
+		if [[ ! $reply = "y" ]]; then
+			cd $base
+			exec ./superr
+			return 1
+		fi
+	fi
 	banner
 	echo "$bluet$t_general_extracting $pullimg ...$normal"
 	echo ""
 	if [[ -f $base/tools/devices/$devicename/superr_mmc ]]; then
 		partbyname=$(grep "$pullimg" $base/tools/devices/$devicename/superr_mmc | gawk '{ print $1 }' | sed 's/\\//g')
-		$adb shell su -C "dd if=$partbyname of=/sdcard/$pullimg.img"
 	else
-		$adb shell su -C "dd if=$byname/$pullimg of=/sdcard/$pullimg.img"
+		partbyname="$byname/$pullimg"
 	fi
-	echo ""
-	echo "$bluet$t_general_extracting $pullimg ...$normal"
-	$adb pull /sdcard/$pullimg.img $romdir/$pullimg.img > $logs/main.log
-	$adb shell rm /sdcard/$pullimg.img
+	$adb shell su -c "dd if=$partbyname of=$pullpath/$pullimg.img 2>/dev/null"
+	$adb pull $pullpath/$pullimg.img $romdir/$pullimg.img > $logs/main.log
+	$adb shell "rm $pullpath/$pullimg.img"
 	pullimg=""
 }
 pullimgr() {
@@ -7482,7 +7482,11 @@ else
 	bashwin=""
 	dependencies="dependencies"
 	usesudo2="sudo "
-	adb=$tools/adb
+	if [[ $(getconf LONG_BIT) = "64" ]]; then
+		adb=$tools/adb64
+	else
+		adb=$tools/adb
+	fi
 	zipalign=$tools/zipalign
 	p7z=$tools/7z
 fi

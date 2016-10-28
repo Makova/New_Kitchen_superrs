@@ -136,6 +136,8 @@ export t_general_cont_anyway_q="Would you like to continue anyway?  y/n  "
 export t_general_extracting="Extracting"
 export t_general_create="has been created in"
 export t_general_build="is building in"
+export t_pullimg_info="Choose device storage path to create img files for\nadb pull. Choose the path where you have the most\nspace on your device. Choose Enter manually to add\nyour own path if you don't see the one you want."
+export t_pullimg_q="Enter the device storage path below and press ENTER:"
 
 # Status
 export t_none="None"
@@ -362,7 +364,8 @@ export t_extract_cho_option="$yellowb${redt}Choose option to extract images$norm
 export t_extract_plug="** Plug in your device"
 export t_extract_detect_part="Detecting partition info ..."
 export t_extract_check_space="Checking for free space ..."
-export t_extract_space_error="The kitchen could not determine your free space."
+export t_extract_free_space="FREE SPACE: "
+export t_extract_space_error="The kitchen could not determine your free space.\nIt may be because the location does not exist."
 export t_extract_space_info="Available device free space for the images:"
 export t_extract_pull_error="Something went wrong. Most likely you lack permission to\npull images from your device, or you don't have enough\nspace on your device to store the images."
 export t_extract_prep="Preparing to extract ..."
