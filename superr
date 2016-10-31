@@ -1103,9 +1103,8 @@ build_custom_zip() {
 				build_zip
 				return 1
 			fi
-		fi
 		# START framework, app, priv-app, lib
-		if [[ $choice = "2" ]]; then
+		elif [[ $choice = "2" ]]; then
 			if [[ ! $isframe = "" && ! $isapp = "" && ! $isprivapp = "" && ! $islib = "" ]]; then
 				signature2=$(echo "$signature-aflp")
 				echo "$bluet$signature2.zip $t_general_build $romname ...$normal"
@@ -1138,9 +1137,8 @@ build_custom_zip() {
 				build_zip
 				return 1
 			fi
-		fi
 		# START framework
-		if [[ $choice = "3" ]]; then
+		elif [[ $choice = "3" ]]; then
 			if [[ ! $isframe = "" ]]; then
 				signature2=$(echo "$signature-framework")
 				echo "$bluet$signature2.zip $t_general_build $romname ...$normal"
@@ -1169,9 +1167,8 @@ build_custom_zip() {
 				build_zip
 				return 1
 			fi
-		fi
 		# START app, priv-app
-		if [[ $choice = "4" ]]; then
+		elif [[ $choice = "4" ]]; then
 			if [[ ! $isapp = "" || ! $isprivapp = "" ]]; then
 				signature2=$(echo "$signature-ap")
 				echo "$bluet$signature2.zip $t_general_build $romname ...$normal"
@@ -1200,9 +1197,8 @@ build_custom_zip() {
 				build_zip
 				return 1
 			fi
-		fi
 		# START lib
-		if [[ $choice = "5" ]]; then
+		elif [[ $choice = "5" ]]; then
 			if [[ ! $islib = "" ]]; then
 				signature2=$(echo "$signature-lib")
 				echo "$bluet$signature2.zip $t_general_build $romname ...$normal"
@@ -1235,9 +1231,8 @@ build_custom_zip() {
 				build_zip
 				return 1
 			fi
-		fi
 		# START media
-		if [[ $choice = "6" ]]; then
+		elif [[ $choice = "6" ]]; then
 			if [[ ! $ismedia = "" ]]; then
 				signature2=$(echo "$signature-media")
 				echo "$bluet$signature2.zip $t_general_build $romname ...$normal"
@@ -5476,16 +5471,17 @@ get_byname() {
 				cd $romdir/recoveryimg/ramdisk
 			fi
 			findfstab
-			if [[ ! $(${usesudo}grep "by-name/system" $fstab) = "" ]]; then
-				${usesudo}grep "by-name/system" $fstab | grep -v "#" | gawk '{ print $1 }' | sed 's/\/system//' > $deviceloc/superr_byname2
-			elif [[ ! $(${usesudo}grep "by-name/SYSTEM" $fstab) = "" ]]; then
-				${usesudo}grep "by-name/SYSTEM" $fstab | grep -v "#" | gawk '{ print $1 }' | sed 's/\/SYSTEM//' > $deviceloc/superr_byname2
+			bntest=$(${usesudo}grep -v "^#" $fstab | sed 's/\r$//')
+			if [[ ! $(echo "$bntest" | grep "by-name/system") = "" ]]; then
+				echo "$bntest" | grep "by-name/system" | gawk '{ print $1 }' | sed 's/\/system//' > $deviceloc/superr_byname2
+			elif [[ ! $(echo "$bntest" | grep "by-name/SYSTEM") = "" ]]; then
+				echo "$bntest" | grep "by-name/SYSTEM" | gawk '{ print $1 }' | sed 's/\/SYSTEM//' > $deviceloc/superr_byname2
 				touch $deviceloc/superr_capbyname
-			elif [[ ! $(${usesudo}grep "by-name/APP" $fstab) = "" ]]; then
-				${usesudo}grep "by-name/APP" $fstab | grep -v "#" | gawk '{ print $1 }' | sed 's/\/APP//' > $deviceloc/superr_byname2
+			elif [[ ! $(echo "$bntest" | grep "by-name/APP") = "" ]]; then
+				echo "$bntest" | grep "by-name/APP" | gawk '{ print $1 }' | sed 's/\/APP//' > $deviceloc/superr_byname2
 				touch $deviceloc/superr_appbyname
-			elif [[ ! $(${usesudo}grep "by-name/userdata" $fstab) = "" ]]; then
-				${usesudo}grep "by-name/userdata" $fstab | grep -v "#" | gawk '{ print $1 }' | sed 's/\/userdata//' > $deviceloc/superr_byname2
+			elif [[ ! $(echo "$bntest" | grep "by-name/userdata") = "" ]]; then
+				echo "$bntest" | grep "by-name/userdata" | gawk '{ print $1 }' | sed 's/\/userdata//' > $deviceloc/superr_byname2
 			fi
 			sed -i 's:/:\\/:g' $deviceloc/superr_byname2
 			mv $deviceloc/superr_byname2 $deviceloc/superr_byname
@@ -5550,23 +5546,21 @@ get_byname() {
 			fi
 			cd $romdir/recoveryimg/ramdisk/etc
 			findfstab
-			if [[ ! $(grep "/system" $fstab | gawk '{ print $1 }' | grep mmcb) = "" && ! $(grep "/system" $fstab | gawk '{ print $2 }' | grep system) = "" ]]; then
-				grep "/system" $fstab | gawk '{ print $1,$2 }' | sed 's/\//\\\//g' >> $deviceloc/superr_mmc
-				grep "/boot" $fstab | gawk '{ print $1,$2 }' | sed 's/\//\\\//g' >> $deviceloc/superr_mmc
-				grep "/data" $fstab | gawk '{ print $1,$2 }' | sed 's/\//\\\//g' >> $deviceloc/superr_mmc
-				grep "/cache" $fstab | gawk '{ print $1,$2 }' | sed 's/\//\\\//g' >> $deviceloc/superr_mmc
-				grep "/recovery" $fstab | gawk '{ print $1,$2 }' | sed 's/\//\\\//g' >> $deviceloc/superr_mmc
-				grep "/modem" $fstab | gawk '{ print $1,$2 }' | sed 's/\//\\\//g' >> $deviceloc/superr_mmc
-				grep "/vendor" $fstab | gawk '{ print $1,$2 }' | sed 's/\//\\\//g' >> $deviceloc/superr_mmc
-			elif [[ ! $(grep "/system" $fstab | gawk '{ print $3 }' | grep mmcb) = "" && ! $(grep "/system" $fstab | gawk '{ print $1 }' | grep system) = "" ]]; then
-				grep "/system" $fstab | gawk '{ print $3,$1 }' | sed 's/\//\\\//g' >> $deviceloc/superr_mmc
-				grep "/boot" $fstab | gawk '{ print $3,$1 }' | sed 's/\//\\\//g' >> $deviceloc/superr_mmc
-				grep "/data" $fstab | gawk '{ print $3,$1 }' | sed 's/\//\\\//g' >> $deviceloc/superr_mmc
-				grep "/cache" $fstab | gawk '{ print $3,$1 }' | sed 's/\//\\\//g' >> $deviceloc/superr_mmc
-				grep "/recovery" $fstab | gawk '{ print $3,$1 }' | sed 's/\//\\\//g' >> $deviceloc/superr_mmc
-				grep "/modem" $fstab | gawk '{ print $3,$1 }' | sed 's/\//\\\//g' >> $deviceloc/superr_mmc
-				grep "/vendor" $fstab | gawk '{ print $3,$1 }' | sed 's/\//\\\//g' >> $deviceloc/superr_mmc
-			else
+			mmctest=$(${usesudo}grep -v "^#" $fstab | sed 's/\r$//')
+			echo -e "system\nboot\ndata\ncache\nrecovery\nmodem\nvendor" | while read line; do
+				if [[ $(echo "$mmctest" | grep "$line") = "" ]]; then
+					continue
+				fi
+				if [[ ! $(echo "$mmctest" | grep "$line" | gawk '{ print $1 }' | grep mmcb) = "" && ! $(echo "$mmctest" | grep "$line" | gawk '{ print $2 }' | grep "$line") = "" ]]; then
+					mmc1=$(echo "$mmctest" | grep "$line" | gawk '{print $1}')
+					mmc2=$(echo "$mmctest" | grep "$line" | gawk '{print $2}')
+				elif [[ ! $(echo "$mmctest" | grep "$line" | gawk '{ print $3 }' | grep mmcb) = "" && ! $(echo "$mmctest" | grep "$line" | gawk '{ print $1 }' | grep "$line") = "" ]]; then
+					mmc1=$(echo "$mmctest" | grep "$line" | gawk '{print $3}')
+					mmc2=$(echo "$mmctest" | grep "$line" | gawk '{print $1}')
+				fi
+				echo "$mmc1 $mmc2" | sed 's:/:\\/:g' >> $deviceloc/superr_mmc
+			done
+			if [[ ! -s $deviceloc/superr_mmc ]]; then
 				banner
 				echo "$redb$yellowt$t_error$normal"
 				echo "$redt$t_byname_no_mmc$normal"
@@ -5578,6 +5572,7 @@ get_byname() {
 			rm -rf $romdir/recoveryimg
 			if [[ -s $deviceloc/superr_mmc ]]; then
 				echo "mmc" > $deviceloc/superr_byname
+				byname=$(cat $deviceloc/superr_byname)
 			else
 				rm -rf $deviceloc/superr_mmc
 				banner
