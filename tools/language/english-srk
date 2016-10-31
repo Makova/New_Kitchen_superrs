@@ -480,6 +480,7 @@ export t_update_launcher_nv="${bluet}NEW VERSION:"
 export t_update_launcher_finished="Installer/Launcher has been updated"
 export t_update_problem_download="There was a problem downloading the update."
 export t_update_no_internet="The Kitchen could not detect an internet connection."
+export t_update_fail="There was a problem updating. If you modified\nany kitchen files other than your project, you\ncan either revert the changes and try again\nor do a fresh clone of the kitchen."
 export t_update_q="Would you like to update now?  y/n  "
 export t_update_auto_q="Do you want to check for updates when the kitchen starts?  y/n  "
 

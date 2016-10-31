@@ -4638,8 +4638,9 @@ extract_new() {
 			# START My device is booted to custom recovery (stock will not work)
 			if [[ $choice = "1" ]]; then
 				banner
-				echo -e "$t_extract_plug"
-				read -n 1 -p "" reply
+				echo "$bluet$t_extract_plug$normal"
+				echo ""
+				read -n 1 -p "$t_general_continue_q" reply
 				if [[ ! $reply = "y" ]]; then
 					cd $base
 					exec ./superr
@@ -6053,8 +6054,8 @@ kitchen_update() {
 				banner
 				echo -e "$t_update_update_avail"
 				echo ""
-				echo "$t_update_update_cv $superrv"
-				echo "$t_update_update_nv $newv"
+				echo "$bluet$t_update_update_cv $redt$superrv"
+				echo "$bluet$t_update_update_nv $greent$newv$normal"
 				echo ""
 				echo "1) $t_update_update_now"
 				echo "2) $t_update_update_view"
@@ -6096,6 +6097,17 @@ kitchen_update() {
 					rm -rf $tools/simg2img
 					rm -rf $tools/make_ext4fs
 					git pull
+					superrv=$(grep "SuperR's Kitchen v" README.md | gawk '{ print $4 }' | sed 's/*//g')
+					currentv=$(echo "$superrv" | cut -d"-" -f1 | cut -d"_" -f1 | sed 's/v//; s/\.//g; s/^0//')
+					if [[ "$currentv" -lt "$upcheck" ]]; then
+						banner
+						echo "$redb$yellowt$bold$t_error$normal"
+						echo -e "$redt$t_update_fail$normal"
+						echo ""
+						read -p "$t_enter_main_menu"
+						exec ./superr
+						return 1
+					fi
 					if [[ ! $(ls $tools | grep "\-srk" | grep -v "english") = "" ]]; then
 						lang=$(ls $tools | grep "\-srk" | grep -v "english" | sed 's/-chosen//')
 						language_check
