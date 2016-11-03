@@ -1288,6 +1288,7 @@ build_rom_zip() {
 	timestamp=$(date +%m-%d-%Y-%H:%M:%S)
 	fullrom=""
 	fullrom1=""
+	exzipfiles="supersu rootzip busybox"
 	cd $romdir
 	isfullrom
 	if [[ ! $fullrom = "Yes" ]]; then
@@ -1388,9 +1389,9 @@ build_rom_zip() {
 		echo "$yellowt$t_build_patient$normal"
 		echo ""
 		if [[ -f $prfiles/data-set_metadata ]]; then
-			$p7z a -tzip -mx5 $signature.zip install boot.img META-INF system.new.dat system.patch.dat system.transfer.list vendor.new.dat vendor.patch.dat vendor.transfer.list data supersu rootzip busybox $prfiles/file_contexts 2>/dev/null >> $logs/zip.log
+			$p7z a -tzip -mx5 $signature.zip install boot.img META-INF system.new.dat system.patch.dat system.transfer.list vendor.new.dat vendor.patch.dat vendor.transfer.list data $exzipfiles $prfiles/file_contexts 2>/dev/null >> $logs/zip.log
 		else
-			$p7z a -tzip -mx5 $signature.zip install boot.img META-INF system.new.dat system.patch.dat system.transfer.list vendor.new.dat vendor.patch.dat vendor.transfer.list data.new.dat data.patch.dat data.transfer.list supersu rootzip busybox $prfiles/file_contexts 2>/dev/null >> $logs/zip.log
+			$p7z a -tzip -mx5 $signature.zip install boot.img META-INF system.new.dat system.patch.dat system.transfer.list vendor.new.dat vendor.patch.dat vendor.transfer.list data.new.dat data.patch.dat data.transfer.list $exzipfiles $prfiles/file_contexts 2>/dev/null >> $logs/zip.log
 		fi
 		rm -rf vendor.new.dat vendor.transfer.list vendor.patch.dat data.new.dat data.patch.dat data.transfer.list system.new.dat system.transfer.list system.patch.dat
 	elif [[ $permtype = "raw_img" ]]; then
@@ -1443,15 +1444,15 @@ build_rom_zip() {
 		echo "$yellowt$t_build_patient$normal"
 		echo ""
 		if [[ -f $prfiles/data-set_metadata ]]; then
-			$p7z a -tzip -mx5 $signature.zip boot.img META-INF system_new.img vendor_new.img data supersu rootzip busybox  2>/dev/null >> $logs/zip.log
+			$p7z a -tzip -mx5 $signature.zip boot.img META-INF system_new.img vendor_new.img data $exzipfiles  2>/dev/null >> $logs/zip.log
 		else
-			$p7z a -tzip -mx5 $signature.zip boot.img META-INF system_new.img vendor_new.img data_new.img supersu rootzip busybox 2>/dev/null >> $logs/zip.log
+			$p7z a -tzip -mx5 $signature.zip boot.img META-INF system_new.img vendor_new.img data_new.img $exzipfiles 2>/dev/null >> $logs/zip.log
 		fi
 		rm -rf system_new.img vendor_new.img data_new.img
 	else
 		banner
 		echo "$bluet$signature.zip $t_general_build $romname ...$normal"
-		$p7z a -tzip -mx5 $signature.zip boot.img META-INF system vendor data supersu rootzip busybox 2>/dev/null >> $logs/zip.log
+		$p7z a -tzip -mx5 $signature.zip boot.img META-INF system vendor data $exzipfiles 2>/dev/null >> $logs/zip.log
 	fi
 	banner
 	if [[ -f $signature.zip ]]; then
@@ -6308,42 +6309,23 @@ misc_tools() {
 	fi
 }
 moveoldfiles() {
-	if [[ -d $romdir/system || -d $romdir/META-INF || -d $romdir/supersu || -d $romdir/rootzip
-	 || -d $romdir/busybox || -d $romdir/data || -d $romdir/vendor ]]; then
+	mktmptime() {
 		echo $timestamp > $prfiles/temptime
 		temptime=$(cat $prfiles/temptime)
 		mkdir -p $prfiles/old_rom_files/$romname.$temptime
-	fi
-	if [[ -d $romdir/system ]]; then
-		mv $romdir/system $prfiles/old_rom_files/$romname.$temptime/
-	fi
-	if [[ -d $romdir/META-INF ]]; then
-		mv $romdir/META-INF $prfiles/old_rom_files/$romname.$temptime/
-	fi
-	if [[ -d $romdir/supersu ]]; then
-		mv $romdir/supersu $prfiles/old_rom_files/$romname.$temptime/
-	fi
-	if [[ -d $romdir/rootzip ]]; then
-		mv $romdir/rootzip $prfiles/old_rom_files/$romname.$temptime/
-	fi
-	if [[ -d $romdir/busybox ]]; then
-		mv $romdir/busybox $prfiles/old_rom_files/$romname.$temptime/
-	fi
-	if [[ -d $romdir/data ]]; then
-		mv $romdir/data $prfiles/old_rom_files/$romname.$temptime/
-	fi
-	if [[ -d $romdir/vendor ]]; then
-		mv $romdir/vendor $prfiles/old_rom_files/$romname.$temptime/
-	fi
-	if [[ -d $romdir/install ]]; then
-		mv $romdir/install $prfiles/old_rom_files/$romname.$temptime/
+	}
+	cd $romdir
+	movetest="system\|META-INF\|supersu\|rootzip\|busybox\|gapps\|xposed\|magisk\|mod\|data\|vendor\|bootimg\|recoveryimg"
+	if [[ ! $(ls -d  */ | sed 's/\/$//g' | grep "$movetest") = "" ]]; then
+		mktmptime
+		ls -d  */ | sed 's/\/$//g' | grep "$movetest" | while read line; do
+			mv $romdir/$line $prfiles/old_rom_files/$romname.$temptime/
+		done
 	fi
 	if [[ ! $romzip = "" && ! $($p7z l $romdir/$romzip | grep boot.img) = "" ]]; then
 		if [[ -f $romdir/boot.img ]]; then
 			if [[ ! -d $prfiles/old_rom_files/$romname.$temptime ]]; then
-				echo $timestamp > $prfiles/temptime
-				temptime=$(cat $prfiles/temptime)
-				mkdir -p $prfiles/old_rom_files/$romname.$temptime
+				mktmptime
 			fi
 			mv $romdir/boot.img $prfiles/old_rom_files/$romname.$temptime/
 		fi
