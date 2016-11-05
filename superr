@@ -7606,7 +7606,7 @@ if [[ $cyg = "" ]] && [[ ! -x $tools/mkbootimg || ! -x $tools/unpackbootimg || !
 	ln -s $tools/mkbootimg $tools/boot/mtk-tools/mkbootimg
 	cd $base
 fi
-if [[ ! $cyg = "" ]] && [[ ! -f $tools/mkbootimg.exe || ! -f $tools/unpackbootimg.exe || ! -f $tools/simg2img.exe || ! -f $tools/make_ext4fs.exe || ! -f $tools/rimg2sdat.exe || ! -f $tools/adb.exe || ! -f $tools/zipalign.exe ]]; then
+if [[ ! $cyg = "" ]] && [[ ! -f $tools/mkbootimg.exe || ! -f $tools/unpackbootimg.exe || ! -f $tools/simg2img.exe || ! -f $tools/make_ext4fs.exe || ! -f $tools/rimg2sdat.exe || ! -f $tools/adb.exe || ! -f $tools/zipalign.exe || ! -f $tools/Imgextractor.exe ]]; then
 	banner
 	echo "$redb$yellowt$bold$t_error$normal"
 	echo "$redt$t_startup_cygwin_bin"
