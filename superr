@@ -5177,16 +5177,18 @@ extract_new() {
 			permtype=""
 			cp -r $tools/updater/META-INF $romdir
 			cd $romdir
-			link1=$(find system vendor -type l -printf "%l\n" 2>/dev/null | sed 's/^/symlink(\"/; s/$/\", /')
-			link2=$(find system vendor -type l 2>/dev/null | sed 's/^/\"\//; s/$/\");/')
-			paste -d '' <(echo "$link1") <(echo "$link2") | sort > $prfiles/symlinks
-			cp $prfiles/symlinks $prfiles/symlinks.orig
-			rm -rf debloat_test debloat_test_custom
-			if [[ -d vendor ]]; then
-				find system vendor -type l -exec rm -f {} \;
-			else
-				find system -type l -exec rm -f {} \;
+			if [[ $cyg = "" ]]; then
+				link1=$(find system vendor -type l -printf "%l\n" 2>/dev/null | sed 's/^/symlink(\"/; s/$/\", /')
+				link2=$(find system vendor -type l 2>/dev/null | sed 's/^/\"\//; s/$/\");/')
+				paste -d '' <(echo "$link1") <(echo "$link2") | sort > $prfiles/symlinks
+				cp $prfiles/symlinks $prfiles/symlinks.orig
+				if [[ -d vendor ]]; then
+					find system vendor -type l -exec rm -f {} \;
+				else
+					find system -type l -exec rm -f {} \;
+				fi
 			fi
+			rm -rf debloat_test debloat_test_custom
 			update_project
 		else
 			banner
@@ -5752,16 +5754,28 @@ imgextract() {
 	fi
 	banner
 	echo "$bluet$t_extract_mount_e ${extractimg}.img ...$normal"
-	mkdir output
-	echo ""
-	${usesudo2}mount -t ext4 -o loop ${extractimg}.img output/
-	banner
-	echo "$bluet$t_extract_copy_e ${extractimg} ...$normal"
-	mkdir ${extractimg}
-	${usesudo2}cp -r output/* ${extractimg}/
-	${usesudo2}umount output/
+	if [[ ! $cyg = "" ]]; then
+		$imgextractor ${extractimg}.img ${extractimg} 2>&1 >/dev/null
+		cat ${extractimg}_statfile.txt | gawk '{print $1, $5}' | while read line; do
+		        if [[ ! $(echo $line | gawk '{print $2}') = "" ]]; then
+		                echo "$line" >> symtest
+		        fi
+		done
+		link1=$(gawk '{print $2}' symtest | sed 's/^/symlink(\"/; s/$/\", /')
+		link2=$(gawk '{print $1}' symtest | sed 's/^/\"\//; s/$/\");/')
+		paste -d '' <(echo "$link1") <(echo "$link2") | sort >> $prfiles/symlinks
+		rm -rf ${extractimg}_statfile.txt symtest
+	else
+		mkdir output
+		${usesudo2}mount -t ext4 -o loop ${extractimg}.img output/
+		banner
+		echo "$bluet$t_extract_copy_e ${extractimg} ...$normal"
+		mkdir ${extractimg}
+		${usesudo2}cp -r output/* ${extractimg}/
+		${usesudo2}umount output/
+		rm -rf $romdir/output
+	fi
 	${usesudo2}chown -hR $myuser:$myuser $romdir/${extractimg}
-	rm -rf $romdir/output
 	find $romdir/${extractimg} ! -perm -g+r | grep -v lost+found | sed 's/^\.\///' | while read line; do
 		chmod 400 $line
 	done
@@ -7454,6 +7468,7 @@ if [[ ! $(uname -s | grep "CYGWIN\|cygwin\|Cygwin") = "" ]]; then
 	usesudo2=""
 	adb=$tools/adb.exe
 	zipalign=$tools/zipalign.exe
+	imgextractor=$tools/Imgextractor.exe
 	p7z=7z
 elif [[ $(find /mnt/c -name Windows -maxdepth 1 2>/dev/null | grep -m 1 -o Windows) = "Windows" ]]; then
 	rm -rf $tools/dependencies2
