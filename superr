@@ -5825,6 +5825,7 @@ install_cygwin_binaries() {
 	rm -rf $tools/adb.exe
 	rm -rf $tools/zipalign.exe
 	rm -rf $tools/ring2sdat.exe
+	rm -rf $tools/Imgextractor.exe
 	rm -rf $tools/boot/mtk-tools/mkbootimg.exe
 	(wget $dlurl/cygwin_binaries.zip 2>&1) >/dev/null
 	$p7z x -y cygwin_binaries.zip 2>&1 >/dev/null
@@ -7613,7 +7614,7 @@ if [[ ! $cyg = "" ]] && [[ ! -f $tools/mkbootimg.exe || ! -f $tools/unpackbootim
 	echo "${yellowt}$tools$normal"
 	echo ""
 	echo "mkbootimg.exe, unpackbootimg.exe, simg2img.exe, make_ext4fs.exe,"
-	echo "rimg2sdat.exe, adb.exe, zipalign.exe"
+	echo "rimg2sdat.exe, adb.exe, zipalign.exe, Imgextractor.exe"
 	echo ""
 	install_cygwin_binaries
 fi
