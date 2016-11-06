@@ -5764,6 +5764,9 @@ imgextract() {
 		link1=$(gawk '{print $2}' symtest | sed 's/^/symlink(\"/; s/$/\", /')
 		link2=$(gawk '{print $1}' symtest | sed 's/^/\"\//; s/$/\");/')
 		paste -d '' <(echo "$link1") <(echo "$link2") | sort >> $prfiles/symlinks
+		gawk '{print $1}' symtest | while read line; do
+			rm -rf $line
+		done
 		rm -rf ${extractimg}_statfile.txt symtest
 	else
 		mkdir output
