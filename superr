@@ -5753,8 +5753,8 @@ imgextract() {
 		mv ${extractimg}.img-2 ${extractimg}.img
 	fi
 	banner
-	echo "$bluet$t_extract_mount_e ${extractimg}.img ...$normal"
 	if [[ ! $cyg = "" ]]; then
+		echo "$bluet$t_extract_copy_e ${extractimg} ...$normal"
 		$imgextractor ${extractimg}.img ${extractimg} 2>&1 >/dev/null
 		cat ${extractimg}_statfile.txt | gawk '{print $1, $5}' | while read line; do
 		        if [[ ! $(echo $line | gawk '{print $2}') = "" ]]; then
@@ -5763,12 +5763,13 @@ imgextract() {
 		done
 		link1=$(gawk '{print $2}' symtest | sed 's/^/symlink(\"/; s/$/\", /')
 		link2=$(gawk '{print $1}' symtest | sed 's/^/\"\//; s/$/\");/')
-		paste -d '' <(echo "$link1") <(echo "$link2") | sort >> $prfiles/symlinks
+		paste -d '' <(echo "$link1") <(echo "$link2") | sort > $prfiles/symlinks
 		gawk '{print $1}' symtest | while read line; do
-			rm -rf $line
+		        rm -rf $line
 		done
 		rm -rf ${extractimg}_statfile.txt symtest
 	else
+		echo "$bluet$t_extract_mount_e ${extractimg}.img ...$normal"
 		mkdir output
 		${usesudo2}mount -t ext4 -o loop ${extractimg}.img output/
 		banner
@@ -5777,11 +5778,11 @@ imgextract() {
 		${usesudo2}cp -r output/* ${extractimg}/
 		${usesudo2}umount output/
 		rm -rf $romdir/output
+		${usesudo2}chown -hR $myuser:$myuser $romdir/${extractimg}
+		find $romdir/${extractimg} ! -perm -g+r | grep -v lost+found | sed 's/^\.\///' | while read line; do
+			chmod 400 $line
+		done
 	fi
-	${usesudo2}chown -hR $myuser:$myuser $romdir/${extractimg}
-	find $romdir/${extractimg} ! -perm -g+r | grep -v lost+found | sed 's/^\.\///' | while read line; do
-		chmod 400 $line
-	done
 	extractimg=""
 }
 install_binaries() {
