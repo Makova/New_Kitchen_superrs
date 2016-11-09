@@ -2256,6 +2256,12 @@ deodex_start() {
 			fi
 		fi
 	}
+	if [[ ! $cyg = "" && ! -f $tools/aapt.exe ]]; then
+		banner
+		echo "$redb$yellowt$bold$t_error$normal"
+		echo "${redt}You need aapt.exe to deodex in cygwin.$normal"
+		exit_deo
+	fi
 	rm -rf $logs/extraodex.txt
 	if [[ ! -d "$framedir" || ! -f $romdir/system/build.prop ]]; then
 		banner
@@ -2511,7 +2517,7 @@ deodex_l() {
 	if [[ -f $framedir/$arch/boot.oat ]]; then
 		banner
 		echo "$bluet$t_startup_project $greent$romname"
-		echo "$bluet$t_startup_version$greent$androidversion"
+		echo "$bluet$t_startup_version $greent$androidversion"
 		echo "$bluet$t_deodex_api$greent$api"
 		echo "$bluet$t_deodex_arch$greent$arch$normal"
 		if [[ ! $arch2 = "" ]]; then
@@ -2798,7 +2804,7 @@ deodex_m() {
 	if [[ -f $framedir/$arch/boot.oat ]]; then
 		banner
 		echo "${bluet}$t_startup_project $greent$romname"
-		echo "$bluet$t_startup_version$greent$androidversion"
+		echo "$bluet$t_startup_version $greent$androidversion"
 		echo "$bluet$t_deodex_api$greent$api"
 		echo "$bluet$t_deodex_arch$greent$arch$normal"
 		if [[ ! $arch2 = "" ]]; then
@@ -3089,7 +3095,7 @@ deodex_m2() {
 	if [[ -f $framedir/$arch/boot.oat ]]; then
 		banner
 		echo "${bluet}$t_startup_project $greent$romname"
-		echo "$bluet$t_startup_version$greent$androidversion"
+		echo "$bluet$t_startup_version $greent$androidversion"
 		echo "$bluet$t_deodex_api$greent$api"
 		echo "$bluet$t_deodex_arch$greent$arch$normal"
 		if [[ ! $arch2 = "" ]]; then
@@ -3373,7 +3379,7 @@ deodex_m3() {
 	if [[ -f $framedir/$arch/boot.oat ]]; then
 		banner
 		echo "${bluet}$t_startup_project $greent$romname"
-		echo "$bluet$t_startup_version$greent$androidversion"
+		echo "$bluet$t_startup_version $greent$androidversion"
 		echo "$bluet$t_deodex_api$greent$api"
 		echo "$bluet$t_deodex_arch$greent$arch$normal"
 		if [[ ! $arch2 = "" ]]; then
@@ -3654,7 +3660,7 @@ deodex_n() {
 	if [[ -f $framedir/$arch/boot.oat ]]; then
 		banner
 		echo "${bluet}$t_startup_project $greent$romname"
-		echo "$bluet$t_startup_version$greent$androidversion"
+		echo "$bluet$t_startup_version $greent$androidversion"
 		echo "$bluet$t_deodex_api$greent$api"
 		echo "$bluet$t_deodex_arch$greent$arch$normal"
 		if [[ ! $arch2 = "" ]]; then
@@ -3929,7 +3935,7 @@ deodex_n2() {
 	if [[ -f $framedir/$arch/boot.oat ]]; then
 		banner
 		echo "${bluet}$t_startup_project $greent$romname"
-		echo "$bluet$t_startup_version$greent$androidversion"
+		echo "$bluet$t_startup_version $greent$androidversion"
 		echo "$bluet$t_deodex_api$greent$api"
 		echo "$bluet$t_deodex_arch$greent$arch$normal"
 		if [[ ! $arch2 = "" ]]; then
@@ -4188,7 +4194,7 @@ deodex_n2() {
 deodex_old() {
         banner
 	echo "${bluet}$t_startup_project $greent$romname"
-	echo "$bluet$t_startup_version$greent$androidversion"
+	echo "$bluet$t_startup_version $greent$androidversion"
 	echo "$bluet$t_deodex_api$greent$api$normal"
 	echo ""
 	read -n 1 -p "$t_deodex_continue_q"
@@ -5597,24 +5603,24 @@ get_devicename() {
 	devicename=""
 	if [[ -f $romdir/system/build.prop ]]; then
 		if [[ ! $(grep "ro.product.device=" $romdir/system/build.prop) = "" ]]; then
-			devicename=$(grep "ro.product.device=" $romdir/system/build.prop | cut -d"=" -f2)
+			devicename=$(grep -m 1 "ro.product.device=" $romdir/system/build.prop | cut -d"=" -f2)
 			devicechk="ro.product.device"
 		elif [[ ! $(grep "ro.build.product=" $romdir/system/build.prop) = "" ]]; then
-			devicename=$(grep "ro.build.product=" $romdir/system/build.prop | cut -d"=" -f2)
+			devicename=$(grep -m 1 "ro.build.product=" $romdir/system/build.prop | cut -d"=" -f2)
 			devicechk="ro.build.product"
 		elif [[ ! $(grep "ro.product.name=" $romdir/system/build.prop) = "" ]]; then
-			devicename=$(grep "ro.product.name=" $romdir/system/build.prop | cut -d"=" -f2)
+			devicename=$(grep -m 1 "ro.product.name=" $romdir/system/build.prop | cut -d"=" -f2)
 			devicechk="ro.product.name"
 		fi
 	elif [[ -f $romdir/build.prop ]]; then
 		if [[ ! $(grep "ro.product.device=" $romdir/build.prop) = "" ]]; then
-			devicename=$(grep "ro.product.device=" $romdir/build.prop | cut -d"=" -f2)
+			devicename=$(grep -m 1 "ro.product.device=" $romdir/build.prop | cut -d"=" -f2)
 			devicechk="ro.product.device"
 		elif [[ ! $(grep "ro.build.product=" $romdir/build.prop) = "" ]]; then
-			devicename=$(grep "ro.build.product=" $romdir/build.prop | cut -d"=" -f2)
+			devicename=$(grep -m 1 "ro.build.product=" $romdir/build.prop | cut -d"=" -f2)
 			devicechk="ro.build.product"
 		elif [[ ! $(grep "ro.product.name=" $romdir/build.prop) = "" ]]; then
-			devicename=$(grep "ro.product.name=" $romdir/build.prop | cut -d"=" -f2)
+			devicename=$(grep -m 1 "ro.product.name=" $romdir/build.prop | cut -d"=" -f2)
 			devicechk="ro.product.name"
 		fi
 	fi
@@ -7458,7 +7464,6 @@ if [[ $t_select = "" ]]; then
 	fi
 fi
 superrv=$(grep "SuperR's Kitchen v" README.md | gawk '{ print $4 }' | sed 's/*//g')
-aapt="$tools/aapt"
 if [[ ! $firstrun = "1" ]]; then
 	export firstrun="1"
 	chkstat &
@@ -7475,6 +7480,7 @@ if [[ ! $(uname -s | grep "CYGWIN\|cygwin\|Cygwin") = "" ]]; then
 	zipalign=$tools/zipalign.exe
 	imgextractor=$tools/Imgextractor.exe
 	p7z=7z
+	aapt=$tools/aapt.exe
 elif [[ $(find /mnt/c -name Windows -maxdepth 1 2>/dev/null | grep -m 1 -o Windows) = "Windows" ]]; then
 	rm -rf $tools/dependencies2
 	cp $tools/dependencies $tools/dependencies2
@@ -7486,6 +7492,7 @@ elif [[ $(find /mnt/c -name Windows -maxdepth 1 2>/dev/null | grep -m 1 -o Windo
 	adb=adb
 	zipalign=$tools/zipalign
 	p7z=7z
+	aapt="$tools/aapt"
 else
 	cyg=""
 	bashwin=""
@@ -7498,6 +7505,7 @@ else
 	fi
 	zipalign=$tools/zipalign
 	p7z=$tools/7z
+	aapt="$tools/aapt"
 fi
 if [[ $cyg = "" && $bashwin = "" ]]; then
 	if [[ ! $(which id) = "" ]]; then
