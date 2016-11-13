@@ -1634,10 +1634,12 @@ change_permtype() {
 		if [[ $permtype = "sparse_dat" ]]; then
 			echo "3) $t_perm_sparse ($bluet$t_current$normal)"
 		else
-			if [[ ! $api -ge "21" || ! $(getconf LONG_BIT) = "64" ]]; then
-				echo "${redt}3) $t_perm_sparse_red$normal"
-			else
+			if [[ $api -ge "21" && ! $cyg = "" ]]; then
 				echo "3) $t_perm_sparse"
+			elif [[ $api -ge "21" && $(getconf LONG_BIT) = "64" ]]; then
+				echo "3) $t_perm_sparse"
+			else
+				echo "${redt}3) $t_perm_sparse_red$normal"
 			fi
 		fi
 		if [[ $permtype = "raw_img" ]]; then
@@ -1759,7 +1761,9 @@ change_permtype() {
 		echo "$permtype" > $prfiles/permtype
 	# Sparse dat chosen
 	elif [[ $choice = "3" ]]; then
-		if [[ ! $api -ge "21" || ! $(getconf LONG_BIT) = "64" ]]; then
+		if [[ $api -ge "21" && ! $cyg = "" ]]; then
+			echo
+		elif [[ ! $api -ge "21" || ! $(getconf LONG_BIT) = "64" ]]; then
 			banner
 			echo "$redb$yellowt$bold$t_error$normal"
 			echo "$redt$t_perm_sparse_error$normal"
@@ -2256,12 +2260,6 @@ deodex_start() {
 			fi
 		fi
 	}
-	if [[ ! $cyg = "" && ! -f $tools/aapt.exe ]]; then
-		banner
-		echo "$redb$yellowt$bold$t_error$normal"
-		echo "${redt}You need aapt.exe to deodex in cygwin.$normal"
-		exit_deo
-	fi
 	rm -rf $logs/extraodex.txt
 	if [[ ! -d "$framedir" || ! -f $romdir/system/build.prop ]]; then
 		banner
@@ -5828,15 +5826,10 @@ install_cygwin_binaries() {
 	fi
 	banner
 	echo "$bluet$t_binary_cygwin_installing$normal"
-	rm -rf $tools/mkbootimg.exe
-	rm -rf $tools/unpackbootimg.exe
-	rm -rf $tools/simg2img.exe
-	rm -rf $tools/make_ext4fs.exe
-	rm -rf $tools/adb.exe
-	rm -rf $tools/zipalign.exe
-	rm -rf $tools/ring2sdat.exe
-	rm -rf $tools/Imgextractor.exe
+	cd $tools
+	rm -rf mkbootimg.exe unpackbootimg.exe simg2img.exe make_ext4fs.exe adb.exe aapt.exe AdbWinApi.dll AdbWinUsbApi.dll zipalign.exe ring2sdat.exe Imgextractor.exe
 	rm -rf $tools/boot/mtk-tools/mkbootimg.exe
+	cd $base
 	(wget $dlurl/cygwin_binaries.zip 2>&1) >/dev/null
 	$p7z x -y cygwin_binaries.zip 2>&1 >/dev/null
 	rm -rf cygwin_binaries.zip
@@ -6245,7 +6238,7 @@ misc_tools() {
 		heapstatus="${heapsize}MB $t_menu_cust_dir"
 	fi
 	choice=""
-	while [[ ! ${choice} =~ ^[1-3]$ ]] && [[ ! $choice = "m" && ! $choice = "q" ]]; do
+	while [[ ! ${choice} =~ ^[1-4]$ ]] && [[ ! $choice = "m" && ! $choice = "q" ]]; do
 		banner
 		echo "$bluet$t_startup_project $greent$romname$normal"
 		if [[ -f $romdir/system/build.prop ]]; then
@@ -6259,6 +6252,7 @@ misc_tools() {
 		echo "1) $t_menu_zip_devices"
 		echo "2) $t_menu_language"
 		echo "3) $t_menu_heapsize ($bluet$t_title_current$greent$heapstatus$normal)"
+		echo "4) $t_menu_support"
 		echo "${yellowt}m = $t_title_main"
 		echo "${magentat}q = $t_menu_quit$normal"
 		echo ""
@@ -6329,6 +6323,35 @@ misc_tools() {
 		elif [[ $choice = "2" ]]; then
 			rm -rf $tools/heapsize
 		fi
+		misc_tools
+		return 1
+	# START Support: Create zip to send
+	elif [[ $choice = "4" ]]; then
+		banner
+		echo "$bluet$t_support_create$normal"
+		rm -rf $romdir/support.zip
+		mkdir -p $romdir/srk_support_zip
+		if [[ ! $cyg = "" ]]; then
+			echo "CYGWIN" >> $romdir/srk_support_zip/info
+		elif [[ ! $bashwin = "" ]]; then
+			echo "BASHWIN" >> $romdir/srk_support_zip/info
+		else
+			cat /etc/*-release | grep "DESCRIPTION" | cut -d"=" -f2 | sed 's/\"//g'>> $romdir/srk_support_zip/info
+			getconf LONG_BIT >> $romdir/srk_support_zip/info
+		fi
+		cat $prfiles/permtype >> $romdir/srk_support_zip/info
+		if [[ ! $(ls $prfiles | grep "deodex_") = "" ]]; then
+			ls $prfiles | grep "deodex_" >> $romdir/srk_support_zip/info
+		fi
+		cp $usdir/updater-script $romdir/srk_support_zip/
+		cp -R $prfiles/logs $romdir/srk_support_zip/
+		cp $romdir/system/build.prop $romdir/srk_support_zip/
+		$p7z a -tzip -mx5 $romdir/support.zip $romdir/srk_support_zip/* 2>/dev/null >> $logs/zip.log
+		rm -rf $romdir/srk_support_zip
+		banner
+		echo "$greent$t_support_finish$normal"
+		echo ""
+		read -p "$t_enter_misc_tools_menu"
 		misc_tools
 		return 1
 	fi
@@ -7167,10 +7190,12 @@ update_project() {
 					echo "1) $t_perm_set_metadata"
 				fi
 				echo "2) $t_perm_set_perm"
-				if [[ ! $api -ge "21" || ! $(getconf LONG_BIT) = "64" ]]; then
-					echo "${redt}3) $t_perm_sparse_red$normal"
-				else
+				if [[ $api -ge "21" && ! $cyg = "" ]]; then
 					echo "3) $t_perm_sparse"
+				elif [[ $api -ge "21" && $(getconf LONG_BIT) = "64" ]]; then
+					echo "3) $t_perm_sparse"
+				else
+					echo "${redt}3) $t_perm_sparse_red$normal"
 				fi
 				echo "4) $t_perm_raw_img"
 				echo ""
@@ -7194,7 +7219,9 @@ update_project() {
 				echo "$permtype" > $prfiles/permtype
 			# Sparse dat chosen
 			elif [[ $choice = "3" ]]; then
-				if [[ ! $api -ge "21" || ! $(getconf LONG_BIT) = "64" ]]; then
+				if [[ $api -ge "21" && ! $cyg = "" ]]; then
+					echo
+				elif [[ ! $api -ge "21" || ! $(getconf LONG_BIT) = "64" ]]; then
 					banner
 					echo "$redt$t_perm_sparse_error$normal"
 					echo ""
@@ -7619,14 +7646,14 @@ if [[ $cyg = "" ]] && [[ ! -x $tools/mkbootimg || ! -x $tools/unpackbootimg || !
 	ln -s $tools/mkbootimg $tools/boot/mtk-tools/mkbootimg
 	cd $base
 fi
-if [[ ! $cyg = "" ]] && [[ ! -f $tools/mkbootimg.exe || ! -f $tools/unpackbootimg.exe || ! -f $tools/simg2img.exe || ! -f $tools/make_ext4fs.exe || ! -f $tools/rimg2sdat.exe || ! -f $tools/adb.exe || ! -f $tools/zipalign.exe || ! -f $tools/Imgextractor.exe ]]; then
+if [[ ! $cyg = "" ]] && [[ ! -f $tools/mkbootimg.exe || ! -f $tools/unpackbootimg.exe || ! -f $tools/simg2img.exe || ! -f $tools/make_ext4fs.exe || ! -f $tools/rimg2sdat.exe || ! -f $tools/adb.exe || ! -f $tools/zipalign.exe || ! -f $tools/Imgextractor.exe || ! -f $tools/aapt.exe ]]; then
 	banner
 	echo "$redb$yellowt$bold$t_error$normal"
 	echo "$redt$t_startup_cygwin_bin"
 	echo "${yellowt}$tools$normal"
 	echo ""
 	echo "mkbootimg.exe, unpackbootimg.exe, simg2img.exe, make_ext4fs.exe,"
-	echo "rimg2sdat.exe, adb.exe, zipalign.exe, Imgextractor.exe"
+	echo "rimg2sdat.exe, adb.exe, zipalign.exe, Imgextractor.exe, aapt.exe"
 	echo ""
 	install_cygwin_binaries
 fi
