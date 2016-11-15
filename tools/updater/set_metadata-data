@@ -336,7 +336,7 @@ set_metadata("/system/etc/hostapd/hostapd_default.conf", "uid", 0, "gid", 0, "mo
 set_metadata("/system/etc/hsml.key", "uid", 0, "gid", 0, "mode", 0400, "capabilities", 0x0, "selabel", "#CONTEXT");
 set_metadata("/system/etc/init.goldfish.sh", "uid", 0, "gid", 2000, "mode", 0550, "capabilities", 0x0, "selabel", "#CONTEXT");
 set_metadata("/system/etc/init.qcom.sdio.sh", "uid", 0, "gid", 1000, "mode", 0550, "capabilities", 0x0, "selabel", "#CONTEXT");
-set_metadata("/system/etc/init.sec.boot.sh", "uid", 0, "gid", 2000, "mode", 0550, "capabilities", 0x0, "selabel", "#CONTEXT");
+set_metadata("/system/etc/init.sec.boot.sh", "uid", 0, "gid", 2000, "mode", 0644, "capabilities", 0x0, "selabel", "#CONTEXT");
 set_metadata("/system/etc/install-recovery.sh", "uid", 0, "gid", 0, "mode", 0755, "capabilities", 0x0, "selabel", "#CONTEXT");
 set_metadata("/system/etc/nano", "uid", 0, "gid", 2000, "mode", 0755, "capabilities", 0x0, "selabel", "#CONTEXT");
 set_metadata("/system/etc/partition_permission.sh", "uid", 0, "gid", 0, "mode", 0750, "capabilities", 0x0, "selabel", "#CONTEXT");

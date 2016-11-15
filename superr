@@ -5760,14 +5760,11 @@ imgextract() {
 	if [[ ! $cyg = "" ]]; then
 		echo "$bluet$t_extract_copy_e ${extractimg} ...$normal"
 		$imgextractor ${extractimg}.img ${extractimg} 2>&1 >/dev/null
-		cat ${extractimg}_statfile.txt | gawk '{print $1, $5}' | while read line; do
-		        if [[ ! $(echo $line | gawk '{print $2}') = "" ]]; then
-		                echo "$line" >> symtest
-		        fi
-		done
+		gawk '{print $1, $5}' ${extractimg}_statfile.txt | grep ". ." > symtest
 		link1=$(gawk '{print $2}' symtest | sed 's/^/symlink(\"/; s/$/\", /')
 		link2=$(gawk '{print $1}' symtest | sed 's/^/\"\//; s/$/\");/')
 		paste -d '' <(echo "$link1") <(echo "$link2") | sort > $prfiles/symlinks
+		cp $prfiles/symlinks $prfiles/symlinks.orig
 		gawk '{print $1}' symtest | while read line; do
 		        rm -rf $line
 		done
@@ -6339,6 +6336,7 @@ misc_tools() {
 			cat /etc/*-release | grep "DESCRIPTION" | cut -d"=" -f2 | sed 's/\"//g'>> $romdir/srk_support_zip/info
 			getconf LONG_BIT >> $romdir/srk_support_zip/info
 		fi
+		echo "$superrv" >> $romdir/srk_support_zip/info
 		cat $prfiles/permtype >> $romdir/srk_support_zip/info
 		if [[ ! $(ls $prfiles | grep "deodex_") = "" ]]; then
 			ls $prfiles | grep "deodex_" >> $romdir/srk_support_zip/info
