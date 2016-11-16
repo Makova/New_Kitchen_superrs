@@ -2322,10 +2322,7 @@ deodex_start() {
 		mv $prfiles/symlinks.orig2 $prfiles/symlinks.orig
 	fi
 	get_heapsize
-	if [[ ! $(grep "deodex_type =" $prfiles/AR-config | cut -d'"' -f2) = "" ]]; then
-		$(grep "deodex_type =" $prfiles/AR-config | cut -d'"' -f2)
-		return 1
-	elif [[ $api -lt 21 ]]; then
+	if [[ $api -lt 21 ]]; then
 		smali=$(find $tools/smali/old -name *smali* | grep -v "baksmali")
 		baksmali=$(find $tools/smali/old -name *baksmali*)
 		deodex_old
