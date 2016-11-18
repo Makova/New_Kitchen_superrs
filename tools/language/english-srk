@@ -458,6 +458,7 @@ export t_wsl_warn="You may not be able to mount/extract images\nwhile running in
 export t_binary_note="NOTE: You should only install the binaries if you can't get the\n      kitchen to build them. It is recommended to have the kitchen\n      build the binaries if possible"
 export t_binary_osbit_installing="Installing binaries for"
 export t_binary_osbit_installed="binaries have been installed"
+export t_cygwin_info="Since you are not running in native Linux, all of the\nprocesses will be slower. Preparing updater-script and\ncreating symlinks are the most noticable examples."
 export t_binary_cygwin_installing="Installing cygwin binaries ..."
 export t_binary_cygwin_installed="cygwin binaries have been installed"
 export t_binary_q="Would you like to install the binaries anyway?  y/n  "
@@ -502,6 +503,7 @@ export t_sign_signing="Signing"
 export t_sign_signed="has been created. Enjoy!"
 export t_sign_fail="Something went wrong with the signing."
 export t_sign_q="Would you like to sign the zip?  y/n  "
+export t_sign_cygwin="Zip signing is not currently supported in CYGWIN"
 
 # Build img
 export t_img_add="Adding"

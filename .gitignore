@@ -4,13 +4,14 @@
 /tools/open_bump.py
 /tools/root/bloat_custom
 /tools/root/root_zips/*
-!/tools/root/root_zips/SuperSU-v2.78-SR3.zip
+!/tools/root/root_zips/SuperSU-v2.78-SR4.zip
 /tools/smali/current/oat2dex*
 !/tools/smali/current/oat2dex-a2dc9ce1.jar
 /tools/*srk-chosen
 /tools/language/*
 !/tools/language/english-srk
 /tools/bituser
+tools/cygnotice
 /tools/depmet
 /tools/depbuild
 /tools/dependencies2

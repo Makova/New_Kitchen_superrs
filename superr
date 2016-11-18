@@ -7086,6 +7086,14 @@ root_tools() {
 	fi
 }
 signzip() {
+	if [[ ! $cyg = "" ]]; then
+		banner
+		echo "$redb$yellowt$bold$t_error$normal"
+		echo "$redt$t_sign_cygwin$normal"
+		echo ""
+		read -p "$t_enter_continue"
+		return 1
+	fi
 	if [[ $signzipname = "" ]]; then
 		signzipname="$signature2"
 	fi
@@ -7491,6 +7499,14 @@ if [[ ! $firstrun = "1" ]]; then
 	chkstat &
 fi
 if [[ ! $(uname -s | grep "CYGWIN\|cygwin\|Cygwin") = "" ]]; then
+	if [[ ! -f $tools/cygnotice ]]; then
+		banner
+		echo "${blueb}CYGWIN $t_notice$normal"
+		echo -e "$bluet$t_cygwin_info$normal"
+		echo ""
+		read -p "$t_enter_continue"
+		touch $tools/cygnotice
+	fi
 	rm -rf $tools/dependencies2
 	cp $tools/dependencies $tools/dependencies2
 	sed -i '/sudo/d; 1i7z' $tools/dependencies2
