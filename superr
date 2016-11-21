@@ -3267,15 +3267,23 @@ deodex_m2() {
 	classes=$(java -Xmx${heapsize}m -jar $baksmali list dex $framedir/$deoarch2/boot.oat | rev | cut -d"/" -f1 | rev)
         line=""
         for line in $(echo "$classes"); do
-                line2=$(echo "$line" | rev | cut -d"." -f2- | rev)
+		if [[ $(echo "$line" | grep classes) = "" ]]; then
+			framejar="$line"
+			dexclass=":classes.dex"
+		else
+			framejar=$(echo "$line" | cut -d":" -f1)
+			dexclass=""
+		fi
+		if [[ ! $($p7z l $framedir/$framejar | grep classes.dex) = "" ]]; then
+			echo ""
+			echo "$greent$frame $t_deodex_app_already$normal"
+			echo ""
+			continue
+		fi
+		line2=$(echo "$line" | rev | cut -d"." -f2- | rev)
                 echo ""
                 echo "$t_deodex_deodexing $line2"
                 echo ""
-		if [[ $(echo "$line" | grep classes) = "" ]]; then
-			dexclass=":classes.dex"
-		else
-			dexclass=""
-		fi
 		java -Xmx${heapsize}m -jar $baksmali deodex -b $framedir/$deoarch2/boot.oat $framedir/$deoarch2/boot.oat/$line -o $framedir/smali >> $logs/deodex.log
 		java -Xmx${heapsize}m -jar $smali assemble $framedir/smali -o $framedir/$line$dexclass >> $logs/deodex.log
 		rm -rf $framedir/smali
@@ -3283,7 +3291,14 @@ deodex_m2() {
 	if [[ -d $framedir/$deoarch ]]; then
 		frame=""
 		for frame in $(ls $framedir/$deoarch | grep .odex$ | sort); do
-	                echo ""
+			framejar=$(echo "$(echo "$frame" | rev | cut -d"." -f2- | rev).jar")
+			if [[ ! $($p7z l $framedir/$framejar | grep classes.dex) = "" ]]; then
+				echo ""
+				echo "$greent$frame $t_deodex_app_already$normal"
+				echo ""
+				continue
+			fi
+			echo ""
 	                echo "$t_deodex_deodexing $frame"
 	                echo ""
 			classes=$(java -Xmx${heapsize}m -jar $baksmali list dex $framedir/$deoarch/$frame)
@@ -3566,12 +3581,29 @@ deodex_m3() {
 	done
 	if [[ -d $framedir/$deoarch ]]; then
 		for frame in $(ls $framedir/$deoarch | grep .odex$); do
+			framejar=$(echo "$(echo "$frame" | rev | cut -d"." -f2- | rev).jar")
+			if [[ ! $($p7z l $framedir/$framejar | grep classes.dex) = "" ]]; then
+				echo ""
+				echo "$greent$frame $t_deodex_app_already$normal"
+				echo ""
+				continue
+			fi
 			echo ""
 			echo "$t_deodex_deodexing $frame"
 			echo ""
 			$oattools/oatdump --oat-file="$framedir/$deoarch/$frame" --export-dex-to="$framedir/temp" >> $logs/deodex.log
 		done
 	fi
+	ls $framedir/temp | grep "export\.dex" | while read line; do
+		if [[ $(echo "$line" | grep classes) = "" ]]; then
+			framejar=$(echo "$line" | sed 's/_export\.dex//')
+		else
+			framejar=$(echo "$line" | cut -d":" -f1)
+		fi
+		if [[ ! $($p7z l $framedir/$framejar | grep classes.dex) = "" ]]; then
+			rm -rf $framedir/temp/$line
+		fi
+	done
 	$oattools/dexrepair -I $framedir/temp >> $logs/deodex.log
 	ls $framedir/temp | grep "export.dex_repaired.dex" | while read line; do
 		if [[ $(echo "$line" | grep classes) = "" ]]; then
@@ -3833,6 +3865,15 @@ deodex_n() {
 	echo ""
 	mkdir -p $framedir/temp
 	for frame in $(ls $framedir/$deoarch2 | grep .oat$); do
+		if [[ ! $frame = "boot.oat" ]]; then
+			framejar=$(echo "$(echo "$frame" | sed 's/^boot-//; s/\.oat$//').jar")
+			if [[ ! $($p7z l $framedir/$framejar | grep classes.dex) = "" ]]; then
+				echo ""
+				echo "$greent$frame $t_deodex_app_already$normal"
+				echo ""
+				continue
+			fi
+		fi
 		echo ""
 		echo "$t_deodex_deodexing $frame"
 		echo ""
@@ -3840,6 +3881,13 @@ deodex_n() {
 	done
 	if [[ -d $framedir/$deoarch ]]; then
 		for frame in $(ls $framedir/$deoarch | grep .odex$); do
+			framejar=$(echo "$(echo "$frame" | rev | cut -d"." -f2- | rev).jar")
+			if [[ ! $($p7z l $framedir/$framejar | grep classes.dex) = "" ]]; then
+				echo ""
+				echo "$greent$frame $t_deodex_app_already$normal"
+				echo ""
+				continue
+			fi
 			echo ""
 			echo "$t_deodex_deodexing $frame"
 			echo ""
@@ -4105,6 +4153,15 @@ deodex_n2() {
 	echo "----------------------------------------------------"
 	echo ""
 	ls $framedir/$deoarch2 | grep .oat$ | sort | while read line; do
+		if [[ ! $line = "boot.oat" ]]; then
+			framejar=$(echo "$(echo "$line" | sed 's/^boot-//; s/\.oat$//').jar")
+			if [[ ! $($p7z l $framedir/$framejar | grep classes.dex) = "" ]]; then
+				echo ""
+				echo "$greent$frame $t_deodex_app_already$normal"
+				echo ""
+				continue
+			fi
+		fi
 		echo ""
 		echo "$t_deodex_deodexing $line"
 		echo ""
@@ -4126,7 +4183,14 @@ deodex_n2() {
 	if [[ -d $framedir/$deoarch ]]; then
 		frame=""
 		for frame in $(ls $framedir/$deoarch | grep .odex$ | sort); do
-	                echo ""
+			framejar=$(echo "$(echo "$frame" | rev | cut -d"." -f2- | rev).jar")
+			if [[ ! $($p7z l $framedir/$framejar | grep classes.dex) = "" ]]; then
+				echo ""
+				echo "$greent$frame $t_deodex_app_already$normal"
+				echo ""
+				continue
+			fi
+			echo ""
 	                echo "$t_deodex_deodexing $frame"
 	                echo ""
 			classes=$(java -Xmx${heapsize}m -jar $baksmali list dex $framedir/$deoarch/$frame)
