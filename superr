@@ -1874,7 +1874,7 @@ change_permtype() {
 	rom_tools
 }
 chkstat() {
-	while [[ ! $(grep 'Kitchen/\" $romdir' $base/superr) = "" && $(grep 'Kitchen/\" $romdir' $base/superr | grep "#") = "" ]]; do
+	while [[ ! $(grep 'Kitchen/\" $sysdir' $base/superr) = "" && $(grep 'Kitchen/\" $sysdir' $base/superr | grep "#") = "" ]]; do
 		sleep 5
 	done
 	killall superr
