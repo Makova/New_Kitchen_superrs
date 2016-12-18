@@ -27,11 +27,8 @@ ui_print("Setting Permissions...");
 ui_print(" ");
 #PERM
 set_progress(0.700000);
-ui_print(" ");
-ui_print("Extracting boot image...");
-ui_print(" ");
-package_extract_file("boot.img", "#BYNAME/boot");
-set_progress(0.800000);
+ui_print(" "); ui_print("Extracting boot image..."); ui_print(" ");
+package_extract_file("boot.img", "#BYNAME/boot"); set_progress(0.800000);
 #ROOT
 ui_print(" ");
 #BUSYBOX

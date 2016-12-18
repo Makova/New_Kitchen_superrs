@@ -210,14 +210,23 @@ boot_initd() {
 		boot_tools
 		return 1
 	fi
+	if [[ -f $romdir/system/default.prop ]]; then
+		banner
+		echo "$redb$yellowt$bold$t_error$normal"
+		echo -e "$redt$t_boot_initd_pixel$normal"
+		echo ""
+		read -p "$t_enter_boot_menu"
+		boot_tools
+		return 1
+	fi
 	if [[ $initdstatus = "No" ]]; then
 		${usesudo}cp -r $tools/boot/initd/bootimg $romdir/
-		${usesudo}sed -i '1iimport /init.d_support.sh' $romdir/bootimg/ramdisk/init.rc
-		mkdir -p $romdir/system/etc/init.d
-		touch $romdir/system/etc/init.d/placeholder
+		${usesudo}sed -i '1iimport /init.d_support.sh' $ramdir/init.rc
+		mkdir -p $sysdir/etc/init.d
+		touch $sysdir/etc/init.d/placeholder
 		if [[ -d $prfiles/init.d ]]; then
-			rm -rf $romdir/system/etc/init.d
-			mv $prfiles/init.d $romdir/system/etc/
+			rm -rf $sysdir/etc/init.d
+			mv $prfiles/init.d $sysdir/etc/
 		fi
 		banner
 		echo "$greent$t_boot_initd_add$normal"
@@ -233,14 +242,14 @@ boot_initd() {
 		echo ""
 		echo ""
 		if [[ $REPLY = "y" ]]; then
-			if [[ -d $romdir/system/etc/init.d ]]; then
-				mv $romdir/system/etc/init.d $prfiles/
+			if [[ -d $sysdir/etc/init.d ]]; then
+				mv $sysdir/etc/init.d $prfiles/
 			fi
-			if [[ -f $romdir/system/bin/sysinit && ! $(grep "init.d" $romdir/system/bin/sysinit) = "" ]]; then
-				rm -rf $romdir/system/bin/sysinit
+			if [[ -f $sysdir/bin/sysinit && ! $(grep "init.d" $sysdir/bin/sysinit) = "" ]]; then
+				rm -rf $sysdir/bin/sysinit
 			fi
 			cd $romdir/bootimg/ramdisk
-			rm -rf $romdir/system/etc/init.d
+			rm -rf $sysdir/etc/init.d
 			${usesudo}rm -rf $romdir/bootimg/ramdisk/sbin/sysinit.sh
 			${usesudo}rm -rf $romdir/bootimg/ramdisk/init.d_support.sh
 			${usesudo}grep -v "init.d_support" init.rc > init.rc2
@@ -282,17 +291,17 @@ boot_insecure() {
 		return 1
 	fi
 	if [[ $insecurestatus = "No" ]]; then
-		if [[ ! $(${usesudo}grep "ro.secure=1" $romdir/bootimg/ramdisk/default.prop) = "" ]]; then
-			${usesudo}sed -i 's/ro\.secure=1/ro\.secure=0/' $romdir/bootimg/ramdisk/default.prop
+		if [[ ! $(${usesudo}grep "ro.secure=1" $ramdir/default.prop) = "" ]]; then
+			${usesudo}sed -i 's/ro\.secure=1/ro\.secure=0/' $ramdir/default.prop
 		else
-			${usesudo}gawk 'a=/^#/{b=1}b&&!a{print "ro\.secure=0";b=0}1' $romdir/bootimg/ramdisk/default.prop > $romdir/bootimg/ramdisk/default.prop2
-			${usesudo}mv $romdir/bootimg/ramdisk/default.prop2 $romdir/bootimg/ramdisk/default.prop
+			${usesudo}gawk 'a=/^#/{b=1}b&&!a{print "ro\.secure=0";b=0}1' $ramdir/default.prop > $ramdir/default.prop2
+			${usesudo}mv $ramdir/default.prop2 $ramdir/default.prop
 		fi
-		if [[ ! $(${usesudo}grep "ro.adb.secure=1" $romdir/bootimg/ramdisk/default.prop) = "" ]]; then
-			${usesudo}sed -i 's/ro\.adb\.secure=1/ro\.adb\.secure=0/' $romdir/bootimg/ramdisk/default.prop
+		if [[ ! $(${usesudo}grep "ro.adb.secure=1" $ramdir/default.prop) = "" ]]; then
+			${usesudo}sed -i 's/ro\.adb\.secure=1/ro\.adb\.secure=0/' $ramdir/default.prop
 		else
-			${usesudo}gawk 'a=/ro\.secure=0/{b=1}b&&!a{print "ro\.adb\.secure=0";b=0}1' $romdir/bootimg/ramdisk/default.prop > $romdir/bootimg/ramdisk/default.prop2
-			${usesudo}mv $romdir/bootimg/ramdisk/default.prop2 $romdir/bootimg/ramdisk/default.prop
+			${usesudo}gawk 'a=/ro\.secure=0/{b=1}b&&!a{print "ro\.adb\.secure=0";b=0}1' $ramdir/default.prop > $ramdir/default.prop2
+			${usesudo}mv $ramdir/default.prop2 $ramdir/default.prop
 		fi
 		banner
 		echo "$greent$t_boot_insecure$normal"
@@ -308,8 +317,8 @@ boot_insecure() {
 		echo ""
 		echo ""
 		if [[ $REPLY = "y" ]]; then
-			${usesudo}sed -i 's/ro\.secure=0/ro\.secure=1/' $romdir/bootimg/ramdisk/default.prop
-			${usesudo}sed -i 's/ro\.adb\.secure=0/ro\.adb\.secure=1/' $romdir/bootimg/ramdisk/default.prop
+			${usesudo}sed -i 's/ro\.secure=0/ro\.secure=1/' $ramdir/default.prop
+			${usesudo}sed -i 's/ro\.adb\.secure=0/ro\.adb\.secure=1/' $ramdir/default.prop
 			banner
 			echo "$greentt_boot_secure$normal"
 			echo ""
@@ -483,9 +492,9 @@ boot_tools() {
 	insecurestatus1=""
 	initdstatus1=""
 	islg=""
-	if [[ -f $romdir/system/build.prop ]]; then
-		api=$(grep "ro.build.version.sdk" $romdir/system/build.prop | cut -d"=" -f2)
-		androidversion=$(grep "ro.build.version.release" $romdir/system/build.prop | cut -d"=" -f2)
+	if [[ -f $sysdir/build.prop ]]; then
+		api=$(grep "ro.build.version.sdk" $sysdir/build.prop | cut -d"=" -f2)
+		androidversion=$(grep "ro.build.version.release" $sysdir/build.prop | cut -d"=" -f2)
 	elif [[ -f $romdir/build.prop ]]; then
 		api=$(grep "ro.build.version.sdk" $romdir/build.prop | cut -d"=" -f2)
 		androidversion=$(grep "ro.build.version.release" $romdir/build.prop | cut -d"=" -f2)
@@ -500,8 +509,8 @@ boot_tools() {
 		exit
 	fi
 	if [[ -f $tools/open_bump.py ]]; then
-		if [[ -f $romdir/system/build.prop ]]; then
-			islg=$(grep "ro.product.brand" $romdir/system/build.prop | cut -d"=" -f2)
+		if [[ -f $sysdir/build.prop ]]; then
+			islg=$(grep "ro.product.brand" $sysdir/build.prop | cut -d"=" -f2)
 		elif [[ -f $romdir/build.prop ]]; then
 			islg=$(grep "ro.product.brand" $romdir/build.prop | cut -d"=" -f2)
 		fi
@@ -534,7 +543,9 @@ boot_tools() {
 	isinsecure
 	chosenimg=""
 	choice=""
-	if [[ -d $romdir/bootimg ]]; then
+	if [[ -f $romdir/system/default.prop && ! -f $romdir/recovery.img ]]; then
+		chosenimg="boot"
+	elif [[ -d $romdir/bootimg ]]; then
 		chosenimg="boot"
 	elif [[ -d $romdir/recoveryimg ]]; then
 		chosenimg="recovery"
@@ -575,7 +586,12 @@ boot_tools() {
 		echo ""
 		exit
 	fi
-	if [[ -d $romdir/${chosenimg}img ]]; then
+	if [[ -f $romdir/system/default.prop ]]; then
+		ramdir="$romdir/system"
+	else
+		ramdir="$romdir/${chosenimg}img/ramdisk"
+	fi
+	if [[ -d $romdir/${chosenimg}img || -f $romdir/system/default.prop ]]; then
 		choice=""
 		while [[ ! ${choice} =~ ^[1-6]$ ]] && [[ ! $choice = "m" && ! $choice = "q" ]]; do
 			banner
@@ -584,8 +600,10 @@ boot_tools() {
 			echo ""
 			echo "$yellowb$redt$t_title_boot$normal"
 			echo ""
-			echo "1) $t_menu_pack_boot ${chosenimg}.img $t_menu_pack_boot_d"
-			echo "2) $t_menu_pack_boot ${chosenimg}.img $t_menu_pack_boot_k"
+			if [[ ! -f $romdir/system/default.prop ]]; then
+				echo "1) $t_menu_pack_boot ${chosenimg}.img $t_menu_pack_boot_d"
+				echo "2) $t_menu_pack_boot ${chosenimg}.img $t_menu_pack_boot_k"
+			fi
 			if [[ $chosenimg = "boot" ]]; then
 				echo "3) $t_menu_initd ($bluet$t_title_current$initdstatus1$normal)"
 				echo "4) $t_menu_insecure ($bluet$t_title_current$insecurestatus1$normal)"
@@ -596,8 +614,17 @@ boot_tools() {
 			echo "${magentat}q = $t_menu_quit$normal"
 			echo ""
 			read -n 1 -p "$t_select" choice
+			if [[ -f $romdir/system/default.prop ]]; then
+				if [[ ${choice} =~ ^[1-2]$ ]]; then
+					choice=""
+				fi
+			fi
+			if [[ $chosenimg != "boot" ]]; then
+				if [[ ${choice} =~ ^[3-6]$ ]]; then
+					choice=""
+				fi
+			fi
 		done
-
 		# START Pack img, delete ramdisk
 		if [[ $choice = "1" ]]; then
 			repackk=""
@@ -618,7 +645,11 @@ boot_tools() {
 			return 1
 		# START Remove dm-verity
 		elif [[ $choice = "5" ]]; then
-			cd $romdir/bootimg/ramdisk
+			if [[ -f $romdir/system/default.prop ]]; then
+				cd $romdir/system
+			else
+				cd $romdir/bootimg/ramdisk
+			fi
 			findfstab
 			if [[ $(${usesudo}grep "verify" $fstab) = "" ]]; then
 				banner
@@ -638,7 +669,11 @@ boot_tools() {
 			return 1
 		# START Remove forceencrypt
 		elif [[ $choice = "6" ]]; then
-			cd $romdir/bootimg/ramdisk
+			if [[ -f $romdir/system/default.prop ]]; then
+				cd $romdir/system
+			else
+				cd $romdir/bootimg/ramdisk
+			fi
 			findfstab
 			boot_forcee
 		# START Main menu
@@ -730,7 +765,7 @@ boot_tools() {
 		elif [[ $chosenimg = "boot" ]]; then
 			signature2=$(echo "$signature-kernel")
 			signature3=$(echo "$signature1 Kernel")
-			if [[ -d $romdir/system/etc/init.d ]]; then
+			if [[ -d $sysdir/etc/init.d ]]; then
 				cp $tools/updater/custom/updater-script-kernel-init $usdir/updater-script
 			else
 				cp $tools/updater/custom/updater-script-kernel $usdir/updater-script
@@ -768,7 +803,7 @@ boot_tools() {
 			if [[ -f $signature2.zip ]]; then
 				mv $signature2.zip ${signature2}_$timestamp.zip
 			fi
-			if [[ -d $romdir/system/etc/init.d ]]; then
+			if [[ -d $sysdir/etc/init.d ]]; then
 				$p7z a -tzip -mx5 $signature2.zip boot.img system/etc/init.d META-INF 2>/dev/null >> $logs/zip.log
 			else
 				$p7z a -tzip -mx5 $signature2.zip boot.img META-INF 2>/dev/null >> $logs/zip.log
@@ -903,21 +938,7 @@ boot_unpack() {
 		return 1
 	fi
 	bootext=""
-	if [[ ! -f $prfiles/file_contexts ]] && [[ -f $romdir/${chosenimg}img/ramdisk/file_contexts || -f $romdir/${chosenimg}img/ramdisk/file_contexts.bin ]]; then
-		if [[ -f $romdir/${chosenimg}img/ramdisk/file_contexts ]]; then
-			${usesudo}cp $romdir/${chosenimg}img/ramdisk/file_contexts $prfiles/
-		elif [[ -f $romdir/${chosenimg}img/ramdisk/file_contexts.bin ]]; then
-			${usesudo}cp $romdir/${chosenimg}img/ramdisk/file_contexts.bin $prfiles/
-			strings $prfiles/file_contexts.bin | sed -n '/u:/,$p' | grep -B1 "/" | grep "/" > $prfiles/contextl
-			strings $prfiles/file_contexts.bin | sed -n '/u:/,$p' | grep -B1 "/" | grep "u:" > $prfiles/contextr
-			paste $prfiles/contextl $prfiles/contextr > $prfiles/file_contexts
-			rm -rf $prfiles/contextl $prfiles/contextr $prfiles/file_contexts.bin
-		fi
-		if [[ $api -ge "23" ]]; then
-			myuser=$(echo "$(whoami | gawk '{ print $1 }')")
-			${usesudo}chown -h $myuser:$myuser $prfiles/file_contexts
-		fi
-	fi
+	get_contexts
 }
 build_custom_zip() {
 	timestamp=$(date +%m-%d-%Y-%H:%M:%S)
@@ -928,19 +949,19 @@ build_custom_zip() {
 	isprivapp=""
 	ismedia=""
 	isready () {
-		if [[ -d $romdir/system/framework ]]; then
+		if [[ -d $sysdir/framework ]]; then
 			isframe="1"
 		fi
-		if [[ -d $romdir/system/app ]]; then
+		if [[ -d $sysdir/app ]]; then
 			isapp="1"
 		fi
-		if [[ -d $romdir/system/lib ]]; then
+		if [[ -d $sysdir/lib ]]; then
 			islib="1"
 		fi
-		if [[ -d $romdir/system/priv-app ]]; then
+		if [[ -d $sysdir/priv-app ]]; then
 			isprivapp="1"
 		fi
-		if [[ -d $romdir/system/media ]]; then
+		if [[ -d $sysdir/media ]]; then
 			ismedia="1"
 		fi
 		if [[ $isframe = "1" || $isapp = "1" || $islib = "1" || $isprivapp = "1" || $ismedia = "1" ]]; then
@@ -1017,7 +1038,7 @@ build_custom_zip() {
 		sed -i "s/#DEVICECHK/$devicechk/g" $usdir/updater-script
 		if [[ $choice = "1" || $choice = "2" || $choice = "4" ]]; then
 			cd $romdir
-			find system vendor 2>/dev/null | sed 's/^/\//' | sort > $prfiles/all_files.txt
+			find $sysdir $romdir/vendor 2>/dev/null | sed 's/^/\//' | sed "s/$romdir//g"| sort > $prfiles/all_files.txt
 			cd $prfiles
 			rm -rf symlinks
 			cp symlinks.orig symlinks
@@ -1047,7 +1068,7 @@ build_custom_zip() {
 			cd $usdir
 			grep -v "#SYM" updater-script > updater-script2
 			mv updater-script2 updater-script
-			if [[ -d $romdir/system/app || -d $romdir/system/priv-app ]]; then
+			if [[ -d $sysdir/app || -d $sysdir/priv-app ]]; then
 				if [[ "$odexstatus" = "Deodexed" ]]; then
 					banner
 					read -n 1 -p "$t_zipalign_q" reply
@@ -1109,7 +1130,7 @@ build_custom_zip() {
 				signature2=$(echo "$signature-aflp")
 				echo "$bluet$signature2.zip $t_general_build $romname ...$normal"
 				cd $usdir
-				if [[ -d $romdir/system/lib64 ]]; then
+				if [[ -d $sysdir/lib64 ]]; then
 					grep -v "\"/system/media\"" updater-script > updater-script2
 				else
 					grep -v "\"/system/media\"\|\"/system/lib64\"" updater-script > updater-script2
@@ -1203,7 +1224,7 @@ build_custom_zip() {
 				signature2=$(echo "$signature-lib")
 				echo "$bluet$signature2.zip $t_general_build $romname ...$normal"
 				cd $usdir
-				if [[ -d $romdir/system/lib64 ]]; then
+				if [[ -d $sysdir/lib64 ]]; then
 					grep -v "\"/system/app\"\|\"/system/framework\"\|\"/system/media\"\|\"/system/priv-app\"" updater-script > updater-script2
 				else
 					grep -v "\"/system/app\"\|\"/system/framework\"\|\"/system/media\"\|\"/system/priv-app\"\|\"/system/lib64\"" updater-script > updater-script2
@@ -1288,7 +1309,6 @@ build_rom_zip() {
 	timestamp=$(date +%m-%d-%Y-%H:%M:%S)
 	fullrom=""
 	fullrom1=""
-	exzipfiles="supersu rootzip busybox"
 	cd $romdir
 	isfullrom
 	if [[ ! $fullrom = "Yes" ]]; then
@@ -1309,14 +1329,14 @@ build_rom_zip() {
 			dozipalign
 		fi
 	fi
-	if [[ ! $(grep "ro.build.display.id" $romdir/system/build.prop) = "" ]]; then
+	if [[ ! $(grep "ro.build.display.id" $sysdir/build.prop) = "" ]]; then
 		displayid="ro.build.display.id"
-	elif [[ ! $(grep "ro.build.id" $romdir/system/build.prop) = "" ]]; then
+	elif [[ ! $(grep "ro.build.id" $sysdir/build.prop) = "" ]]; then
 		displayid="ro.build.id"
 	fi
 	displayid2=$(echo "$displayid" | sed 's/\./\\./g')
-	bdisplay=$(grep "$displayid" $romdir/system/build.prop | sed 's/\./\\./g; s:/:\\/:g; s/\,/\\,/g; s/\ /\\ /g')
-	sed -i "s/$bdisplay/$displayid2=Built\.with\.SuperRs\.Kitchen/" $romdir/system/build.prop
+	bdisplay=$(grep "$displayid" $sysdir/build.prop | sed 's/\./\\./g; s:/:\\/:g; s/\,/\\,/g; s/\ /\\ /g')
+	sed -i "s/$bdisplay/$displayid2=Built\.with\.SuperRs\.Kitchen/" $sysdir/build.prop
 	update_project
 	cd $prfiles
 	get_sig
@@ -1357,9 +1377,14 @@ build_rom_zip() {
 		fi
 		whatimg="system"
 		findimgsize
-		if [[ ! $(grep "vendor.transfer" $usdir/updater-script) = "" ]]; then
-			whatimg="vendor"
-			findimgsize
+		if [[ -s $prfiles/exdirs ]]; then
+			rm -rf $prfiles/exdirsb
+			for line in $(cat $prfiles/exdirs); do
+				if [[ ! $(grep "$line.transfer" $usdir/updater-script) = "" ]]; then
+					whatimg="$line"
+					findimgsize
+				fi
+			done
 		fi
 		if [[ ! $(grep "data.transfer" $usdir/updater-script) = "" ]]; then
 			if [[ ! -f $prfiles/data-set_metadata ]]; then
@@ -1367,33 +1392,44 @@ build_rom_zip() {
 				findimgsize
 			fi
 		fi
-		whatpart="system"
+		whatimg="system"
 		partimg
 		partsdat
-		if [[ ! $(grep "vendor.transfer" $usdir/updater-script) = "" ]]; then
-			whatpart="vendor"
-			partimg
-			partsdat
+		if [[ -s $prfiles/exdirsb ]]; then
+			for line in $(cat $prfiles/exdirs); do
+				whatimg="$line"
+				partimg
+				partsdat
+			done
 		fi
 		if [[ ! $(grep "data.transfer" $usdir/updater-script) = "" ]]; then
 			if [[ ! -f $prfiles/data-set_metadata ]]; then
-				whatpart="data"
+				whatimg="data"
 				partimg
 				partsdat
 			fi
 		fi
 		rm -rf $romdir/tmpsparse
 		banner
-		echo "$bluet$signature.zip $t_general_build $romname"
+		echo "$bluet$signature.zip $t_general_build $romname ..."
 		echo ""
 		echo "$yellowt$t_build_patient$normal"
 		echo ""
 		if [[ -f $prfiles/data-set_metadata ]]; then
-			$p7z a -tzip -mx5 $signature.zip install boot.img META-INF system.new.dat system.patch.dat system.transfer.list vendor.new.dat vendor.patch.dat vendor.transfer.list data $exzipfiles $prfiles/file_contexts 2>/dev/null >> $logs/zip.log
+			if [[ $romdir/system/default.prop ]]; then
+				exzipfiles="install META-INF supersu rootzip busybox gapps xposed magisk mod* data $cusdir"
+			else
+				exzipfiles="install boot.img META-INF supersu rootzip busybox gapps xposed magisk mod* data $cusdir"
+			fi
 		else
-			$p7z a -tzip -mx5 $signature.zip install boot.img META-INF system.new.dat system.patch.dat system.transfer.list vendor.new.dat vendor.patch.dat vendor.transfer.list data.new.dat data.patch.dat data.transfer.list $exzipfiles $prfiles/file_contexts 2>/dev/null >> $logs/zip.log
+			if [[ $romdir/system/default.prop ]]; then
+				exzipfiles="install META-INF supersu rootzip busybox gapps xposed magisk mod* $cusdir"
+			else
+				exzipfiles="install boot.img META-INF supersu rootzip busybox gapps xposed magisk mod* $cusdir"
+			fi
 		fi
-		rm -rf vendor.new.dat vendor.transfer.list vendor.patch.dat data.new.dat data.patch.dat data.transfer.list system.new.dat system.transfer.list system.patch.dat
+		$p7z a -tzip -mx5 $signature.zip *.new.dat *.patch.dat *.transfer.list $exzipfiles $prfiles/file_contexts 2>/dev/null >> $logs/zip.log
+		rm -rf *.new.dat *.transfer.list *.patch.dat
 	elif [[ $permtype = "raw_img" ]]; then
 		banner
 		echo "$bluet$t_build_prep_img$normal"
@@ -1415,26 +1451,32 @@ build_rom_zip() {
 		fi
 		whatimg="system"
 		findimgsize
-		if [[ ! $(grep "\"/vendor\"" $usdir/updater-script) = "" ]]; then
-			whatimg="vendor"
-			findimgsize
+		if [[ -s $prfiles/exdirs ]]; then
+			rm -rf $prfiles/exdirsb
+			for line in $(cat $prfiles/exdirs); do
+				if [[ ! $(grep "\"/$line\"" $usdir/updater-script) = "" ]]; then
+					whatimg="$line"
+					findimgsize
+				fi
+			done
 		fi
-		if [[ ! $(grep "\"/data\"" $usdir/updater-script) = "" ]]; then
+		if [[ ! $(grep "data.transfer" $usdir/updater-script) = "" ]]; then
 			if [[ ! -f $prfiles/data-set_metadata ]]; then
 				whatimg="data"
 				findimgsize
 			fi
 		fi
-		banner
-		whatpart="system"
+		whatimg="system"
 		partimg
-		if [[ ! $(grep "\"/vendor\"" $usdir/updater-script) = "" ]]; then
-			whatpart="vendor"
-			partimg
+		if [[ -s $prfiles/exdirsb ]]; then
+			for line in $(cat $prfiles/exdirs); do
+				whatimg="$line"
+				partimg
+			done
 		fi
-		if [[ ! $(grep "\"/data\"" $usdir/updater-script) = "" ]]; then
+		if [[ ! $(grep "data.transfer" $usdir/updater-script) = "" ]]; then
 			if [[ ! -f $prfiles/data-set_metadata ]]; then
-				whatpart="data"
+				whatimg="data"
 				partimg
 			fi
 		fi
@@ -1444,15 +1486,29 @@ build_rom_zip() {
 		echo "$yellowt$t_build_patient$normal"
 		echo ""
 		if [[ -f $prfiles/data-set_metadata ]]; then
-			$p7z a -tzip -mx5 $signature.zip boot.img META-INF system_new.img vendor_new.img data $exzipfiles  2>/dev/null >> $logs/zip.log
+			if [[ $romdir/system/default.prop ]]; then
+				exzipfiles="META-INF supersu rootzip busybox gapps xposed magisk mod* data $cusdir"
+			else
+				exzipfiles="boot.img META-INF supersu rootzip busybox gapps xposed magisk mod* data $cusdir"
+			fi
 		else
-			$p7z a -tzip -mx5 $signature.zip boot.img META-INF system_new.img vendor_new.img data_new.img $exzipfiles 2>/dev/null >> $logs/zip.log
+			if [[ $romdir/system/default.prop ]]; then
+				exzipfiles="META-INF supersu rootzip busybox gapps xposed magisk mod* $cusdir"
+			else
+				exzipfiles="boot.img META-INF supersu rootzip busybox gapps xposed magisk mod* $cusdir"
+			fi
 		fi
-		rm -rf system_new.img vendor_new.img data_new.img
+		$p7z a -tzip -mx5 $signature.zip *_new.img $exzipfiles 2>/dev/null >> $logs/zip.log
+		rm -rf *_new.img
 	else
 		banner
 		echo "$bluet$signature.zip $t_general_build $romname ...$normal"
-		$p7z a -tzip -mx5 $signature.zip boot.img META-INF system vendor data $exzipfiles 2>/dev/null >> $logs/zip.log
+		if [[ $romdir/system/default.prop ]]; then
+			exzipfiles="META-INF system supersu rootzip busybox gapps xposed magisk data $cusdir $(cat $prfiles/exdirs 2>/dev/null| tr '\n', ' ') "
+		else
+			exzipfiles="boot.img META-INF system supersu rootzip busybox gapps xposed magisk data $cusdir $(cat $prfiles/exdirs 2>/dev/null| tr '\n', ' ') "
+		fi
+		$p7z a -tzip -mx5 $signature.zip $exzipfiles mod* 2>/dev/null >> $logs/zip.log
 	fi
 	banner
 	if [[ -f $signature.zip ]]; then
@@ -1522,7 +1578,7 @@ build_zip() {
 		elif [[ $choice = "2" ]]; then
 			sparseimg=" -s"
 		fi
-		whatpart="system"
+		whatimg="system"
 		partimg
 		sparseimg=""
 		if [[ -f system_new.img && ! -f system.img ]]; then
@@ -1673,7 +1729,7 @@ change_permtype() {
 	if [[ ! -f $prfiles/symlinks && ! $(grep ^symlink $usdir/updater-script 2>/dev/null) = "" ]]; then
 		cd $usdir
 		get_symlinks
-	elif [[ ! -f $prfiles/symlinks && ! $(find $romdir/system $romdir/vendor -type l 2>/dev/null) = "" ]]; then
+	elif [[ ! -f $prfiles/symlinks && ! $(find $sysdir $romdir/vendor -type l 2>/dev/null) = "" ]]; then
 		cd $romdir
 		link1=$(find system vendor -type l -printf "%l\n" 2>/dev/null | sed 's/^/symlink(\"/; s/$/\", /')
 		link2=$(find system vendor -type l 2>/dev/null | sed 's/^/\"\//; s/$/\");/')
@@ -1800,7 +1856,7 @@ change_permtype() {
 	fi
 	update_project
 	if [[ -f $prfiles/root && ! -f $prfiles/root_existing ]]; then
-		if [[ -f $romdir/system/xbin/su || -d $romdir/SuperSU || -d $romdir/supersu || -d $romdir/rootzip ]]; then
+		if [[ -f $sysdir/xbin/su || -d $romdir/SuperSU || -d $romdir/supersu || -d $romdir/rootzip ]]; then
 			rootrem
 			root
 		else
@@ -1851,7 +1907,7 @@ choosepr() {
 	prchoice=""
 }
 data_app() {
-	whatpart="data"
+	whatimg="data"
 	partadd
 	mkdir -p $romdir/data/app
 }
@@ -2261,7 +2317,7 @@ deodex_start() {
 		fi
 	}
 	rm -rf $logs/extraodex.txt
-	if [[ ! -d "$framedir" || ! -f $romdir/system/build.prop ]]; then
+	if [[ ! -d "$framedir" || ! -f $sysdir/build.prop ]]; then
 		banner
 		echo "$redb$yellowt$bold$t_missing$normal"
 		echo -e "$redt$t_deodex_copy_frame_prop $yellowt$romname/system$normal"
@@ -2288,29 +2344,29 @@ deodex_start() {
 		rom_tools
 		return 1
 	fi
-	if [[ -f $romdir/system/odex.sqsh ]]; then
+	if [[ -f $sysdir/odex.sqsh ]]; then
 		sqshfile="odex.sqsh"
 		deodex_sqsh
-		if [[ -f $romdir/system/odex1.sqsh ]]; then
+		if [[ -f $sysdir/odex1.sqsh ]]; then
 			sqshfile="odex1.sqsh"
 			deodex_sqsh
-			if [[ -f $romdir/system/odex2.sqsh ]]; then
+			if [[ -f $sysdir/odex2.sqsh ]]; then
 				sqshfile="odex2.sqsh"
 				deodex_sqsh
 			fi
 		fi
-	elif [[ -f $romdir/system/odex.app.sqsh ]]; then
+	elif [[ -f $sysdir/odex.app.sqsh ]]; then
 		sqshfile="odex.app.sqsh"
 		deodex_sqsh
-		if [[ -f $romdir/system/odex.priv-app.sqsh ]]; then
+		if [[ -f $sysdir/odex.priv-app.sqsh ]]; then
 			sqshfile="odex.priv-app.sqsh"
 			deodex_sqsh
 		fi
-		if [[ -f $romdir/system/odex.framework.sqsh ]]; then
+		if [[ -f $sysdir/odex.framework.sqsh ]]; then
 			sqshfile="odex.framework.sqsh"
 			deodex_sqsh
 		fi
-		if [[ -f $romdir/system/etc/product/orig.applications.sqsh ]]; then
+		if [[ -f $sysdir/etc/product/orig.applications.sqsh ]]; then
 			sqshfile="orig.applications.sqsh"
 			deodex_sqsh
 		fi
@@ -2589,7 +2645,7 @@ deodex_l() {
 			$p7z e -o$xzdir $line 2>/dev/null >> $logs/zip.log
 		done
 	fi
-	if [[ -d $romdir/system/app && ! $(find system vendor -name *.odex 2>/dev/null | grep -v "system/framework/$arch/\|system/framework/$arch2/\|system/app/\|system/priv-app/") = "" ]]; then
+	if [[ -d $sysdir/app && ! $(find system vendor -name *.odex 2>/dev/null | grep -v "system/framework/$arch/\|system/framework/$arch2/\|system/app/\|system/priv-app/") = "" ]]; then
 		echo "$clears"
 		echo ""
 		echo "----------------------------------------------------"
@@ -2612,7 +2668,7 @@ deodex_l() {
 					line="$newappdir"
 				fi
 				extraapp=$(basename $line)
-				mv $romdir/$line $romdir/system/app/$extraapp
+				mv $romdir/$line $sysdir/app/$extraapp
 			done
 		fi
 	fi
@@ -2657,7 +2713,7 @@ deodex_l() {
 		line=""
 		cat $logs/extraodex.txt | while read line; do
 			extraapp=$(echo $line | rev | cut -d"/" -f1 | rev)
-			mv $romdir/system/app/$extraapp $romdir/$line
+			mv $sysdir/app/$extraapp $romdir/$line
 		done
 		line=""
 		if [[ -s $logs/extramv.txt ]]; then
@@ -2877,7 +2933,7 @@ deodex_m() {
 			$p7z e -o$xzdir $line 2>/dev/null >> $logs/zip.log
 		done
 	fi
-	if [[ -d $romdir/system/app && ! $(find system vendor -name *.odex 2>/dev/null | grep -v "system/framework/oat/\|system/framework/$arch/\|system/framework/$arch2/\|system/app/\|system/priv-app/") = "" ]]; then
+	if [[ -d $sysdir/app && ! $(find system vendor -name *.odex 2>/dev/null | grep -v "system/framework/oat/\|system/framework/$arch/\|system/framework/$arch2/\|system/app/\|system/priv-app/") = "" ]]; then
 		echo "$clears"
 		echo ""
 		echo "----------------------------------------------------"
@@ -2900,7 +2956,7 @@ deodex_m() {
 					line="$newappdir"
 				fi
 				extraapp=$(basename $line)
-				mv $romdir/$line $romdir/system/app/$extraapp
+				mv $romdir/$line $sysdir/app/$extraapp
 			done
 		fi
 	fi
@@ -2945,7 +3001,7 @@ deodex_m() {
 		line=""
 		cat $logs/extraodex.txt | while read line; do
 			extraapp=$(echo $line | rev | cut -d"/" -f1 | rev)
-			mv $romdir/system/app/$extraapp $romdir/$line
+			mv $sysdir/app/$extraapp $romdir/$line
 		done
 		line=""
 		if [[ -s $logs/extramv.txt ]]; then
@@ -3169,7 +3225,7 @@ deodex_m2() {
 			$p7z e -o$xzdir $line 2>/dev/null >> $logs/zip.log
 		done
 	fi
-	if [[ -d $romdir/system/app && ! $(find system vendor -name *.odex 2>/dev/null | grep -v "system/framework/oat/\|system/framework/$arch/\|system/framework/$arch2/\|system/app/\|system/priv-app/") = "" ]]; then
+	if [[ -d $sysdir/app && ! $(find system vendor -name *.odex 2>/dev/null | grep -v "system/framework/oat/\|system/framework/$arch/\|system/framework/$arch2/\|system/app/\|system/priv-app/") = "" ]]; then
 		echo "$clears"
 		echo ""
 		echo "----------------------------------------------------"
@@ -3192,7 +3248,7 @@ deodex_m2() {
 					line="$newappdir"
 				fi
 				extraapp=$(basename $line)
-				mv $romdir/$line $romdir/system/app/$extraapp
+				mv $romdir/$line $sysdir/app/$extraapp
 			done
 		fi
 	fi
@@ -3223,7 +3279,7 @@ deodex_m2() {
 		line=""
 		cat $logs/extraodex.txt | while read line; do
 			extraapp=$(echo $line | rev | cut -d"/" -f1 | rev)
-			mv $romdir/system/app/$extraapp $romdir/$line
+			mv $sysdir/app/$extraapp $romdir/$line
 		done
 		line=""
 		if [[ -s $logs/extramv.txt ]]; then
@@ -3477,7 +3533,7 @@ deodex_m3() {
 			$p7z e -o$xzdir $line 2>/dev/null >> $logs/zip.log
 		done
 	fi
-	if [[ -d $romdir/system/app && ! $(find system vendor -name *.odex 2>/dev/null | grep -v "system/framework/oat/\|system/framework/$arch/\|system/framework/$arch2/\|system/app/\|system/priv-app/") = "" ]]; then
+	if [[ -d $sysdir/app && ! $(find system vendor -name *.odex 2>/dev/null | grep -v "system/framework/oat/\|system/framework/$arch/\|system/framework/$arch2/\|system/app/\|system/priv-app/") = "" ]]; then
 		echo "$clears"
 		echo ""
 		echo "----------------------------------------------------"
@@ -3500,7 +3556,7 @@ deodex_m3() {
 					line="$newappdir"
 				fi
 				extraapp=$(basename $line)
-				mv $romdir/$line $romdir/system/app/$extraapp
+				mv $romdir/$line $sysdir/app/$extraapp
 			done
 		fi
 	fi
@@ -3531,7 +3587,7 @@ deodex_m3() {
 		line=""
 		cat $logs/extraodex.txt | while read line; do
 			extraapp=$(echo $line | rev | cut -d"/" -f1 | rev)
-			mv $romdir/system/app/$extraapp $romdir/$line
+			mv $sysdir/app/$extraapp $romdir/$line
 		done
 		line=""
 		if [[ -s $logs/extramv.txt ]]; then
@@ -3768,7 +3824,7 @@ deodex_n() {
 			$p7z e -o$xzdir $line 2>/dev/null >> $logs/zip.log
 		done
 	fi
-	if [[ -d $romdir/system/app && ! $(find system vendor -name *.odex 2>/dev/null | grep -v "system/framework/oat/\|system/framework/$arch/\|system/framework/$arch2/\|system/app/\|system/priv-app/") = "" ]]; then
+	if [[ -d $sysdir/app && ! $(find system vendor -name *.odex 2>/dev/null | grep -v "system/framework/oat/\|system/framework/$arch/\|system/framework/$arch2/\|system/app/\|system/priv-app/") = "" ]]; then
 		echo "$clears"
 		echo ""
 		echo "----------------------------------------------------"
@@ -3791,7 +3847,7 @@ deodex_n() {
 					line="$newappdir"
 				fi
 				extraapp=$(basename $line)
-				mv $romdir/$line $romdir/system/app/$extraapp
+				mv $romdir/$line $sysdir/app/$extraapp
 			done
 		fi
 	fi
@@ -3822,7 +3878,7 @@ deodex_n() {
 		line=""
 		cat $logs/extraodex.txt | while read line; do
 			extraapp=$(echo $line | rev | cut -d"/" -f1 | rev)
-			mv $romdir/system/app/$extraapp $romdir/$line
+			mv $sysdir/app/$extraapp $romdir/$line
 		done
 		line=""
 		if [[ -s $logs/extramv.txt ]]; then
@@ -4057,7 +4113,7 @@ deodex_n2() {
 			$p7z e -o$xzdir $line 2>/dev/null >> $logs/zip.log
 		done
 	fi
-	if [[ -d $romdir/system/app && ! $(find system vendor -name *.odex 2>/dev/null | grep -v "system/framework/oat/\|system/framework/$arch/\|system/framework/$arch2/\|system/app/\|system/priv-app/") = "" ]]; then
+	if [[ -d $sysdir/app && ! $(find system vendor -name *.odex 2>/dev/null | grep -v "system/framework/oat/\|system/framework/$arch/\|system/framework/$arch2/\|system/app/\|system/priv-app/") = "" ]]; then
 		echo "$clears"
 		echo ""
 		echo "----------------------------------------------------"
@@ -4080,7 +4136,7 @@ deodex_n2() {
 					line="$newappdir"
 				fi
 				extraapp=$(basename $line)
-				mv $romdir/$line $romdir/system/app/$extraapp
+				mv $romdir/$line $sysdir/app/$extraapp
 			done
 		fi
 	fi
@@ -4111,7 +4167,7 @@ deodex_n2() {
 		line=""
 		cat $logs/extraodex.txt | while read line; do
 			extraapp=$(echo $line | rev | cut -d"/" -f1 | rev)
-			mv $romdir/system/app/$extraapp $romdir/$line
+			mv $sysdir/app/$extraapp $romdir/$line
 		done
 		line=""
 		if [[ -s $logs/extramv.txt ]]; then
@@ -4288,7 +4344,7 @@ deodex_old() {
 	rm -rf $prfiles/deodex_*
 	touch $prfiles/deodex_old
 	rm -rf $logs/*.log
-	if [[ -d $romdir/system/app && ! $(find system vendor -name *.odex 2>/dev/null | grep -v "system/framework\|system/app/\|system/priv-app/") = "" ]]; then
+	if [[ -d $sysdir/app && ! $(find system vendor -name *.odex 2>/dev/null | grep -v "system/framework\|system/app/\|system/priv-app/") = "" ]]; then
 		echo "$clears"
 		echo ""
 		echo "----------------------------------------------------"
@@ -4299,7 +4355,7 @@ deodex_old() {
         	if [[ -s $logs/extraodex.txt ]]; then
         		line=""
         		cat $logs/extraodex.txt | while read line; do
-        			( exec mv $romdir/$line* $romdir/system/app/ 2<&1 ) > /dev/null
+        			( exec mv $romdir/$line* $sysdir/app/ 2<&1 ) > /dev/null
         		done
         	fi
 	fi
@@ -4318,7 +4374,7 @@ deodex_old() {
 		line=""
 		cat $logs/extraodex.txt | while read line; do
 			extraapp=$(echo $line | rev | cut -d"/" -f1 | rev)
-			mv $romdir/system/app/$extraapp.apk $romdir/$line.apk
+			mv $sysdir/app/$extraapp.apk $romdir/$line.apk
 		done
 	fi
 	rm -rf $logs/extraodex.txt
@@ -4372,11 +4428,11 @@ deodex_sqsh() {
 	banner
 	echo "$bluet$t_general_extracting $sqshfile ...$normal"
 	if [[ ! $(echo "$sqshfile" | grep "priv-app\|odex.app\|framework") = "" ]]; then
-		cd $romdir/system
+		cd $sysdir
 		sqshtype=$(echo "$sqshfile" | cut -d"." -f2)
 		sqshdir=$(echo "sqshtmp/$sqshtype")
 	elif [[ ! $(echo "$sqshfile" | grep "orig.applications") = "" ]]; then
-		cd $romdir/system/etc/product
+		cd $sysdir/etc/product
 		mkdir -p sqshtmp
 		mv $sqshfile sqshtmp/
 		cd sqshtmp
@@ -4392,10 +4448,10 @@ deodex_sqsh() {
 		fi
 		ls | while read line; do
 			odexapp=$(echo "$line" | sed 's/\.odex//')
-			mv $line $romdir/system/etc/product/applications/$odexapp/oat/$odexarch/
-			mv $romdir/system/etc/product/sqshtmp/$odexapp/$odexapp.apk $romdir/system/etc/product/applications/$odexapp/
+			mv $line $sysdir/etc/product/applications/$odexapp/oat/$odexarch/
+			mv $sysdir/etc/product/sqshtmp/$odexapp/$odexapp.apk $sysdir/etc/product/applications/$odexapp/
 		done
-		rm -rf $romdir/system/etc/product/sqshtmp $romdir/system/etc/product/orig.applications
+		rm -rf $sysdir/etc/product/sqshtmp $sysdir/etc/product/orig.applications
 		sqshfile=""
 		cd $romdir
 		return 1
@@ -4409,20 +4465,20 @@ deodex_sqsh() {
 	rm -rf $sqshfile
 	banner
 	echo "$bluet$t_deodex_move_odex$normal"
-	if [[ -d $romdir/system/$sqshdir/arm || -d $romdir/system/$sqshdir/arm64 ]]; then
-		if [[ -d $romdir/system/$sqshdir/arm ]]; then
-			cd $romdir/system/$sqshdir/arm
+	if [[ -d $sysdir/$sqshdir/arm || -d $sysdir/$sqshdir/arm64 ]]; then
+		if [[ -d $sysdir/$sqshdir/arm ]]; then
+			cd $sysdir/$sqshdir/arm
 			sqsharch="arm"
-		elif [[ -d $romdir/system/$sqshdir/arm64 ]]; then
-			cd $romdir/system/$sqshdir/arm64
+		elif [[ -d $sysdir/$sqshdir/arm64 ]]; then
+			cd $sysdir/$sqshdir/arm64
 			sqsharch="arm64"
 		fi
 		if [[ ! $sqshtype = "framework" ]]; then
 			line=""
 			ls | grep .odex | while read line; do
 				tmpapp=$(echo "$line" | sed 's/\.odex//')
-				mkdir -p $romdir/system/$sqshtype/$tmpapp/oat/$sqsharch
-				mv "$line" $romdir/system/$sqshtype/$tmpapp/oat/$sqsharch/
+				mkdir -p $sysdir/$sqshtype/$tmpapp/oat/$sqsharch
+				mv "$line" $sysdir/$sqshtype/$tmpapp/oat/$sqsharch/
 			done
 		else
 			line=""
@@ -4433,21 +4489,21 @@ deodex_sqsh() {
 					mv "$line" $framedir/$tmpapp/oat/$sqsharch/
 				fi
 			done
-			mkdir -p $romdir/system/$sqshtype/oat/$sqsharch
-			mv * $romdir/system/$sqshtype/oat/$sqsharch/
+			mkdir -p $sysdir/$sqshtype/oat/$sqsharch
+			mv * $sysdir/$sqshtype/oat/$sqsharch/
 		fi
 	else
-		cd $romdir/system/sqshtmp
+		cd $sysdir/sqshtmp
 		line=""
 		find . -type d | sed 's/^.\///' | while read line; do
-			mkdir -p $romdir/system/$line
+			mkdir -p $sysdir/$line
 		done
 		line=""
 		find . -type f | sed 's/^.\///' | while read line; do
-			mv $line $romdir/system/$line
+			mv $line $sysdir/$line
 		done
 	fi
-	cd $romdir/system
+	cd $sysdir
 	rmleft=$(echo "$sqshfile" | sed 's/\.sqsh$//')
 	rm -rf sqshtmp $rmleft
 	sqshfile=""
@@ -4657,9 +4713,9 @@ extract_new() {
 				elif [[ ! $(echo "$project" | grep "system.ext4$\|system.img.ext4") = "" ]]; then
 					romimg="$project"
 					if [[ $romimg = "system.ext4" ]]; then
-						mv $romdir/system.ext4 $romdir/system.img
+						mv $sysdir.ext4 $sysdir.img
 					elif [[ $romimg = "system.img.ext4" ]]; then
-						mv $romdir/system.img.ext4 $romdir/system.img
+						mv $sysdir.img.ext4 $sysdir.img
 					fi
 					romimg="system.img"
 				fi
@@ -4809,7 +4865,7 @@ extract_new() {
 				echo ""
 				exit
 			fi
-			if [[ -f $romdir/system.img ]]; then
+			if [[ -f $sysdir.img ]]; then
 				romimg="system.img"
 			else
 				banner
@@ -4845,7 +4901,7 @@ extract_new() {
 	fi
 	banner
 	echo "$bluet$t_extract_prep$normal"
-	if [[ ! $romimg = "cache.img" && ! $romimg = "hidden.img" && ! $romimg = "data.img" && ! $romimg = "vendor.img" && ! $romimg = "generic.img" ]]; then
+	if [[ ! $romimg = "cache.img" && ! $romimg = "hidden.img" && ! $romimg = "data.img" && ! $romimg = "vendor.img" && ! $romimg = "product.img" && ! $romimg = "cust.img" && ! $romimg = "generic.img" ]]; then
 		moveoldfiles
 	fi
 	if [[ ! $romzip = "" ]]; then
@@ -4890,16 +4946,17 @@ extract_new() {
 		elif [[ ! $($p7z l $romzip | grep system.new.dat) = "" ]]; then
 			banner
 			echo "$bluet$t_extract_dat$normal"
-			$p7z e $romzip system.new.dat system.transfer.list vendor.new.dat vendor.transfer.list boot.img 2>/dev/null >> $logs/zip.log
-			banner
-			echo "$bluet$t_extract_convert_sys$normal"
-			$tools/sdat2img.py system.transfer.list system.new.dat system.img > $logs/main.log
-			rm -rf system.transfer.list system.new.dat
-			if [[ -f vendor.new.dat && -f vendor.transfer.list ]]; then
-				banner
-				echo "$bluet$t_extract_convert_ven$normal"
-				$tools/sdat2img.py vendor.transfer.list vendor.new.dat vendor.img > $logs/main.log
+			$p7z e $romzip *.new.dat* *.transfer.list boot.img 2>/dev/null >> $logs/zip.log
+			if [[ -f system.new.dat.xz ]]; then
+				$p7z e system.new.dat.xz 2>/dev/null >> $logs/zip.log
+				rm -rf system.new.dat.xz
 			fi
+			ls | grep "\.new\.dat" | cut -d"." -f1 | while read line; do
+				banner
+				echo "$bluet$t_extract_convert_sys $line.img ...$normal"
+				$tools/sdat2img.py $line.transfer.list $line.new.dat $line.img > $logs/main.log
+				rm -rf $line.transfer.list $line.new.dat
+			done
 			romzip=""
 			romimg="system.img"
 		elif [[ ! $($p7z l $romzip | grep "system_new.img\|system.img$") = "" ]]; then
@@ -5003,7 +5060,7 @@ extract_new() {
 			rm -rf $romdir/META-INF/*.MF
 			rm -rf $romdir/META-INF/com/android
 			deviceloc=""
-			if [[ -f $romdir/system/build.prop && -f $usdir/updater-script ]]; then
+			if [[ -f $sysdir/build.prop && -f $usdir/updater-script ]]; then
 				get_devicename
 				mkdir -p $base/tools/devices/$devicename
 				deviceloc=$base/tools/devices/$devicename
@@ -5144,7 +5201,7 @@ extract_new() {
 		extractimg="$romimgdir"
 		imgextract
 		if [[ -f $romdir/$romimgdir/build.prop && ! $romimgdir = "system" && ! $romimg = "vendor.img" ]]; then
-			mv $romdir/$romimgdir $romdir/system
+			mv $romdir/$romimgdir $sysdir
 		fi
 	fi
 	if [[ ! $romtar = "" ]]; then
@@ -5168,15 +5225,18 @@ extract_new() {
 			tar -xf $romtar 2>/dev/null >> $logs/zip.log
 		fi
 	fi
-	if [[ -f $romdir/system/system/build.prop ]]; then
+	if [[ -f $romdir/system/default.prop && -d $romdir/system/system ]]; then
+		sysdir="$romdir/system/system"
+	elif [[ -f $romdir/system/system/build.prop ]]; then
 		mv $romdir/system/system/* $romdir/system/
 		rm -rf $romdir/system/system
+		sysdir="$romdir/system"
 	fi
-	if [[ -f $romdir/system/xbin/su || -f $romdir/system/bin/su ]]; then
+	if [[ -f $sysdir/xbin/su || -f $sysdir/bin/su ]]; then
 		touch $prfiles/root_existing
 	fi
 	if [[ ! $romimg = "" || ! $romwin = "" || ! $romtar = "" ]] && [[ ! $romimg = "cache.img" && ! $romimg = "hidden.img" && ! $romimg = "data.img" && ! $romimg = "vendor.img" && ! $romimg = "generic.img" ]]; then
-		if [[ -f $romdir/system/build.prop ]]; then
+		if [[ -f $sysdir/build.prop ]]; then
 			if [[ -f cache.img ]]; then
 				banner
 				choice=""
@@ -5184,7 +5244,7 @@ extract_new() {
 				if [[ $choice = "y" ]]; then
 					extractimg="cache"
 					imgextract
-					if [[ -d cache && $(grep "ro.product.manufacturer" $romdir/system/build.prop | cut -d"=" -f2) = "samsung" ]]; then
+					if [[ -d cache && $(grep "ro.product.manufacturer" $sysdir/build.prop | cut -d"=" -f2) = "samsung" ]]; then
 						choice=""
 						echo ""
 						echo -e "$t_extract_cache_include_q"
@@ -5211,28 +5271,33 @@ extract_new() {
 					fi
 				fi
 			fi
-			if [[ -f vendor.img && ! -f $prfiles/vendorimg ]]; then
-				banner
-				choice=""
-				read -n 1 -p "$t_extract_vendor_extract_q" choice
-				if [[ $choice = "y" ]]; then
-					extractimg="vendor"
-					imgextract
-					if [[ -d vendor ]]; then
+			cd $romdir
+			if [[ $(ls | grep "\.img$" | grep -v "system\|cache\|boot\|recovery") != "" ]]; then
+				for line in $(ls | grep "\.img$" | grep -v "system\|cache\|boot\|recovery"); do
+					line2=$(echo "$line" | sed 's/\.img//')
+					if [[ $(grep "$line2" $prfiles/exdirs 2>/dev/null) = "" ]]; then
+						banner
 						choice=""
-						echo ""
-						echo -e "$t_extract_vendor_include_q"
+						echo "$t_extract_extra_extract$yellowt$line$normal$t_extract_extra_q"
 						read -n 1 -p "" choice
 						if [[ $choice = "y" ]]; then
-							touch $prfiles/vendorimg
-						else
-							rm -rf $prfiles/vendorimg
+							extractimg="$line2"
+							imgextract
+							if [[ -d $line2 ]]; then
+								choice=""
+								echo ""
+								echo "$t_extract_extra_include"
+								read -n 1 -p "$line$t_extract_extra_include_q" choice
+								if [[ $choice = "y" ]]; then
+									echo "$line2" >> $prfiles/exdirs
+								fi
+							fi
 						fi
+					elif [[ $(grep "$line2" $prfiles/exdirs 2>/dev/null) != "" ]]; then
+						extractimg="$line2"
+						imgextract
 					fi
-				fi
-			elif [[ -f vendor.img && -f $prfiles/vendorimg ]]; then
-				extractimg="vendor"
-				imgextract
+				done
 			fi
 			get_devicename
 			mkdir -p $base/tools/devices/$devicename
@@ -5277,7 +5342,7 @@ findimgsize() {
 	cd $romdir
 	imgfile=$(echo $whatimg | cut -c1-3)
 	if [[ -f $deviceloc/${imgfile}imgsize ]]; then
-		export ${imgfile}size=$(cat $deviceloc/${imgfile}imgsize)
+		tmpsize=$(cat $deviceloc/${imgfile}imgsize)
 	else
 		choice=""
 		while [[ ! ${choice} =~ ^[1-4]$ ]] && [[ ! $choice = "q" ]]; do
@@ -5345,7 +5410,7 @@ findimgsize() {
 				findimgsize
 				return 1
 			fi
-			export ${imgfile}size=$(echo $(($rawsize * 1024)))
+			tmpsize=$(echo $(($rawsize * 1024)))
 		#START Project $whatimg directory (BETA)
 		elif [[ $choice = "2" ]]; then
 			banner
@@ -5359,7 +5424,7 @@ findimgsize() {
 				return 1
 			fi
 			imgtest=$(du -hbd 0 $romdir/$whatimg | gawk '{ print $1 }')
-			export ${imgfile}size=$(($imgtest + 75000000))
+			tmpsize=$(($imgtest + 75000000))
 		#START Enter it manually in bytes
 		elif [[ $choice = "3" ]]; then
 			banner
@@ -5375,7 +5440,7 @@ findimgsize() {
 				build_zip
 				return 1
 			else
-				export ${imgfile}size="$whatsize"
+				tmpsize="$whatsize"
 			fi
 		#START $whatimg.img
 		elif [[ $choice = "4" ]]; then
@@ -5388,7 +5453,7 @@ findimgsize() {
 				else
 					mv $whatimg.img-2 $whatimg.img
 				fi
-				export ${imgfile}size=$(wc -c $whatimg.img | gawk '{ print $1 }')
+				tmpsize=$(wc -c $whatimg.img | gawk '{ print $1 }')
 			else
 				banner
 				echo "$redb$yellowt$bold$t_error$normal"
@@ -5405,6 +5470,11 @@ findimgsize() {
 			exit
 		fi
 	fi
+	if [[ -s $prfiles/exdirs && $(grep "$whatimg" $prfiles/exdirs) != "" ]]; then
+		echo "$whatimg $tmpsize" >> $prfiles/exdirsb
+		return 1
+	fi
+	export ${imgfile}size=$tmpsize
 }
 get_byname() {
 	if [[ ! -s $deviceloc/superr_byname ]]; then
@@ -5439,6 +5509,8 @@ get_byname() {
 				elif [[ ! $($adb shell "mount" | grep "by-name/APP") = "" ]]; then
 					byname1=$($adb shell "mount" | grep "by-name/APP")
 					touch $deviceloc/superr_appbyname
+				elif [[ ! $($adb shell "mount" | grep "by-name/userdata") = "" ]]; then
+					byname1=$($adb shell "mount" | grep "by-name/userdata")
 				fi
 				echo "$byname1" | gawk '{ print $1 }' | rev | cut -d'/' -f2- | rev | sed 's:/:\\/:g' > $deviceloc/superr_byname
 				rm -rf $deviceloc/devicename
@@ -5534,10 +5606,10 @@ get_byname() {
 					return 1
 				fi
 			fi
-			if [[ $chosenimg = "boot" ]]; then
-				cd $romdir/bootimg/ramdisk
-			elif [[ $chosenimg = "recovery" ]]; then
-				cd $romdir/recoveryimg/ramdisk
+			if [[ -f $romdir/system/default.prop ]]; then
+				cd $romdir/system
+			else
+				cd $romdir/${chosenimg}img/ramdisk
 			fi
 			findfstab
 			bntest=$(${usesudo}grep -v "^#" $fstab | sed 's/\r$//')
@@ -5658,17 +5730,38 @@ get_byname() {
 		byname=$(cat $deviceloc/superr_byname)
 	fi
 }
+get_contexts() {
+	if [[ ! -f $prfiles/file_contexts ]] && [[ -f $romdir/${chosenimg}img/ramdisk/file_contexts || -f $romdir/${chosenimg}img/ramdisk/file_contexts.bin || -f $romdir/system/file_contexts.bin ]]; then
+		if [[ -f $romdir/system/file_contexts.bin ]]; then
+			cp $romdir/system/file_contexts.bin $prfiles/
+		elif [[ -f $romdir/${chosenimg}img/ramdisk/file_contexts ]]; then
+			${usesudo}cp $romdir/${chosenimg}img/ramdisk/file_contexts $prfiles/
+		elif [[ -f $romdir/${chosenimg}img/ramdisk/file_contexts.bin ]]; then
+			${usesudo}cp $romdir/${chosenimg}img/ramdisk/file_contexts.bin $prfiles/
+		fi
+		if [[ -f $prfiles/file_contexts.bin ]]; then
+			strings $prfiles/file_contexts.bin | sed -n '/u:/,$p' | grep -B1 "/" | grep "/" > $prfiles/contextl
+			strings $prfiles/file_contexts.bin | sed -n '/u:/,$p' | grep -B1 "/" | grep "u:" > $prfiles/contextr
+			paste $prfiles/contextl $prfiles/contextr > $prfiles/file_contexts
+			rm -rf $prfiles/contextl $prfiles/contextr $prfiles/file_contexts.bin
+		fi
+		if [[ $api -ge "23" ]]; then
+			myuser=$(echo "$(whoami | gawk '{ print $1 }')")
+			${usesudo}chown -h $myuser:$myuser $prfiles/file_contexts
+		fi
+	fi
+}
 get_devicename() {
 	devicename=""
-	if [[ -f $romdir/system/build.prop ]]; then
-		if [[ ! $(grep "ro.product.device=" $romdir/system/build.prop) = "" ]]; then
-			devicename=$(grep -m 1 "ro.product.device=" $romdir/system/build.prop | cut -d"=" -f2)
+	if [[ -f $sysdir/build.prop ]]; then
+		if [[ ! $(grep "ro.product.device=" $sysdir/build.prop) = "" ]]; then
+			devicename=$(grep -m 1 "ro.product.device=" $sysdir/build.prop | cut -d"=" -f2)
 			devicechk="ro.product.device"
-		elif [[ ! $(grep "ro.build.product=" $romdir/system/build.prop) = "" ]]; then
-			devicename=$(grep -m 1 "ro.build.product=" $romdir/system/build.prop | cut -d"=" -f2)
+		elif [[ ! $(grep "ro.build.product=" $sysdir/build.prop) = "" ]]; then
+			devicename=$(grep -m 1 "ro.build.product=" $sysdir/build.prop | cut -d"=" -f2)
 			devicechk="ro.build.product"
-		elif [[ ! $(grep "ro.product.name=" $romdir/system/build.prop) = "" ]]; then
-			devicename=$(grep -m 1 "ro.product.name=" $romdir/system/build.prop | cut -d"=" -f2)
+		elif [[ ! $(grep "ro.product.name=" $sysdir/build.prop) = "" ]]; then
+			devicename=$(grep -m 1 "ro.product.name=" $sysdir/build.prop | cut -d"=" -f2)
 			devicechk="ro.product.name"
 		fi
 	elif [[ -f $romdir/build.prop ]]; then
@@ -5836,14 +5929,25 @@ imgextract() {
 		${usesudo2}mount -t ext4 -o loop ${extractimg}.img output/
 		banner
 		echo "$bluet$t_extract_copy_e ${extractimg} ...$normal"
+		if [[ -f output/default.prop ]]; then
+			cd output
+			find . -maxdepth 1 | while read line; do
+			        line2=$(echo "$line" | sed 's/^\.//')
+			        stat -c "set_metadata(\"/system$line2\", \"uid\", %u, \"gid\", %g, \"mode\", %a, \"capabilities\", 0x0, \"selabel\", \"%C\");" $line >> $prfiles/root_meta
+			done
+			grep -v "\"/system\/system\"\|\"/system\"" $prfiles/root_meta > $prfiles/root_meta2
+			mv $prfiles/root_meta2 $prfiles/root_meta
+ 			cd $romdir
+		fi
 		mkdir ${extractimg}
 		${usesudo2}cp -r output/* ${extractimg}/
 		${usesudo2}umount output/
 		rm -rf $romdir/output
 		${usesudo2}chown -hR $myuser:$myuser $romdir/${extractimg}
-		find $romdir/${extractimg} ! -perm -g+r | grep -v lost+found | sed 's/^\.\///' | while read line; do
-			chmod 400 $line
-		done
+		# find $romdir/${extractimg} ! -perm -g+r 2>/dev/null | grep -v lost+found | sed 's/^\.\///' | while read line; do
+		# 	chmod 400 $line
+		# done
+		${usesudo2}chmod -R ug+rw $romdir/${extractimg}
 	fi
 	extractimg=""
 }
@@ -5910,7 +6014,7 @@ isassertdevices() {
 }
 isbusyboxstatus() {
 	if [[ -d $romdir ]]; then
-		if [[ -f $romdir/system/xbin/busybox || -d $romdir/Busybox || -d $romdir/busybox || -d $romdir/BusyBox ]]; then
+		if [[ -f $sysdir/xbin/busybox || -d $romdir/Busybox || -d $romdir/busybox || -d $romdir/BusyBox ]]; then
 			if [[ ! -f $prfiles/busybox ]]; then
 				touch $prfiles/busybox
 			fi
@@ -5984,34 +6088,42 @@ isdebloatcustomstatus() {
 isdmverity() {
 	if [[ -d $romdir/bootimg/ramdisk ]]; then
 		cd $romdir/bootimg/ramdisk
-		findfstab
-		if [[ ! $(${usesudo}grep "verify" $fstab) = "" ]]; then
-			dmveritystatus="Yes"
-			dmveritystatus1="${redt}$t_enabled$normal"
-		else
-			dmveritystatus="No"
-			dmveritystatus1="${greent}$t_disabled$normal"
-		fi
+	elif [[ -f $romdir/system/default.prop ]]; then
+		cd $romdir/system
+	else
+		return 1
+	fi
+	findfstab
+	if [[ ! $(${usesudo}grep "verify" $fstab) = "" ]]; then
+		dmveritystatus="Yes"
+		dmveritystatus1="${redt}$t_enabled$normal"
+	else
+		dmveritystatus="No"
+		dmveritystatus1="${greent}$t_disabled$normal"
 	fi
 }
 isforcee() {
 	if [[ -d $romdir/bootimg/ramdisk ]]; then
 		cd $romdir/bootimg/ramdisk
-		findfstab
-		if [[ ! $(${usesudo}grep "/data" $fstab | grep "forceencrypt\|forcefdeorfbe") = "" ]]; then
-			forceestatus="Yes"
-			forceestatus1="${redt}$t_enabled$normal"
-		else
-			forceestatus="No"
-			forceestatus1="${greent}$t_disabled$normal"
-		fi
+	elif [[ -f $romdir/system/default.prop ]]; then
+		cd $romdir/system
+	else
+		return 1
+	fi
+	findfstab
+	if [[ ! $(${usesudo}grep "/data" $fstab | grep "forceencrypt\|forcefdeorfbe") = "" ]]; then
+		forceestatus="Yes"
+		forceestatus1="${redt}$t_enabled$normal"
+	else
+		forceestatus="No"
+		forceestatus1="${greent}$t_disabled$normal"
 	fi
 }
 isfullrom() {
 	fullrom=""
 	fullrom1=""
-	if [[ -d $romdir/system ]]; then
-		if [[ $(ls $romdir/system | grep "lib") = "" || $(ls $romdir/system | grep "etc") = "" || $(ls $romdir/system | grep "bin") = "" || $(ls $romdir/system | grep "xbin") = "" || $(ls $romdir | grep "META-INF") = "" || $(ls $romdir | grep "system") = "" || $(ls $romdir | grep "boot.img") = "" ]]; then
+	if [[ -d $sysdir ]]; then
+		if [[ $(ls $sysdir | grep "lib") = "" || $(ls $sysdir | grep "etc") = "" || $(ls $sysdir | grep "bin") = "" || $(ls $sysdir | grep "xbin") = "" || $(ls $romdir | grep "META-INF") = "" || $(ls $romdir | grep "system") = "" || $(ls $romdir | grep "boot.img") = "" ]]; then
 			fullrom="No"
 			fullrom1=$(echo "$redt$t_no$normal")
 		else
@@ -6023,24 +6135,35 @@ isfullrom() {
 isinitd() {
 	if [[ -d $romdir/bootimg/ramdisk ]]; then
 		cd $romdir/bootimg/ramdisk
-		if [[ ! $(${usesudo}grep -r "init\.d" . | grep -v "lge_fota\|chargerlogo") = "" ]]; then
-			initdstatus="Yes"
-			initdstatus1="$greent$t_enabled$normal"
-		else
-			initdstatus="No"
-			initdstatus1="${redt}$t_disabled$normal"
-		fi
+		inittest=$(${usesudo}grep -r "init\.d" . | grep -v "lge_fota\|chargerlogo")
+	elif [[ -f $romdir/system/default.prop ]]; then
+		cd $romdir/system
+		inittest=$(find . -not -path "*system*" 2>/dev/null | while read line; do grep "init\.d" $line 2>/dev/null; done)
+	else
+		return 1
+	fi
+	if [[ $inittest != "" ]]; then
+		initdstatus="Yes"
+		initdstatus1="$greent$t_enabled$normal"
+	else
+		initdstatus="No"
+		initdstatus1="${redt}$t_disabled$normal"
 	fi
 }
 isinsecure() {
 	if [[ -f $romdir/bootimg/ramdisk/default.prop ]]; then
-		if [[ $(${usesudo}grep "ro.secure=0" $romdir/bootimg/ramdisk/default.prop) = "" ]]; then
-			insecurestatus="No"
-			insecurestatus1=$(echo "$redt$t_secure$normal")
-		else
-			insecurestatus="Yes"
-			insecurestatus1=$(echo "$greent$t_insecure$normal")
-		fi
+		insectest=$(${usesudo}grep "ro.secure=0" $romdir/bootimg/ramdisk/default.prop)
+	elif [[ -f $romdir/system/default.prop ]]; then
+		insectest=$(grep "ro.secure=0" $romdir/system/default.prop)
+	else
+		return 1
+	fi
+	if [[ $insectest = "" ]]; then
+		insecurestatus="No"
+		insecurestatus1=$(echo "$redt$t_secure$normal")
+	else
+		insecurestatus="Yes"
+		insecurestatus1=$(echo "$greent$t_insecure$normal")
 	fi
 }
 isknoxstatus() {
@@ -6061,7 +6184,7 @@ isknoxstatus() {
 }
 isodexstatus() {
 	if [[ -d $romdir ]]; then
-		if [[ $(find $romdir/system $romdir/vendor -name *.odex 2>/dev/null) = "" && ! -f $romdir/system/odex.sqsh && $(find $framedir -name boot.oat) = "" ]]; then
+		if [[ $(find $sysdir $romdir/vendor -name *.odex 2>/dev/null) = "" && ! -f $sysdir/odex.sqsh && $(find $framedir -name boot.oat) = "" ]]; then
 			mmode=""
 			if [[ $api -ge "23" ]]; then
 				if [[ -f $prfiles/deodex_m ]]; then
@@ -6082,7 +6205,7 @@ isodexstatus() {
 }
 isrootstatus() {
 	if [[ -d $romdir ]]; then
-		if [[ -f $romdir/system/xbin/su || -d $romdir/SuperSU || -d $romdir/supersu || -d $romdir/rootzip ]]; then
+		if [[ -f $sysdir/xbin/su || -d $romdir/SuperSU || -d $romdir/supersu || -d $romdir/rootzip ]]; then
 			if [[ ! -f $prfiles/root ]]; then
 				touch $prfiles/root
 			fi
@@ -6096,7 +6219,7 @@ isrootstatus() {
 	fi
 }
 issud() {
-	if [[ ! $(grep "su\.d" $usdir/updater-script) = "" && -d $romdir/system/su.d ]]; then
+	if [[ ! $(grep "su\.d" $usdir/updater-script) = "" && -d $sysdir/su.d ]]; then
 		sudstatus="Yes"
 		sudstatus1="$greent$t_enabled$normal"
 	else
@@ -6274,10 +6397,12 @@ kitchen_update() {
 language_check() {
 	banner
 	echo "$bluet$t_checking_language $lang ...$normal"
+	lang_add=""
 	grep "^export" $tools/language/english-srk | while read line; do
 		line2=$(echo "$line" | cut -d"=" -f1 | gawk '{print $2}')
 		if [[ $(grep "$line2" $tools/language/$lang | grep -v "$line2\_") = "" ]]; then
 			echo "$line" >> $tools/language/$lang
+			lang_add="1"
 		fi
 	done
 	if [[ $lang_add = "1" ]]; then
@@ -6299,7 +6424,7 @@ misc_tools() {
 	while [[ ! ${choice} =~ ^[1-4]$ ]] && [[ ! $choice = "m" && ! $choice = "q" ]]; do
 		banner
 		echo "$bluet$t_startup_project $greent$romname$normal"
-		if [[ -f $romdir/system/build.prop ]]; then
+		if [[ -f $sysdir/build.prop ]]; then
 			echo "$bluet$t_startup_version $greent$androidversion$normal"
 		else
 			echo "$bluet$t_startup_title_no_rom$normal"
@@ -6404,7 +6529,7 @@ misc_tools() {
 		fi
 		cp $usdir/updater-script $romdir/srk_support_zip/
 		cp -R $prfiles/logs $romdir/srk_support_zip/
-		cp $romdir/system/build.prop $romdir/srk_support_zip/
+		cp $sysdir/build.prop $romdir/srk_support_zip/
 		$p7z a -tzip -mx5 $romdir/support.zip $romdir/srk_support_zip/* 2>/dev/null >> $logs/zip.log
 		rm -rf $romdir/srk_support_zip
 		banner
@@ -6473,22 +6598,24 @@ new_project() {
 }
 partadd() {
 	banner
-	echo "$bluet$t_img_add $whatpart ...$normal"
+	echo "$bluet$t_img_add $whatimg ...$normal"
 	permtype=$(cat $prfiles/permtype)
 	needpart=""
 	partbyname=""
-	if [[ -f $deviceloc/superr_mmc && ! $(grep "$whatpart" $deviceloc/superr_mmc) = "" ]]; then
-		partbyname=$(grep "$whatpart" $deviceloc/superr_mmc | gawk '{ print $1 }')
-	elif [[ -f $deviceloc/superr_byname && ! $(grep "by-name" $deviceloc/superr_byname) = "" ]]; then
-		if [[ $whatpart = "vendor" ]]; then
-			if [[ -f $deviceloc/superr_capbyname ]]; then
+	if [[ -f $deviceloc/superr_mmc && $(grep "$whatimg" $deviceloc/superr_mmc) != "" ]]; then
+		partbyname=$(grep "$whatimg" $deviceloc/superr_mmc | gawk '{ print $1 }')
+	elif [[ -s $deviceloc/superr_byname ]]; then
+		if [[ $whatimg = "vendor" ]]; then
+			if [[ -f $romdir/system/default.prop ]]; then
+				partbyname="$(cat $deviceloc/superr_byname)\/vendor_a"
+			elif [[ -f $deviceloc/superr_capbyname ]]; then
 				partbyname="$(cat $deviceloc/superr_byname)\/VENDOR"
 			elif [[ -f $deviceloc/superr_appbyname ]]; then
 				partbyname="$(cat $deviceloc/superr_byname)\/VNR"
 			else
 				partbyname="$(cat $deviceloc/superr_byname)\/vendor"
 			fi
-		elif [[ $whatpart = "data" ]]; then
+		elif [[ $whatimg = "data" ]]; then
 			if [[ -f $deviceloc/superr_capbyname ]]; then
 				partbyname="$(cat $deviceloc/superr_byname)\/USERDATA"
 			elif [[ -f $deviceloc/superr_appbyname ]]; then
@@ -6496,33 +6623,47 @@ partadd() {
 			else
 				partbyname="$(cat $deviceloc/superr_byname)\/userdata"
 			fi
+		else
+			if [[ -f $romdir/system/default.prop ]]; then
+				partbyname="$(cat $deviceloc/superr_byname)\/${whatimg}_a"
+			else
+				partbyname="$(cat $deviceloc/superr_byname)\/$whatimg"
+			fi
 		fi
 	fi
 	if [[ ! $partbyname = "" ]]; then
 		if [[ $permtype = "sparse_dat" || $permtype = "raw_img" ]]; then
 			cd $usdir
-			if [[ ! $whatpart = "data" ]]; then
+			if [[ ! $whatimg = "data" ]]; then
 				gawk 'a=/^mount/{b=1}b&&!a{print "#MOUNT";b=0}1' updater-script > updater-script2
 				mv updater-script2 updater-script
 				if [[ $permtype = "sparse_dat" ]]; then
-					sed -i "s/#MOUNT/mount(\"ext4\"\,\ \"EMMC\"\,\ \"$partbyname\"\,\ \"\/$whatpart\"\,\ \"\");/" updater-script
+					sed -i "s/#MOUNT/mount(\"ext4\"\,\ \"EMMC\"\,\ \"$partbyname\"\,\ \"\/$whatimg\"\,\ \"\");/" updater-script
 				else
-					sed -i "s/#MOUNT/mount(\"ext4\"\,\ \"EMMC\"\,\ \"$partbyname\"\,\ \"\/$whatpart\");/" updater-script
+					sed -i "s/#MOUNT/mount(\"ext4\"\,\ \"EMMC\"\,\ \"$partbyname\"\,\ \"\/$whatimg\");/" updater-script
 				fi
 				gawk 'a=/^unmount/{b=1}b&&!a{print "#UNMOUNT";b=0}1' updater-script > updater-script2
 				mv updater-script2 updater-script
-				sed -i "s/#UNMOUNT/unmount(\"\/$whatpart\");/" updater-script
+				sed -i "s/#UNMOUNT/unmount(\"\/$whatimg\");/" updater-script
 			fi
-			if [[ $whatpart = "vendor" ]]; then
+			if [[ -s $prfiles/exdirs && $(grep "$whatimg" $prfiles/exdirs) != "" ]]; then
+				partup=$(echo $whatimg | gawk '{print toupper($0)}')
 				if [[ $permtype = "sparse_dat" ]]; then
-					gawk 'a=/^block_image_update/{b=1}b&&!a{print "#VENDOR";b=0}1' updater-script > updater-script2
+					if [[ $(grep "#$partup" updater-script) = "" ]]; then
+						line=$(grep -m 1 "block_image_update(" updater-script | sed 's/\"/\\"/g; s:\/:\\/:g; s/\./\\./g; s/\ /\\ /g')
+						sed -i "s:$line:$line\n#$partup:" updater-script
+					fi
 				else
-					gawk 'a=/system_new/{b=1}b&&!a{print "#VENDOR";b=0}1' updater-script > updater-script2
+					if [[ $(grep "#$partup" updater-script) = "" ]]; then
+						gcmd="a=/system_new/{b=1}b&&!a{print \"#$partup\";b=0}1"
+						gawk "$gcmd" updater-script > updater-script2
+					fi
 				fi
 				mv updater-script2 updater-script
-				sed -i "/#VENDOR/ r $tools/updater/vendor-$permtype.txt" updater-script
-				sed -i "s/#PARTVENDOR/$partbyname/" updater-script
-			elif [[ $whatpart = "data" ]]; then
+				sed -i "/#$partup/ r $tools/updater/extra-$permtype.txt" updater-script
+				sed -i "s/#PARTEXTRA/$partbyname/g" updater-script
+				sed -i "s/#PEXTRA/$whatimg/g" updater-script
+			elif [[ $whatimg = "data" ]]; then
 				if [[ $permtype = "sparse_dat" ]]; then
 					gawk 'a=/^block_image_update/{b=1}b&&!a{print "#DATA";b=0}1' updater-script > updater-script2
 				else
@@ -6552,23 +6693,27 @@ partadd() {
 			fi
 		else
 			cd $usdir
-			if [[ ! $whatpart = "data" ]]; then
+			if [[ ! $whatimg = "data" ]]; then
 				gawk 'a=/^format/{b=1}b&&!a{print "#FORMAT";b=0}1' updater-script > updater-script2
 				mv updater-script2 updater-script
-				sed -i "s/#FORMAT/format(\"ext4\"\,\ \"EMMC\"\,\ \"$partbyname\"\,\ \"0\"\,\ \"\/$whatpart\");/" updater-script
+				sed -i "s/#FORMAT/format(\"ext4\"\,\ \"EMMC\"\,\ \"$partbyname\"\,\ \"0\"\,\ \"\/$whatimg\");/" updater-script
 				gawk 'a=/^mount/{b=1}b&&!a{print "#MOUNT";b=0}1' updater-script > updater-script2
 				mv updater-script2 updater-script
-				sed -i "s/#MOUNT/mount(\"ext4\"\,\ \"EMMC\"\,\ \"$partbyname\"\,\ \"\/$whatpart\");/" updater-script
+				sed -i "s/#MOUNT/mount(\"ext4\"\,\ \"EMMC\"\,\ \"$partbyname\"\,\ \"\/$whatimg\");/" updater-script
 				gawk 'a=/^unmount/{b=1}b&&!a{print "#UNMOUNT";b=0}1' updater-script > updater-script2
 				mv updater-script2 updater-script
-				sed -i "s/#UNMOUNT/unmount(\"\/$whatpart\");/" updater-script
+				sed -i "s/#UNMOUNT/unmount(\"\/$whatimg\");/" updater-script
 			fi
-			if [[ $whatpart = "vendor" ]]; then
-				gawk 'a=/^package_extract_dir/{b=1}b&&!a{print "#VENDOR";b=0}1' updater-script > updater-script2
-				mv updater-script2 updater-script
-				sed -i "/#VENDOR/ r $tools/updater/vendor-set_metadata.txt" updater-script
-				touch $prfiles/vendor-set_metadata
-			elif [[ $whatpart = "data" ]]; then
+			if [[ -s $prfiles/exdirs && $(grep "$whatimg" $prfiles/exdirs) != "" ]]; then
+				partup=$(echo $whatimg | gawk '{print toupper($0)}')
+				if [[ $(grep "#$partup" updater-script) = "" ]]; then
+					line=$(grep "package_extract_dir(\"system\"" updater-script | sed 's/\"/\\"/g; s:\/:\\/:g')
+					sed -i "s:$line:$line\n#$partup:" updater-script
+				fi
+				sed -i "/#$partup/ r $tools/updater/extra-set_metadata.txt" updater-script
+				sed -i "s/#PARTEXTRA/$partbyname/g" updater-script
+				sed -i "s/#PEXTRA/$whatimg/g" updater-script
+			elif [[ $whatimg = "data" ]]; then
 				gawk 'a=/\"system\"/{b=1}b&&!a{print "#DATA";b=0}1' updater-script > updater-script2
 				mv updater-script2 updater-script
 				sed -i "/#DATA/ r $tools/updater/data-set_metadata.txt" updater-script
@@ -6579,34 +6724,34 @@ partadd() {
 		banner
 		echo "$redb$yellowt$bold$t_warning$normal"
 		echo ""
-		echo -e "$redt$t_img_flash_fail $whatpart$normal"
+		echo -e "$redt$t_img_flash_fail $whatimg$normal"
 		echo ""
 		read -p "$t_enter_continue"
-		if [[ $whatpart = "data" ]]; then
+		if [[ $whatimg = "data" ]]; then
 			needpart="1"
 		fi
 	fi
-	whatpart=""
+	whatimg=""
 }
 partsdat() {
 	banner
-	echo "$bluet$t_img_create_dat $whatpart ...$normal"
+	echo "$bluet$t_img_create_dat $whatimg ...$normal"
 	mkdir -p $romdir/tmpsparse
-	mv ${whatpart}_new.img $romdir/tmpsparse/${whatpart}_new.img
+	mv ${whatimg}_new.img $romdir/tmpsparse/${whatimg}_new.img
 	cd $romdir/tmpsparse
-	( $tools/rimg2sdat${cyg} ${whatpart}_new.img 2>&1 ) >> $logs/main.log
-	rm -rf ${whatpart}_new.img
-	touch $whatpart.patch.dat
-	if [[ ! $whatpart = "system" ]]; then
-		mv system.transfer.list $whatpart.transfer.list
-		mv system.new.dat $whatpart.new.dat
+	( $tools/rimg2sdat${cyg} ${whatimg}_new.img 2>&1 ) >> $logs/main.log
+	rm -rf ${whatimg}_new.img
+	touch $whatimg.patch.dat
+	if [[ ! $whatimg = "system" ]]; then
+		mv system.transfer.list $whatimg.transfer.list
+		mv system.new.dat $whatimg.new.dat
 	fi
 	mv * $romdir/
 	cd $romdir
 }
 partimg() {
 	banner
-	echo "$bluet$t_img_create_symlinks $whatpart.img ...$normal"
+	echo "$bluet$t_img_create_symlinks $whatimg.img ...$normal"
 	cd $romdir
 	line=""
 	cat $prfiles/symlinks | while read line; do
@@ -6620,22 +6765,24 @@ partimg() {
 	done
 	banner
 	if [[ -f $prfiles/file_contexts ]]; then
-		echo "$bluet$t_img_create_raw $whatpart.img ...$normal"
-		if [[ $whatpart = "system" ]]; then
-			( $tools/make_ext4fs${cyg} -T 0 -S $prfiles/file_contexts -l $syssize -a $whatpart$sparseimg ${whatpart}_new.img ${whatpart}/ 2>&1 ) >> $logs/main.log
-		elif [[ $whatpart = "vendor" ]]; then
-			( $tools/make_ext4fs${cyg} -T 0 -S $prfiles/file_contexts -l $vensize -a $whatpart$sparseimg ${whatpart}_new.img ${whatpart}/ 2>&1 ) >> $logs/main.log
-		elif [[ $whatpart = "data" ]]; then
-			( $tools/make_ext4fs${cyg} -T 0 -S $prfiles/file_contexts -l $datsize -a $whatpart$sparseimg ${whatpart}_new.img ${whatpart}/ 2>&1 ) >> $logs/main.log
+		echo "$bluet$t_img_create_raw $whatimg.img ...$normal"
+		if [[ $whatimg = "system" ]]; then
+			( $tools/make_ext4fs${cyg} -T 0 -S $prfiles/file_contexts -l $syssize -a $whatimg$sparseimg ${whatimg}_new.img ${whatimg}/ 2>&1 ) >> $logs/main.log
+		elif [[ $whatimg = "data" ]]; then
+			( $tools/make_ext4fs${cyg} -T 0 -S $prfiles/file_contexts -l $datsize -a $whatimg$sparseimg ${whatimg}_new.img ${whatimg}/ 2>&1 ) >> $logs/main.log
+		elif [[ -s $prfiles/exdirsb && $(grep "$whatimg" $prfiles/exdirsb) != "" ]]; then
+			partsize=$(grep "$whatimg" $prfiles/exdirsb | gawk '{print $2}')
+			( $tools/make_ext4fs${cyg} -T 0 -S $prfiles/file_contexts -l $partsize -a $whatimg$sparseimg ${whatimg}_new.img ${whatimg}/ 2>&1 ) >> $logs/main.log
 		fi
 	else
 		echo "$bluet$t_img_create_raw$normal"
-		if [[ $whatpart = "system" ]]; then
-			( $tools/make_ext4fs${cyg} -T 0 -l $syssize -a $whatpart$sparseimg ${whatpart}_new.img ${whatpart}/ 2>&1 ) >> $logs/main.log
-		elif [[ $whatpart = "vendor" ]]; then
-			( $tools/make_ext4fs${cyg} -T 0 -l $vensize -a $whatpart$sparseimg ${whatpart}_new.img ${whatpart}/ 2>&1 ) >> $logs/main.log
-		elif [[ $whatpart = "data" ]]; then
-			( $tools/make_ext4fs${cyg} -T 0 -l $datsize -a $whatpart$sparseimg ${whatpart}_new.img ${whatpart}/ 2>&1 ) >> $logs/main.log
+		if [[ $whatimg = "system" ]]; then
+			( $tools/make_ext4fs${cyg} -T 0 -l $syssize -a $whatimg$sparseimg ${whatimg}_new.img ${whatimg}/ 2>&1 ) >> $logs/main.log
+		elif [[ $whatimg = "data" ]]; then
+			( $tools/make_ext4fs${cyg} -T 0 -l $datsize -a $whatimg$sparseimg ${whatimg}_new.img ${whatimg}/ 2>&1 ) >> $logs/main.log
+		elif [[ -s $prfiles/exdirsb && $(grep "$whatimg" $prfiles/exdirsb) != "" ]]; then
+			partsize=$(grep "$whatimg" $prfiles/exdirsb | gawk '{print $2}')
+			( $tools/make_ext4fs${cyg} -T 0 -l $partsize -a $whatimg$sparseimg ${whatimg}_new.img ${whatimg}/ 2>&1 ) >> $logs/main.log
 		fi
 	fi
 	if [[ -d vendor ]]; then
@@ -6643,7 +6790,7 @@ partimg() {
 	else
 		find system -type l -exec rm -f {} \;
 	fi
-	if [[ ! -f ${whatpart}_new.img ]]; then
+	if [[ ! -f ${whatimg}_new.img ]]; then
 		banner
 		echo "$redb$yellowt$bold$t_error$normal"
 		echo -e "$t_img_fail"
@@ -6681,6 +6828,10 @@ part_setup() {
 			sed -i "s/#BYNAME\/system/#BYNAME\/APP/g" $usdir/updater-script
 			sed -i "s/#BYNAME\/boot/#BYNAME\/LNX/g" $usdir/updater-script
 			sed -i "s/#BYNAME\/recovery/#BYNAME\/SOS/g" $usdir/updater-script
+		elif [[ -f $romdir/system/default.prop ]]; then
+			sed -i "s/#BYNAME\/system/#BYNAME\/system_a/g" $usdir/updater-script
+			grep -v "boot.img\|boot\ image" $usdir/updater-script > $usdir/updater-script2
+			mv $usdir/updater-script2 $usdir/updater-script
 		fi
 		sed -i "s/#BYNAME/$byname/g" $usdir/updater-script
 	fi
@@ -6756,7 +6907,7 @@ rom_tools() {
 	odexstatus1=""
 	dataapp=""
 	dataapp1=""
-	if [[ ! -f $romdir/system/build.prop ]]; then
+	if [[ ! -f $sysdir/build.prop ]]; then
 		banner
 		echo "$redb$yellowt$bold$t_error$normal"
 		echo "$redt$t_startup_no_rom$normal"
@@ -6867,7 +7018,7 @@ root() {
 	if [[ ! $(echo "$rootzip" | grep "SuperSU\|supersu\|SuperSu\|Supersu") = "" ]]; then
 		rootver="supersu"
 	fi
-	if [[ $api -ge "23" ]] || [[ $androidversion = "5.1.1" && $(grep "ro.product.manufacturer" $romdir/system/build.prop | cut -d"=" -f2) = "samsung" ]] && [[ $rootver = "supersu" ]]; then
+	if [[ $api -ge "23" ]] || [[ $androidversion = "5.1.1" && $(grep "ro.product.manufacturer" $sysdir/build.prop | cut -d"=" -f2) = "samsung" ]] && [[ $rootver = "supersu" ]]; then
 		choice=""
 		while [[ ! ${choice} =~ ^[1-3]$ ]]; do
 			banner
@@ -6887,7 +7038,7 @@ root() {
 		done
 	fi
 	if [[ $choice = "2" ]]; then
-		echo "SYSTEMLESS=false" > $romdir/system/.supersu
+		echo "SYSTEMLESS=false" > $sysdir/.supersu
 	elif [[ $choice = "3" ]]; then
 		if [[ ! -d $tools/inject-sepolicy ]]; then
 			cd $tools
@@ -6897,7 +7048,7 @@ root() {
 			root
 			return 1
 		fi
-		echo "SYSTEMLESS=false" > $romdir/system/.supersu
+		echo "SYSTEMLESS=false" > $sysdir/.supersu
 		if [[ ! -d $romdir/bootimg ]]; then
 			chosenimg="boot"
 			bootext="1"
@@ -6931,50 +7082,50 @@ root() {
 rootrem() {
 	cd $prfiles
 	rm -rf $prfiles/root_existing
-	rm -rf $romdir/system/.supersu
+	rm -rf $sysdir/.supersu
 	if [[ -f $prfiles/boot.noroot ]]; then
 		mv $prfiles/boot.noroot $romdir/boot.img
 	fi
-	if [[ -f "$romdir/system/bin/install-recovery_original.sh" ]]; then
-		mv $romdir/system/bin/install-recovery_original.sh $romdir/system/bin/install-recovery.sh
+	if [[ -f "$sysdir/bin/install-recovery_original.sh" ]]; then
+		mv $sysdir/bin/install-recovery_original.sh $sysdir/bin/install-recovery.sh
 	fi
-	if [[ -f "$romdir/system/etc/install-recovery_original.sh" ]]; then
-		mv $romdir/system/etc/install-recovery_original.sh $romdir/system/etc/install-recovery.sh
+	if [[ -f "$sysdir/etc/install-recovery_original.sh" ]]; then
+		mv $sysdir/etc/install-recovery_original.sh $sysdir/etc/install-recovery.sh
 	fi
-	if [[ -f "$romdir/system/bin/install-recovery.sh-ku.bak" ]]; then
-		mv $romdir/system/bin/install-recovery.sh-ku.bak $romdir/system/bin/install-recovery.sh
+	if [[ -f "$sysdir/bin/install-recovery.sh-ku.bak" ]]; then
+		mv $sysdir/bin/install-recovery.sh-ku.bak $sysdir/bin/install-recovery.sh
 	fi
-	if [[ -f "$romdir/system/etc/install-recovery.sh-ku.bak" ]]; then
-		mv $romdir/system/etc/install-recovery.sh-ku.bak $romdir/system/etc/install-recovery.sh
+	if [[ -f "$sysdir/etc/install-recovery.sh-ku.bak" ]]; then
+		mv $sysdir/etc/install-recovery.sh-ku.bak $sysdir/etc/install-recovery.sh
 	fi
-	if [[ -f $romdir/system/bin/debuggerd_real ]]; then
-		mv $romdir/system/bin/debuggerd_real $romdir/system/bin/debuggerd
+	if [[ -f $sysdir/bin/debuggerd_real ]]; then
+		mv $sysdir/bin/debuggerd_real $sysdir/bin/debuggerd
 	fi
-	if [[ -f $romdir/system/bin/install-recovery.sh && ! $(grep xbin $romdir/system/bin/install-recovery.sh) = "" ]]; then
-		rm -rf $romdir/system/bin/install-recovery.sh
+	if [[ -f $sysdir/bin/install-recovery.sh && ! $(grep xbin $sysdir/bin/install-recovery.sh) = "" ]]; then
+		rm -rf $sysdir/bin/install-recovery.sh
 		grep -v "system/bin/install-recovery.sh" symlinks > symlinks2
 		mv symlinks2 symlinks
 	fi
-	if [[ -f $romdir/system/etc/install-recovery.sh && ! $(grep xbin $romdir/system/etc/install-recovery.sh) = "" ]]; then
-		rm -rf $romdir/system/etc/install-recovery.sh
+	if [[ -f $sysdir/etc/install-recovery.sh && ! $(grep xbin $sysdir/etc/install-recovery.sh) = "" ]]; then
+		rm -rf $sysdir/etc/install-recovery.sh
 		grep -v "system/etc/install-recovery.sh" symlinks > symlinks2
 		mv symlinks2 symlinks
 	fi
 	if [[ -f symunroot ]]; then
 		cat symunroot >> symlinks
 	fi
-	if [[ -f $romdir/system/bin/app_process_original ]]; then
-		mv $romdir/system/bin/app_process_original $romdir/system/bin/app_process
-	elif [[ -f $romdir/system/bin/app_process32_original ]]; then
-		mv $romdir/system/bin/app_process32_original $romdir/system/bin/app_process32
-	elif [[ -f $romdir/system/bin/app_process64_original ]]; then
-		mv $romdir/system/bin/app_process64_original $romdir/system/bin/app_process64
-	elif [[ -f $romdir/system/bin/app_process.orig ]]; then
-		mv $romdir/system/bin/app_process.orig $romdir/system/bin/app_process
-	elif [[ -f $romdir/system/bin/app_process32.orig ]]; then
-		mv $romdir/system/bin/app_process32.orig $romdir/system/bin/app_process32
-	elif [[ -f $romdir/system/bin/app_process64.orig ]]; then
-		mv $romdir/system/bin/app_process64.orig $romdir/system/bin/app_process64
+	if [[ -f $sysdir/bin/app_process_original ]]; then
+		mv $sysdir/bin/app_process_original $sysdir/bin/app_process
+	elif [[ -f $sysdir/bin/app_process32_original ]]; then
+		mv $sysdir/bin/app_process32_original $sysdir/bin/app_process32
+	elif [[ -f $sysdir/bin/app_process64_original ]]; then
+		mv $sysdir/bin/app_process64_original $sysdir/bin/app_process64
+	elif [[ -f $sysdir/bin/app_process.orig ]]; then
+		mv $sysdir/bin/app_process.orig $sysdir/bin/app_process
+	elif [[ -f $sysdir/bin/app_process32.orig ]]; then
+		mv $sysdir/bin/app_process32.orig $sysdir/bin/app_process32
+	elif [[ -f $sysdir/bin/app_process64.orig ]]; then
+		mv $sysdir/bin/app_process64.orig $sysdir/bin/app_process64
 	fi
 	remrootscript=""
 	cat $tools/root/root_files | while read remrootscript; do
@@ -7016,15 +7167,20 @@ root_busyboxrem() {
 	grep -v "Busybox\|/tmp/busybox" updater-script > updater-script2
 	mv updater-script2 updater-script
 	rm -rf $romdir/busybox
-	rm -rf $romdir/system/xbin/busybox
+	rm -rf $sysdir/xbin/busybox
 }
 root_sud() {
-	mkdir -p $romdir/system/su.d
+	mkdir -p $sysdir/su.d
+	if [[ -f $romdir/system/default.prop ]]; then
+		sudfile="$tools/boot/sud_perms2"
+	else
+		sudfile="$tools/boot/sud_perms"
+	fi
 	sed -i 's/#ROOT/#SUD\n#ROOT/' $usdir/updater-script
-	sed -i "/#SUD/ r $tools/boot/sud_perms" $usdir/updater-script
+	sed -i "/#SUD/ r $sudfile" $usdir/updater-script
 }
 root_sudrem() {
-	rm -rf $romdir/system/su.d
+	rm -rf $sysdir/su.d
 	grep -v "#SUD\|su\.d" $usdir/updater-script > $usdir/updater-script2
 	mv $usdir/updater-script2 $usdir/updater-script
 }
@@ -7228,8 +7384,9 @@ update_project() {
 	fi
 	get_byname
 	cd $romdir
-	find system vendor 2>/dev/null | sed 's/^/\//' | sort > $prfiles/all_files.txt
-	sed -i '/^$/d' $prfiles/all_files.txt
+	romdir2=$(echo "$romdir" | sed 's:\/:\\/:g')
+	find $sysdir $romdir/vendor 2>/dev/null | sed "s/$romdir2//g" | sort > $prfiles/all_files.txt
+	# sed -i '/^$/d' $prfiles/all_files.txt
 	if [[ ! $permtype = "sparse_dat" && ! $permtype = "raw_img" ]]; then
 		cd $usdir
 		permtype=""
@@ -7245,7 +7402,7 @@ update_project() {
 			permtype=$(cat $prfiles/permtype)
 		fi
 		if [[ $permtype = "" ]]; then
-			api=$(grep "ro.build.version.sdk" $romdir/system/build.prop | cut -d"=" -f2)
+			api=$(grep "ro.build.version.sdk" $sysdir/build.prop | cut -d"=" -f2)
 			choice=""
 			while [[ ! ${choice} =~ ^[1-4]$ ]]; do
 				banner
@@ -7367,11 +7524,9 @@ update_project() {
 			if [[ ! -f $prfiles/file_contexts2 ]]; then
 				if [[ ! -f $prfiles/file_contexts ]]; then
 					if [[ -f $romdir/bootimg/ramdisk/file_contexts ]]; then
-						${usesudo}cp $romdir/bootimg/ramdisk/file_contexts $prfiles/
-						if [[ $api -ge "23" ]]; then
-							myuser=$(echo "$(whoami | gawk '{ print $1 }')")
-							${usesudo}chown -h $myuser:$myuser $prfiles/file_contexts
-						fi
+						get_contexts
+					elif [[ -f $romdir/system/file_contexts.bin ]]; then
+						get_contexts
 					elif [[ -f $romdir/boot.img ]]; then
 						chosenimg="boot"
 						bootext="1"
@@ -7408,6 +7563,9 @@ update_project() {
 			fi
 			sed 's/\\././g; s/(\/\.\*)?//g' file_contexts2 | gawk '{ print $1, $2 }' | sort > file_contexts3
 			mv file_contexts3 file_contexts2
+			if [[ -f $romdir/system/default.prop ]]; then
+				sed -i 's/^/\/system/g' file_contexts2
+			fi
 			line=""
 			for line in $(gawk '{ print $1 }' file_contexts2); do
 			        if [[ $(grep -m 1 "^$line$" all_files.txt) = "$line" ]]; then
@@ -7416,16 +7574,21 @@ update_project() {
 			                grep -m 1 "^$line " file_contexts2 >> pre_metadata
 			        fi
 			done
+			if [[ -f $romdir/system/default.prop ]]; then
+				metadata=$tools/updater/set_metadata-data2
+			else
+				metadata=$tools/updater/set_metadata-data
+			fi
 			line=""
-			cat $tools/updater/set_metadata-data | while read line; do
-			        line2=$(echo "$line" | gawk '{ print $1 }' | rev | cut -d'"' -f2 | rev)
+			cat $metadata | while read line; do
+			        line2=$(echo "$line" | gawk '{ print $1 }' | cut -d'"' -f2)
 			        if [[ $(gawk '{ print $1 }' pre_metadata | grep -m 1 "^$line2$") = "$line2" ]]; then
 			                context=$(grep -m 1 "^$line2 " pre_metadata | gawk '{ print $2 }')
-			                grep -m 1 "$line2" $tools/updater/set_metadata-data | sed "s/#CONTEXT/$context/" >> set_metadata
+			                grep -m 1 "$line2" $metadata | sed "s/#CONTEXT/$context/" >> set_metadata
 			        elif [[ $(grep -m 1 "^$line2$" all_files.txt) = "$line2" && ! $(echo $line | grep "#CONTEXT") = "" ]]; then
-			                grep -m 1 "$line2" $tools/updater/set_metadata-data | sed "s/#CONTEXT/u:object_r:system_file:s0/" >> set_metadata
+			                grep -m 1 "$line2" $metadata | sed "s/#CONTEXT/u:object_r:system_file:s0/" >> set_metadata
 			        elif [[ $(grep -m 1 "^$line2$" all_files.txt) = "$line2" && $(echo $line | grep "#CONTEXT") = "" ]]; then
-			                grep -m 1 "$line2" $tools/updater/set_metadata-data >> set_metadata
+			                grep -m 1 "$line2" $metadata >> set_metadata
 			        fi
 			done
 			cat pre_metadata | while read line; do
@@ -7435,10 +7598,13 @@ update_project() {
 			                echo "set_metadata(\"$line2\", \"selabel\", \"$xcontext\");" >> set_metadata
 			        fi
 			done
-			if [[ $(grep "ro.board.platform=" $romdir/system/build.prop | cut -d"=" -f2) = "exynos5" ]]; then
+			if [[ $(grep "ro.board.platform=" $sysdir/build.prop | cut -d"=" -f2) = "exynos5" ]]; then
 				sed -i "s/init\.sec\.boot\.sh\",\ \"uid\",\ 0,\ \"gid\",\ 2000, \"mode\",\ 0644/init\.sec\.boot\.sh\",\ \"uid\",\ 0,\ \"gid\",\ 2000, \"mode\",\ 0550/" set_metadata
 			fi
 			rm -rf pre_metadata
+			if [[ -s $prfiles/root_meta ]]; then
+				cat $prfiles/root_meta >> set_metadata
+			fi
 		fi
 	fi
 	cd $prfiles
@@ -7492,9 +7658,13 @@ update_project() {
 	sed -i "s/#DEVICECHK/$devicechk/g" $usdir/updater-script
 	sed -i '/#SYM/ r symlinks' $usdir/updater-script
 	sed -i "/#PERM/ r $permtype" $usdir/updater-script
-	if [[ -f $prfiles/vendorimg && $(grep "\"\/vendor\");" $usdir/updater-script) = "" && $(grep "vendor.transfer" $usdir/updater-script) = "" ]]; then
-		whatpart="vendor"
-		partadd
+	if [[ -s $prfiles/exdirs ]]; then
+		for line in $(cat $prfiles/exdirs); do
+			if [[ $(grep "\"\/$line\");" $usdir/updater-script) = "" && $(grep "$line.transfer" $usdir/updater-script) = "" ]]; then
+				whatimg="$line"
+				partadd
+			fi
+		done
 	fi
 }
 redt=$(tput setaf 1)
@@ -7769,15 +7939,20 @@ if [[ ! $(ls -d */ | grep 'superr_') = "" ]]; then
 	fi
 fi
 romdir=$base/superr_$romname
-prfiles=$base/superr_$romname/00_project_files
-framedir=$base/superr_$romname/system/framework
-appdir=$base/superr_$romname/system/app
-privdir=$base/superr_$romname/system/priv-app
-usdir=$base/superr_$romname/META-INF/com/google/android
-logs=$base/superr_$romname/00_project_files/logs
-if [[ -f $romdir/system/build.prop ]]; then
-	androidversion=$(grep "ro.build.version.release" $romdir/system/build.prop | cut -d"=" -f2)
-	api=$(grep "ro.build.version.sdk" $romdir/system/build.prop | cut -d"=" -f2)
+if [[ -f $romdir/system/system/build.prop ]]; then
+	sysdir="$romdir/system/system"
+else
+	sysdir="$romdir/system"
+fi
+prfiles=$romdir/00_project_files
+framedir=$sysdir/framework
+appdir=$sysdir/app
+privdir=$sysdir/priv-app
+usdir=$romdir/META-INF/com/google/android
+logs=$romdir/00_project_files/logs
+if [[ -f $sysdir/build.prop ]]; then
+	androidversion=$(grep "ro.build.version.release" $sysdir/build.prop | cut -d"=" -f2)
+	api=$(grep "ro.build.version.sdk" $sysdir/build.prop | cut -d"=" -f2)
 	get_devicename
 	mkdir -p $base/tools/devices/$devicename
 	deviceloc=""

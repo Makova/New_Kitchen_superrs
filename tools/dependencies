@@ -32,6 +32,7 @@ rev
 rm
 sed
 sort
+stat
 strings
 sudo
 tar
