@@ -1,4 +1,5 @@
 /superr_*
+/tools/img2sdat/*.pyc
 /tools/boot/*.zip
 /tools/inject-sepolicy/
 /tools/open_bump.py

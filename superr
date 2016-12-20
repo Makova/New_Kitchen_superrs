@@ -1418,13 +1418,13 @@ build_rom_zip() {
 		echo "$yellowt$t_build_patient$normal"
 		echo ""
 		if [[ -f $prfiles/data-set_metadata ]]; then
-			if [[ $romdir/system/default.prop ]]; then
+			if [[ -f $romdir/system/default.prop ]]; then
 				exzipfiles="install META-INF supersu rootzip busybox gapps xposed magisk mod* data $cusdir"
 			else
 				exzipfiles="install boot.img META-INF supersu rootzip busybox gapps xposed magisk mod* data $cusdir"
 			fi
 		else
-			if [[ $romdir/system/default.prop ]]; then
+			if [[ -f $romdir/system/default.prop ]]; then
 				exzipfiles="install META-INF supersu rootzip busybox gapps xposed magisk mod* $cusdir"
 			else
 				exzipfiles="install boot.img META-INF supersu rootzip busybox gapps xposed magisk mod* $cusdir"
@@ -1488,13 +1488,13 @@ build_rom_zip() {
 		echo "$yellowt$t_build_patient$normal"
 		echo ""
 		if [[ -f $prfiles/data-set_metadata ]]; then
-			if [[ $romdir/system/default.prop ]]; then
+			if [[ -f $romdir/system/default.prop ]]; then
 				exzipfiles="META-INF supersu rootzip busybox gapps xposed magisk mod* data $cusdir"
 			else
 				exzipfiles="boot.img META-INF supersu rootzip busybox gapps xposed magisk mod* data $cusdir"
 			fi
 		else
-			if [[ $romdir/system/default.prop ]]; then
+			if [[ -f $romdir/system/default.prop ]]; then
 				exzipfiles="META-INF supersu rootzip busybox gapps xposed magisk mod* $cusdir"
 			else
 				exzipfiles="boot.img META-INF supersu rootzip busybox gapps xposed magisk mod* $cusdir"
@@ -1505,7 +1505,7 @@ build_rom_zip() {
 	else
 		banner
 		echo "$bluet$signature.zip $t_general_build $romname ...$normal"
-		if [[ $romdir/system/default.prop ]]; then
+		if [[ -f $romdir/system/default.prop ]]; then
 			exzipfiles="META-INF system supersu rootzip busybox gapps xposed magisk data $cusdir $(cat $prfiles/exdirs 2>/dev/null| tr '\n', ' ') "
 		else
 			exzipfiles="boot.img META-INF system supersu rootzip busybox gapps xposed magisk data $cusdir $(cat $prfiles/exdirs 2>/dev/null| tr '\n', ' ') "
