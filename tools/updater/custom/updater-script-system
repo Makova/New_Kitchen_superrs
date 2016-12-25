@@ -1,6 +1,6 @@
 #ASSERT
 show_progress(1.000000, 0);
-unmount("/system");
+ifelse(is_mounted("/system"), unmount("/system"));
 ui_print(" ");
 ui_print(" ");
 ui_print("Custom #SIGNATURE Installer");
@@ -29,12 +29,12 @@ set_progress(0.700000);
 #SYM
 ui_print("Setting Permissions...");
 ui_print(" ");
-set_perm_recursive(0, 0, 0755, 0644, "/system/app");
-set_perm_recursive(0, 0, 0755, 0644, "/system/framework");
-set_perm_recursive(0, 0, 0755, 0644, "/system/lib");
-set_perm_recursive(0, 0, 0755, 0644, "/system/lib64");
-set_perm_recursive(0, 0, 0755, 0644, "/system/media");
-set_perm_recursive(0, 0, 0755, 0644, "/system/priv-app");
+set_metadata_recursive("/system/app", "uid", 0, "gid", 0, "dmode", 0755, "fmode", 0644);
+set_metadata_recursive("/system/framework", "uid", 0, "gid", 0, "dmode", 0755, "fmode", 0644);
+set_metadata_recursive("/system/lib", "uid", 0, "gid", 0, "dmode", 0755, "fmode", 0644);
+set_metadata_recursive("/system/lib64", "uid", 0, "gid", 0, "dmode", 0755, "fmode", 0644);
+set_metadata_recursive("/system/media", "uid", 0, "gid", 0, "dmode", 0755, "fmode", 0644);
+set_metadata_recursive("/system/priv-app", "uid", 0, "gid", 0, "dmode", 0755, "fmode", 0644);
 set_progress(0.900000);
 unmount("/system");
 set_progress(1.000000);

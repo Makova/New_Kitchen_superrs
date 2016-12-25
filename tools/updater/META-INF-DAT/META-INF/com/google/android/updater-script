@@ -1,5 +1,5 @@
 #ASSERT
-unmount("/system");
+ifelse(is_mounted("/system"), unmount("/system"));
 ui_print(" ");
 ui_print(" ");
 ui_print("#SIGNATURE Installer");
@@ -8,7 +8,6 @@ ui_print(" ");
 ui_print(" ");
 ui_print(" ");
 ui_print(" ");
-ifelse(is_mounted("/system"), unmount("/system"));
 package_extract_dir("install", "/tmp/install");
 set_metadata_recursive("/tmp/install", "uid", 0, "gid", 0, "dmode", 0755, "fmode", 0644);
 set_metadata_recursive("/tmp/install/bin", "uid", 0, "gid", 0, "dmode", 0755, "fmode", 0755);

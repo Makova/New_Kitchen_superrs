@@ -1,6 +1,6 @@
 #ASSERT
 show_progress(1.000000, 0);
-unmount("/system");
+ifelse(is_mounted("/system"), unmount("/system"));
 ui_print(" ");
 ui_print(" ");
 ui_print("#SIGNATURE Installer");

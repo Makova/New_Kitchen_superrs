@@ -63,8 +63,8 @@ assert_devices() {
 		echo ""
 		exit
 	fi
-	grep "getprop(" updater-script > $assertdir/assert_original
-	grep -v "getprop(" updater-script > updater-script2
+	grep " getprop(\|(getprop(" updater-script > $assertdir/assert_original
+	grep -v " getprop(\|(getprop(" updater-script > updater-script2
 	mv updater-script2 updater-script
 	# START Add/Remove Device asserts
 	if [[ $assertch = "1" ]]; then
@@ -1764,7 +1764,7 @@ change_permtype() {
 		if [[ ! -d $romdir/META-INF ]]; then
 			permtype="set_metadata"
 			echo "set_metadata" > $prfiles/permtype
-			cp -r $tools/updater/META-INF $romdir
+			cp -r $tools/updater/META-INF $romdir/
 		fi
 		if [[ -s $prfiles/$permtype ]]; then
 			cd $usdir
@@ -1828,7 +1828,7 @@ change_permtype() {
 		echo "$bluet$t_perm_changing_perm$normal"
 		rm -rf $romdir/META-INF
 		cp -r $tools/updater/META-INF-DAT/META-INF $romdir/
-		cp $tools/updater/META-INF/com/google/android/update-binary $usdir/
+		# cp $tools/updater/META-INF/com/google/android/update-binary $usdir/
 		cp -r $tools/updater/META-INF-DAT/install $romdir/
 		cd $prfiles
 		rm -rf permtype set_metadata set_perm
@@ -1840,7 +1840,7 @@ change_permtype() {
 	# raw_img chosen
 	elif [[ $choice = "4" ]]; then
 		echo "$bluet$t_perm_changing_perm$normal"
-		rm -rf $romdir/META-INF
+		rm -rf $romdir/META-INF $romdir/install
 		cp -r $tools/updater/META-INF-IMG/META-INF $romdir/
 		cp $tools/updater/META-INF/com/google/android/update-binary $usdir/
 		cd $prfiles
@@ -5737,10 +5737,9 @@ get_contexts() {
 			${usesudo}cp $romdir/${chosenimg}img/ramdisk/file_contexts.bin $prfiles/
 		fi
 		if [[ -f $prfiles/file_contexts.bin ]]; then
-			strings $prfiles/file_contexts.bin | sed -n '/u:/,$p' | grep -B1 "/" | grep "/" > $prfiles/contextl
-			strings $prfiles/file_contexts.bin | sed -n '/u:/,$p' | grep -B1 "/" | grep "u:" > $prfiles/contextr
-			paste $prfiles/contextl $prfiles/contextr > $prfiles/file_contexts
-			rm -rf $prfiles/contextl $prfiles/contextr $prfiles/file_contexts.bin
+			contest=$(strings $prfiles/file_contexts.bin | sed -n '/u:/,$p' | grep -B1 "/");
+			paste -d '\t' <(echo "$contest" | grep "/") <(echo "$contest" | grep "u:")  > $prfiles/file_contexts
+			rm -rf $prfiles/file_contexts.bin
 		fi
 		if [[ $api -ge "23" ]]; then
 			myuser=$(echo "$(whoami | gawk '{ print $1 }')")
@@ -6634,14 +6633,13 @@ partadd() {
 			if [[ ! $whatimg = "data" ]]; then
 				gawk 'a=/^mount/{b=1}b&&!a{print "#MOUNT";b=0}1' updater-script > updater-script2
 				mv updater-script2 updater-script
-				if [[ $permtype = "sparse_dat" ]]; then
-					sed -i "s/#MOUNT/mount(\"ext4\"\,\ \"EMMC\"\,\ \"$partbyname\"\,\ \"\/$whatimg\"\,\ \"\");/" updater-script
-				else
-					sed -i "s/#MOUNT/mount(\"ext4\"\,\ \"EMMC\"\,\ \"$partbyname\"\,\ \"\/$whatimg\");/" updater-script
-				fi
-				gawk 'a=/^unmount/{b=1}b&&!a{print "#UNMOUNT";b=0}1' updater-script > updater-script2
+				sed -i "s/#MOUNT/mount(\"ext4\"\,\ \"EMMC\"\,\ \"$partbyname\"\,\ \"\/$whatimg\"\,\ \"\");/" updater-script
+				gawk 'a=/^ifelse\(is_mounted/{b=1}b&&!a{print "#UNMOUNT1";b=0}1' updater-script > updater-script2
 				mv updater-script2 updater-script
-				sed -i "s/#UNMOUNT/unmount(\"\/$whatimg\");/" updater-script
+				gawk 'a=/^unmount/{b=1}b&&!a{print "#UNMOUNT2";b=0}1' updater-script > updater-script2
+				mv updater-script2 updater-script
+				sed -i "s/#UNMOUNT1/ifelse(is_mounted(\"\/$whatimg\"),\ unmount(\"\/$whatimg\"));/" updater-script
+				sed -i "s/#UNMOUNT2/unmount(\"\/$whatimg\");/" updater-script
 			fi
 			if [[ -s $prfiles/exdirs && $(grep "$whatimg" $prfiles/exdirs) != "" ]]; then
 				partup=$(echo $whatimg | gawk '{print toupper($0)}')
@@ -6654,9 +6652,9 @@ partadd() {
 					if [[ $(grep "#$partup" updater-script) = "" ]]; then
 						gcmd="a=/system_new/{b=1}b&&!a{print \"#$partup\";b=0}1"
 						gawk "$gcmd" updater-script > updater-script2
+						mv updater-script2 updater-script
 					fi
 				fi
-				mv updater-script2 updater-script
 				sed -i "/#$partup/ r $tools/updater/extra-$permtype.txt" updater-script
 				sed -i "s/#PARTEXTRA/$partbyname/g" updater-script
 				sed -i "s/#PEXTRA/$whatimg/g" updater-script
@@ -6697,9 +6695,12 @@ partadd() {
 				gawk 'a=/^mount/{b=1}b&&!a{print "#MOUNT";b=0}1' updater-script > updater-script2
 				mv updater-script2 updater-script
 				sed -i "s/#MOUNT/mount(\"ext4\"\,\ \"EMMC\"\,\ \"$partbyname\"\,\ \"\/$whatimg\");/" updater-script
-				gawk 'a=/^unmount/{b=1}b&&!a{print "#UNMOUNT";b=0}1' updater-script > updater-script2
+				gawk 'a=/^ifelse\(is_mounted/{b=1}b&&!a{print "#UNMOUNT1";b=0}1' updater-script > updater-script2
 				mv updater-script2 updater-script
-				sed -i "s/#UNMOUNT/unmount(\"\/$whatimg\");/" updater-script
+				gawk 'a=/^unmount/{b=1}b&&!a{print "#UNMOUNT2";b=0}1' updater-script > updater-script2
+				mv updater-script2 updater-script
+				sed -i "s/#UNMOUNT1/ifelse(is_mounted(\"\/$whatimg\"),\ unmount(\"\/$whatimg\"));/" updater-script
+				sed -i "s/#UNMOUNT2/unmount(\"\/$whatimg\");/" updater-script
 			fi
 			if [[ -s $prfiles/exdirs && $(grep "$whatimg" $prfiles/exdirs) != "" ]]; then
 				partup=$(echo $whatimg | gawk '{print toupper($0)}')
@@ -6736,7 +6737,16 @@ partsdat() {
 	mkdir -p $romdir/tmpsparse
 	mv ${whatimg}_new.img $romdir/tmpsparse/
 	cd $romdir/tmpsparse
-	( $tools/img2sdat/img2sdat.py ${whatimg}_new.img 2>&1 ) >> $logs/main.log
+	if [[ $api = "21" ]]; then
+		aver="1"
+	elif [[ $api = "22" ]]; then
+		aver="2"
+	elif [[ $api = "23" ]]; then
+		aver="3"
+	elif [[ $api -ge "24" ]]; then
+		aver="4"
+	fi
+	( $tools/img2sdat/img2sdat.py ${whatimg}_new.img $aver 2>&1 ) >> $logs/main.log
 	rm -rf ${whatimg}_new.img
 	if [[ ! $whatimg = "system" ]]; then
 		mv system.transfer.list $whatimg.transfer.list
@@ -7443,7 +7453,7 @@ update_project() {
 				permtype="sparse_dat"
 				rm -rf $romdir/META-INF
 				cp -r $tools/updater/META-INF-DAT/META-INF $romdir/
-				cp $tools/updater/META-INF/com/google/android/update-binary $usdir/
+				# cp $tools/updater/META-INF/com/google/android/update-binary $usdir/
 				cp -r $tools/updater/META-INF-DAT/install $romdir/
 				cd $prfiles
 				rm -rf permtype set_metadata set_perm
@@ -7452,7 +7462,7 @@ update_project() {
 				return 1
 			# raw_img chosen
 			elif [[ $choice = "4" ]]; then
-				rm -rf $romdir/META-INF
+				rm -rf $romdir/META-INF $romdir/install
 				cd $tools/updater
 				cp -r $tools/updater/META-INF-IMG/META-INF $romdir/
 				cp $tools/updater/META-INF/com/google/android/update-binary $usdir/
@@ -7474,7 +7484,7 @@ update_project() {
 		cd $usdir
 		if [[ $(grep -o "#ASSERT" updater-script) = "" ]]; then
 			sed -i '1i#ASSERT' updater-script
-			grep "getprop(" updater-script > $prfiles/assert_original
+			grep " getprop(\|(getprop(" updater-script > $prfiles/assert_original
 		fi
 		if [[ ! $(grep -o "#SYM" updater-script) = "#SYM" ]]; then
 			gawk '/^symlink/ && !x {print "#SYM"; x=1} 1' updater-script > updater-script2
@@ -7494,7 +7504,7 @@ update_project() {
 				mv updater-script2 updater-script
 			fi
 		fi
-		grep -v "getprop(\|^symlink" updater-script > updater-script2
+		grep -v " getprop(\|(getprop(\|^symlink" updater-script > updater-script2
 		mv updater-script2 updater-script
 		cd $prfiles
 		rm -rf set_metadata
@@ -7637,7 +7647,7 @@ update_project() {
 			cat assertcustom >> assert
 		fi
 	fi
-	if [[ $(grep "getprop(" $usdir/updater-script) = "" ]]; then
+	if [[ $(grep " getprop(\|(getprop(" $usdir/updater-script) = "" ]]; then
 		sed -i '/#ASSERT/ r assert' $usdir/updater-script
 	fi
 	sed -i "s/#SIGNATURE/$signature1/g" $usdir/updater-script
