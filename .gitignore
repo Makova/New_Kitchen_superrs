@@ -5,7 +5,7 @@
 /tools/open_bump.py
 /tools/root/bloat_custom
 /tools/root/root_zips/*
-!/tools/root/root_zips/SuperSU-v2.79-SR1.zip
+!/tools/root/root_zips/SuperSU-v2.79-SR2.zip
 /tools/smali/current/oat2dex*
 !/tools/smali/current/oat2dex-a2dc9ce1.jar
 /tools/*srk-chosen

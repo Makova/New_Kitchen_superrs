@@ -1419,15 +1419,15 @@ build_rom_zip() {
 		echo ""
 		if [[ -f $prfiles/data-set_metadata ]]; then
 			if [[ -f $romdir/system/default.prop ]]; then
-				exzipfiles="install META-INF supersu rootzip busybox gapps xposed magisk mod* data $cusdir"
+				exzipfiles="install META-INF config supersu rootzip busybox gapps xposed magisk mod* data $cusdir"
 			else
-				exzipfiles="install boot.img META-INF supersu rootzip busybox gapps xposed magisk mod* data $cusdir"
+				exzipfiles="install boot.img META-INF config supersu rootzip busybox gapps xposed magisk mod* data $cusdir"
 			fi
 		else
 			if [[ -f $romdir/system/default.prop ]]; then
-				exzipfiles="install META-INF supersu rootzip busybox gapps xposed magisk mod* $cusdir"
+				exzipfiles="install META-INF config supersu rootzip busybox gapps xposed magisk mod* $cusdir"
 			else
-				exzipfiles="install boot.img META-INF supersu rootzip busybox gapps xposed magisk mod* $cusdir"
+				exzipfiles="install boot.img META-INF config supersu rootzip busybox gapps xposed magisk mod* $cusdir"
 			fi
 		fi
 		$p7z a -tzip -mx5 $signature.zip *.new.dat *.patch.dat *.transfer.list $exzipfiles $prfiles/file_contexts 2>/dev/null >> $logs/zip.log
@@ -1489,15 +1489,15 @@ build_rom_zip() {
 		echo ""
 		if [[ -f $prfiles/data-set_metadata ]]; then
 			if [[ -f $romdir/system/default.prop ]]; then
-				exzipfiles="META-INF supersu rootzip busybox gapps xposed magisk mod* data $cusdir"
+				exzipfiles="META-INF config supersu rootzip busybox gapps xposed magisk mod* data $cusdir"
 			else
-				exzipfiles="boot.img META-INF supersu rootzip busybox gapps xposed magisk mod* data $cusdir"
+				exzipfiles="boot.img META-INF config supersu rootzip busybox gapps xposed magisk mod* data $cusdir"
 			fi
 		else
 			if [[ -f $romdir/system/default.prop ]]; then
-				exzipfiles="META-INF supersu rootzip busybox gapps xposed magisk mod* $cusdir"
+				exzipfiles="META-INF config supersu rootzip busybox gapps xposed magisk mod* $cusdir"
 			else
-				exzipfiles="boot.img META-INF supersu rootzip busybox gapps xposed magisk mod* $cusdir"
+				exzipfiles="boot.img META-INF config supersu rootzip busybox gapps xposed magisk mod* $cusdir"
 			fi
 		fi
 		$p7z a -tzip -mx5 $signature.zip *_new.img $exzipfiles 2>/dev/null >> $logs/zip.log
@@ -1506,9 +1506,9 @@ build_rom_zip() {
 		banner
 		echo "$bluet$signature.zip $t_general_build $romname ...$normal"
 		if [[ -f $romdir/system/default.prop ]]; then
-			exzipfiles="META-INF system supersu rootzip busybox gapps xposed magisk data $cusdir $(cat $prfiles/exdirs 2>/dev/null| tr '\n', ' ') "
+			exzipfiles="META-INF config system supersu rootzip busybox gapps xposed magisk data $cusdir $(cat $prfiles/exdirs 2>/dev/null| tr '\n', ' ') "
 		else
-			exzipfiles="boot.img META-INF system supersu rootzip busybox gapps xposed magisk data $cusdir $(cat $prfiles/exdirs 2>/dev/null| tr '\n', ' ') "
+			exzipfiles="boot.img META-INF config system supersu rootzip busybox gapps xposed magisk data $cusdir $(cat $prfiles/exdirs 2>/dev/null| tr '\n', ' ') "
 		fi
 		$p7z a -tzip -mx5 $signature.zip $exzipfiles mod* 2>/dev/null >> $logs/zip.log
 	fi
@@ -1691,7 +1691,7 @@ change_permtype() {
 		if [[ $permtype = "sparse_dat" ]]; then
 			echo "3) $t_perm_sparse ($bluet$t_current$normal)"
 		else
-			if [[ $api -ge "21" ]]; then
+			if [[ $api -ge "21" && ! -f $romdir/system/default.prop ]]; then
 				echo "3) $t_perm_sparse"
 			else
 				echo "${redt}3) $t_perm_sparse_red$normal"
@@ -1748,6 +1748,7 @@ change_permtype() {
 		rom_tools
 		return 1
 	fi
+	cp -r $tools/updater/config $romdir/
 	banner
 	# set_metadata chosen
 	if [[ $choice = "1" ]]; then
@@ -1816,7 +1817,7 @@ change_permtype() {
 		echo "$permtype" > $prfiles/permtype
 	# Sparse dat chosen
 	elif [[ $choice = "3" ]]; then
-		if [[ $api -lt "21" ]]; then
+		if [[ $api -lt "21" || -f $romdir/system/default.prop ]]; then
 			banner
 			echo "$redb$yellowt$bold$t_error$normal"
 			echo "$redt$t_perm_sparse_error$normal"
@@ -5737,8 +5738,9 @@ get_contexts() {
 			${usesudo}cp $romdir/${chosenimg}img/ramdisk/file_contexts.bin $prfiles/
 		fi
 		if [[ -f $prfiles/file_contexts.bin ]]; then
+			cp $tools/boot/file_contexts $prfiles/file_contexts
 			contest=$(strings $prfiles/file_contexts.bin | sed -n '/u:/,$p' | grep -B1 "/");
-			paste -d '\t' <(echo "$contest" | grep "/") <(echo "$contest" | grep "u:")  > $prfiles/file_contexts
+			paste -d '\t' <(echo "$contest" | grep "/") <(echo "$contest" | grep "u:")  >> $prfiles/file_contexts
 			rm -rf $prfiles/file_contexts.bin
 		fi
 		if [[ $api -ge "23" ]]; then
@@ -5916,9 +5918,25 @@ imgextract() {
 		paste -d '' <(echo "$link1") <(echo "$link2") | sort > $prfiles/symlinks
 		cp $prfiles/symlinks $prfiles/symlinks.orig
 		gawk '{print $1}' symtest | while read line; do
-		        rm -rf $line
+		    rm -rf $line
 		done
-		rm -rf ${extractimg}_statfile.txt symtest
+		if [[ -f system/build.prop ]]; then
+			get_contexts
+			cp ${extractimg}_statfile.txt >> ${extractimg}_statfile
+			gawk '{print $1}' symtest | while read line; do
+				grep -v "$line" ${extractimg}_statfile > ${extractimg}_statfile2
+				mv ${extractimg}_statfile2 ${extractimg}_statfile
+			done
+			grep -v "system/system/" ${extractimg}_statfile | while read line; do
+				cyfile=$(echo "$line" | gawk '{print $1}')
+				cyuid=$(echo "$line" | gawk '{print $2}')
+				cygid=$(echo "$line" | gawk '{print $3}')
+				cymode=$(echo "$line" | gawk '{print $4}')
+				cycon=$(sed 's:\\::g' $prfiles/file_contexts | grep "lost+found" | gawk '{print $2}')
+				echo "set_metadata(\"/$cyfile\", \"uid\", $cyuid, \"gid\", $cygid, \"mode\", $cymode, \"capabilities\", 0x0, \"selabel\", \"$cycon\");" >> $prfiles/root_meta
+			done
+		fi
+		rm -rf ${extractimg}_statfile.txt symtest ${extractimg}_statfile
 	else
 		echo "$bluet$t_extract_mount_e ${extractimg}.img ...$normal"
 		mkdir output
@@ -5928,21 +5946,18 @@ imgextract() {
 		if [[ -f output/default.prop ]]; then
 			cd output
 			find . -maxdepth 1 | while read line; do
-			        line2=$(echo "$line" | sed 's/^\.//')
-			        stat -c "set_metadata(\"/system$line2\", \"uid\", %u, \"gid\", %g, \"mode\", %a, \"capabilities\", 0x0, \"selabel\", \"%C\");" $line >> $prfiles/root_meta
+			    line2=$(echo "$line" | sed 's/^\.//')
+			    stat -c "set_metadata(\"/system$line2\", \"uid\", %u, \"gid\", %g, \"mode\", %a, \"capabilities\", 0x0, \"selabel\", \"%C\");" $line >> $prfiles/root_meta
 			done
 			grep -v "\"/system\/system\"\|\"/system\"" $prfiles/root_meta > $prfiles/root_meta2
 			mv $prfiles/root_meta2 $prfiles/root_meta
  			cd $romdir
 		fi
 		mkdir ${extractimg}
-		${usesudo2}cp -r output/* ${extractimg}/
+		${usesudo2}cp -R output/* ${extractimg}/
 		${usesudo2}umount output/
 		rm -rf $romdir/output
 		${usesudo2}chown -hR $myuser:$myuser $romdir/${extractimg}
-		# find $romdir/${extractimg} ! -perm -g+r 2>/dev/null | grep -v lost+found | sed 's/^\.\///' | while read line; do
-		# 	chmod 400 $line
-		# done
 		${usesudo2}chmod -R ug+rw $romdir/${extractimg}
 	fi
 	extractimg=""
@@ -6602,9 +6617,7 @@ partadd() {
 		partbyname=$(grep "$whatimg" $deviceloc/superr_mmc | gawk '{ print $1 }')
 	elif [[ -s $deviceloc/superr_byname ]]; then
 		if [[ $whatimg = "vendor" ]]; then
-			if [[ -f $romdir/system/default.prop ]]; then
-				partbyname="$(cat $deviceloc/superr_byname)\/vendor_a"
-			elif [[ -f $deviceloc/superr_capbyname ]]; then
+			if [[ -f $deviceloc/superr_capbyname ]]; then
 				partbyname="$(cat $deviceloc/superr_byname)\/VENDOR"
 			elif [[ -f $deviceloc/superr_appbyname ]]; then
 				partbyname="$(cat $deviceloc/superr_byname)\/VNR"
@@ -6620,11 +6633,7 @@ partadd() {
 				partbyname="$(cat $deviceloc/superr_byname)\/userdata"
 			fi
 		else
-			if [[ -f $romdir/system/default.prop ]]; then
-				partbyname="$(cat $deviceloc/superr_byname)\/${whatimg}_a"
-			else
-				partbyname="$(cat $deviceloc/superr_byname)\/$whatimg"
-			fi
+			partbyname="$(cat $deviceloc/superr_byname)\/$whatimg"
 		fi
 	fi
 	if [[ ! $partbyname = "" ]]; then
@@ -6633,7 +6642,7 @@ partadd() {
 			if [[ ! $whatimg = "data" ]]; then
 				gawk 'a=/^mount/{b=1}b&&!a{print "#MOUNT";b=0}1' updater-script > updater-script2
 				mv updater-script2 updater-script
-				sed -i "s/#MOUNT/mount(\"ext4\"\,\ \"EMMC\"\,\ \"$partbyname\"\,\ \"\/$whatimg\"\,\ \"\");/" updater-script
+				sed -i "s/#MOUNT/mount(\"ext4\"\,\ \"EMMC\"\,\ \"$partbyname\"\ +\ file_getprop\(\"\/tmp\/slotsel\",\ \"slotnum\"\),\ \"\/$whatimg\"\,\ \"\");/" updater-script
 				gawk 'a=/^ifelse\(is_mounted/{b=1}b&&!a{print "#UNMOUNT1";b=0}1' updater-script > updater-script2
 				mv updater-script2 updater-script
 				gawk 'a=/^unmount/{b=1}b&&!a{print "#UNMOUNT2";b=0}1' updater-script > updater-script2
@@ -6691,10 +6700,10 @@ partadd() {
 			if [[ ! $whatimg = "data" ]]; then
 				gawk 'a=/^format/{b=1}b&&!a{print "#FORMAT";b=0}1' updater-script > updater-script2
 				mv updater-script2 updater-script
-				sed -i "s/#FORMAT/format(\"ext4\"\,\ \"EMMC\"\,\ \"$partbyname\"\,\ \"0\"\,\ \"\/$whatimg\");/" updater-script
+				sed -i "s/#FORMAT/format(\"ext4\"\,\ \"EMMC\"\,\ \"$partbyname\"\ +\ file_getprop\(\"\/tmp\/slotsel\",\ \"slotnum\"\),\ \"0\"\,\ \"\/$whatimg\");/" updater-script
 				gawk 'a=/^mount/{b=1}b&&!a{print "#MOUNT";b=0}1' updater-script > updater-script2
 				mv updater-script2 updater-script
-				sed -i "s/#MOUNT/mount(\"ext4\"\,\ \"EMMC\"\,\ \"$partbyname\"\,\ \"\/$whatimg\");/" updater-script
+				sed -i "s/#MOUNT/mount(\"ext4\"\,\ \"EMMC\"\,\ \"$partbyname\"\ +\ file_getprop\(\"\/tmp\/slotsel\",\ \"slotnum\"\),\ \"\/$whatimg\");/" updater-script
 				gawk 'a=/^ifelse\(is_mounted/{b=1}b&&!a{print "#UNMOUNT1";b=0}1' updater-script > updater-script2
 				mv updater-script2 updater-script
 				gawk 'a=/^unmount/{b=1}b&&!a{print "#UNMOUNT2";b=0}1' updater-script > updater-script2
@@ -6778,7 +6787,11 @@ partimg() {
 	fi
 	echo "$bluet$t_img_create_raw $whatimg.img ...$normal"
 	if [[ $whatimg = "system" ]]; then
-		( $tools/make_ext4fs${cyg} -T 0$fcontexts -l $syssize -a $whatimg$sparseimg ${whatimg}_new.img ${whatimg}/ 2>&1 ) >> $logs/main.log
+		if [[ -f $romdir/system/default.prop ]]; then
+			( $tools/make_ext4fs${cyg} -T 0$fcontexts -l $syssize -L / -a /$sparseimg ${whatimg}_new.img ${whatimg}/ 2>&1 ) >> $logs/main.log
+		else
+			( $tools/make_ext4fs${cyg} -T 0$fcontexts -l $syssize -a $whatimg$sparseimg ${whatimg}_new.img ${whatimg}/ 2>&1 ) >> $logs/main.log
+		fi
 	elif [[ $whatimg = "data" ]]; then
 		( $tools/make_ext4fs${cyg} -T 0$fcontexts -l $datsize -a $whatimg$sparseimg ${whatimg}_new.img ${whatimg}/ 2>&1 ) >> $logs/main.log
 	elif [[ -s $prfiles/exdirsb && $(grep "$whatimg" $prfiles/exdirsb) != "" ]]; then
@@ -6806,10 +6819,10 @@ part_setup() {
 	if [[ -f $deviceloc/superr_mmc ]]; then
 		if [[ $chosenimg = "recovery" && ! $(grep "recovery" $deviceloc/superr_mmc) = "" ]]; then
 			mmcrecovery=$(grep "recovery" $deviceloc/superr_mmc | gawk '{ print $1 }')
-			sed -i "s/#BYNAME\/recovery/$mmcrecovery/g" $usdir/updater-script
+			sed -i "s/\"#BYNAME\/recovery\"/\"$mmcrecovery\"/g" $usdir/updater-script
 		elif [[ $chosenimg = "boot" && ! $(grep "boot" $deviceloc/superr_mmc) = "" ]]; then
 			mmcboot=$(grep "boot" $deviceloc/superr_mmc | gawk '{ print $1 }')
-			sed -i "s/#BYNAME\/boot/$mmcboot/g" $usdir/updater-script
+			sed -i "s/\"#BYNAME\/boot\"/\"$mmcboot\"/g" $usdir/updater-script
 		else
 			banner
 			echo "$redb$yellowt$bold$t_warning$normal"
@@ -6819,18 +6832,17 @@ part_setup() {
 			read -p "$t_enter_continue"
 		fi
 		mmcsystem=$(grep "system" $deviceloc/superr_mmc | gawk '{ print $1 }')
-		sed -i "s/#BYNAME\/system/$mmcsystem/g" $usdir/updater-script
+		sed -i "s/\"#BYNAME\/system\",/\"$mmcsystem\",/g" $usdir/updater-script
 	else
 		if [[ -f $deviceloc/superr_capbyname ]]; then
-			sed -i "s/#BYNAME\/system/#BYNAME\/SYSTEM/g" $usdir/updater-script
-			sed -i "s/#BYNAME\/boot/#BYNAME\/BOOT/g" $usdir/updater-script
-			sed -i "s/#BYNAME\/recovery/#BYNAME\/RECOVERY/g" $usdir/updater-script
+			sed -i "s/\"#BYNAME\/system\",/\"#BYNAME\/SYSTEM\",/g" $usdir/updater-script
+			sed -i "s/\"#BYNAME\/boot\",/\"#BYNAME\/BOOT\",/g" $usdir/updater-script
+			sed -i "s/\"#BYNAME\/recovery\",/\"#BYNAME\/RECOVERY\",/g" $usdir/updater-script
 		elif [[ -f $deviceloc/superr_appbyname ]]; then
-			sed -i "s/#BYNAME\/system/#BYNAME\/APP/g" $usdir/updater-script
-			sed -i "s/#BYNAME\/boot/#BYNAME\/LNX/g" $usdir/updater-script
-			sed -i "s/#BYNAME\/recovery/#BYNAME\/SOS/g" $usdir/updater-script
+			sed -i "s/\"#BYNAME\/system\",/\"#BYNAME\/APP\",/g" $usdir/updater-script
+			sed -i "s/\"#BYNAME\/boot\",/\"#BYNAME\/LNX\",/g" $usdir/updater-script
+			sed -i "s/\"#BYNAME\/recovery\",/\"#BYNAME\/SOS\",/g" $usdir/updater-script
 		elif [[ -f $romdir/system/default.prop ]]; then
-			sed -i "s/#BYNAME\/system/#BYNAME\/system_a/g" $usdir/updater-script
 			grep -v "boot.img\|boot\ image" $usdir/updater-script > $usdir/updater-script2
 			mv $usdir/updater-script2 $usdir/updater-script
 		fi
@@ -7378,6 +7390,8 @@ signzip() {
 update_project() {
 	if [[ -f $prfiles/permtype ]]; then
 		permtype=$(cat $prfiles/permtype)
+	else
+		permtype=""
 	fi
 	if [[ ! $(grep "#SIGNATURE" $usdir/updater-script) = "" ]]; then
 		cd $prfiles
@@ -7388,220 +7402,220 @@ update_project() {
 	romdir2=$(echo "$romdir" | sed 's:\/:\\/:g')
 	find $sysdir $romdir/vendor 2>/dev/null | sed "s/$romdir2//g" | sort > $prfiles/all_files.txt
 	# sed -i '/^$/d' $prfiles/all_files.txt
-	if [[ ! $permtype = "sparse_dat" && ! $permtype = "raw_img" ]]; then
+	if [[ ! $permtype = "" && ! $permtype = "sparse_dat" && ! $permtype = "raw_img" ]]; then
 		cd $usdir
 		permtype=""
 		if [[ ! -f $prfiles/permtype ]]; then
-			if [[ ! $(grep "^set_metadata" updater-script | grep -v "/tmp/") = "" && $(grep "system.new.dat\|system_new" updater-script) = "" ]]; then
+			if [[ ! $(grep "^set_metadata" updater-script 2>/dev/null | grep -v "/tmp/") = "" && $(grep "system.new.dat\|system_new" updater-script 2>/dev/null) = "" ]]; then
 				permtype="set_metadata"
 				echo "$permtype" > $prfiles/permtype
-			elif [[ ! $(grep "^set_perm" updater-script | grep -v "/tmp/") = "" ]]; then
+			elif [[ ! $(grep "^set_perm" updater-script 2>/dev/null | grep -v "/tmp/") = "" ]]; then
 				permtype="set_perm"
 				echo "$permtype" > $prfiles/permtype
 			fi
 		else
 			permtype=$(cat $prfiles/permtype)
 		fi
-		if [[ $permtype = "" ]]; then
-			api=$(grep "ro.build.version.sdk" $sysdir/build.prop | cut -d"=" -f2)
-			choice=""
-			while [[ ! ${choice} =~ ^[1-4]$ ]]; do
+	fi
+	if [[ $permtype = "" ]]; then
+		api=$(grep "ro.build.version.sdk" $sysdir/build.prop | cut -d"=" -f2)
+		choice=""
+		while [[ ! ${choice} =~ ^[1-4]$ ]]; do
+			banner
+			echo "$t_perm_which"
+			echo ""
+			if [[ ! $api -ge "19" ]]; then
+				echo "${redt}1) $t_perm_set_metadata$normal"
+			else
+				echo "1) $t_perm_set_metadata"
+			fi
+			echo "2) $t_perm_set_perm"
+			if [[ $api -ge "21" ]]; then
+				echo "3) $t_perm_sparse"
+			else
+				echo "${redt}3) $t_perm_sparse_red$normal"
+			fi
+			echo "4) $t_perm_raw_img"
+			echo ""
+			read -n 1 -p "$t_select" choice
+		done
+		# set_metadata chosen
+		if [[ $choice = "1" ]]; then
+			if [[ ! $api -ge "19" ]]; then
 				banner
-				echo "$t_perm_which"
+				echo "$redt$t_perm_set_metadata_error$normal"
 				echo ""
-				if [[ ! $api -ge "19" ]]; then
-					echo "${redt}1) $t_perm_set_metadata$normal"
-				else
-					echo "1) $t_perm_set_metadata"
-				fi
-				echo "2) $t_perm_set_perm"
-				if [[ $api -ge "21" ]]; then
-					echo "3) $t_perm_sparse"
-				else
-					echo "${redt}3) $t_perm_sparse_red$normal"
-				fi
-				echo "4) $t_perm_raw_img"
-				echo ""
-				read -n 1 -p "$t_select" choice
-			done
-			# set_metadata chosen
-			if [[ $choice = "1" ]]; then
-				if [[ ! $api -ge "19" ]]; then
-					banner
-					echo "$redt$t_perm_set_metadata_error$normal"
-					echo ""
-					read -p "$t_enter_continue"
-					update_project
-					return 1
-				fi
-				permtype="set_metadata"
-				echo "$permtype" > $prfiles/permtype
-			# set_perm chosen
-			elif [[ $choice = "2" ]]; then
-				permtype="set_perm"
-				echo "$permtype" > $prfiles/permtype
-			# Sparse dat chosen
-			elif [[ $choice = "3" ]]; then
-				if [[ $api -lt "21" ]]; then
-					banner
-					echo "$redt$t_perm_sparse_error$normal"
-					echo ""
-					read -p "$t_enter_continue"
-					update_project
-					return 1
-				fi
-				permtype="sparse_dat"
-				rm -rf $romdir/META-INF
-				cp -r $tools/updater/META-INF-DAT/META-INF $romdir/
-				# cp $tools/updater/META-INF/com/google/android/update-binary $usdir/
-				cp -r $tools/updater/META-INF-DAT/install $romdir/
-				cd $prfiles
-				rm -rf permtype set_metadata set_perm
-				echo "$permtype" > $prfiles/permtype
-				update_project
-				return 1
-			# raw_img chosen
-			elif [[ $choice = "4" ]]; then
-				rm -rf $romdir/META-INF $romdir/install
-				cd $tools/updater
-				cp -r $tools/updater/META-INF-IMG/META-INF $romdir/
-				cp $tools/updater/META-INF/com/google/android/update-binary $usdir/
-				cd $prfiles
-				rm -rf permtype set_metadata set_perm
-				permtype="raw_img"
-				if [[ -f $prfiles/permtype ]]; then
-					mv $prfiles/permtype $prfiles/permtype_old
-				fi
-				echo "$permtype" > $prfiles/permtype
+				read -p "$t_enter_continue"
 				update_project
 				return 1
 			fi
-		else
-			rm -rf $prfiles/permtype_old
+			permtype="set_metadata"
+			echo "$permtype" > $prfiles/permtype
+		# set_perm chosen
+		elif [[ $choice = "2" ]]; then
+			permtype="set_perm"
+			echo "$permtype" > $prfiles/permtype
+		# Sparse dat chosen
+		elif [[ $choice = "3" ]]; then
+			if [[ $api -lt "21" ]]; then
+				banner
+				echo "$redt$t_perm_sparse_error$normal"
+				echo ""
+				read -p "$t_enter_continue"
+				update_project
+				return 1
+			fi
+			permtype="sparse_dat"
+			rm -rf $romdir/META-INF
+			cp -r $tools/updater/META-INF-DAT/META-INF $romdir/
+			# cp $tools/updater/META-INF/com/google/android/update-binary $usdir/
+			cp -r $tools/updater/META-INF-DAT/install $romdir/
+			cd $prfiles
+			rm -rf permtype set_metadata set_perm
+			echo "$permtype" > $prfiles/permtype
+			update_project
+			return 1
+		# raw_img chosen
+		elif [[ $choice = "4" ]]; then
+			rm -rf $romdir/META-INF $romdir/install
+			cd $tools/updater
+			cp -r $tools/updater/META-INF-IMG/META-INF $romdir/
+			cp $tools/updater/META-INF/com/google/android/update-binary $usdir/
+			cd $prfiles
+			rm -rf permtype set_metadata set_perm
+			permtype="raw_img"
+			if [[ -f $prfiles/permtype ]]; then
+				mv $prfiles/permtype $prfiles/permtype_old
+			fi
+			echo "$permtype" > $prfiles/permtype
+			update_project
+			return 1
 		fi
-		banner
-		echo "$bluet$t_startup_prep_updater_script$normal"
-		cd $usdir
-		if [[ $(grep -o "#ASSERT" updater-script) = "" ]]; then
-			sed -i '1i#ASSERT' updater-script
-			grep " getprop(\|(getprop(" updater-script > $prfiles/assert_original
+	else
+		rm -rf $prfiles/permtype_old
+	fi
+	banner
+	echo "$bluet$t_startup_prep_updater_script$normal"
+	cd $usdir
+	if [[ $(grep -o "#ASSERT" updater-script) = "" ]]; then
+		sed -i '1i#ASSERT' updater-script
+		grep " getprop(\|(getprop(" updater-script > $prfiles/assert_original
+	fi
+	if [[ ! $(grep -o "#SYM" updater-script) = "#SYM" ]]; then
+		gawk '/^symlink/ && !x {print "#SYM"; x=1} 1' updater-script > updater-script2
+		mv updater-script2 updater-script
+	fi
+	if [[ ! $(grep -o "#PERM" updater-script) = "#PERM" ]]; then
+		if [[ ! $(grep "^$permtype" updater-script | grep -v "/tmp/") = "" ]]; then
+			gawk 'a=/^#SYM/{b=1}b&&!a{print "#PERM";b=0}1' updater-script > updater-script2
+			mv updater-script2 updater-script
+			grep "^$permtype" updater-script | grep -v "/tmp/" > $prfiles/${permtype}_original
 		fi
-		if [[ ! $(grep -o "#SYM" updater-script) = "#SYM" ]]; then
-			gawk '/^symlink/ && !x {print "#SYM"; x=1} 1' updater-script > updater-script2
+	fi
+	if [[ $permtype = "set_metadata" || $permtype = "set_perm" ]]; then
+		permtest=$(gawk '/#PERM/,/set_progress/' updater-script | grep $permtype)
+		if [[ ! $permtest = "" ]]; then
+			grep -v "$permtest" updater-script > updater-script2
 			mv updater-script2 updater-script
 		fi
-		if [[ ! $(grep -o "#PERM" updater-script) = "#PERM" ]]; then
-			if [[ ! $(grep "^$permtype" updater-script | grep -v "/tmp/") = "" ]]; then
-				gawk 'a=/^#SYM/{b=1}b&&!a{print "#PERM";b=0}1' updater-script > updater-script2
-				mv updater-script2 updater-script
-				grep "^$permtype" updater-script | grep -v "/tmp/" > $prfiles/${permtype}_original
+	fi
+	grep -v " getprop(\|(getprop(\|^symlink" updater-script > updater-script2
+	mv updater-script2 updater-script
+	cd $prfiles
+	rm -rf set_metadata
+	rm -rf set_perm
+	if [[ $permtype = "set_perm" ]]; then
+		line=""
+		cut -d"\"" -f2 $tools/updater/set_perm-data | while read line; do
+			if [[ $(grep -r -m 1 "^$line$" all_files.txt) = "$line" ]]; then
+				grep -m 1 "$line" $tools/updater/set_perm-data >> set_perm
 			fi
-		fi
-		if [[ $permtype = "set_metadata" || $permtype = "set_perm" ]]; then
-			permtest=$(gawk '/#PERM/,/set_progress/' updater-script | grep $permtype)
-			if [[ ! $permtest = "" ]]; then
-				grep -v "$permtest" updater-script > updater-script2
-				mv updater-script2 updater-script
-			fi
-		fi
-		grep -v " getprop(\|(getprop(\|^symlink" updater-script > updater-script2
-		mv updater-script2 updater-script
-		cd $prfiles
-		rm -rf set_metadata
-		rm -rf set_perm
-		if [[ $permtype = "set_perm" ]]; then
-			line=""
-			cut -d"\"" -f2 $tools/updater/set_perm-data | while read line; do
-				if [[ $(grep -r -m 1 "^$line$" all_files.txt) = "$line" ]]; then
-					grep -m 1 "$line" $tools/updater/set_perm-data >> set_perm
+		done
+		cp set_perm set_perm.orig
+	elif [[ $permtype = "set_metadata" ]]; then
+		if [[ ! -f $prfiles/file_contexts2 ]]; then
+			if [[ ! -f $prfiles/file_contexts ]]; then
+				if [[ -f $romdir/bootimg/ramdisk/file_contexts ]]; then
+					get_contexts
+				elif [[ -f $romdir/system/file_contexts.bin ]]; then
+					get_contexts
+				elif [[ -f $romdir/boot.img ]]; then
+					chosenimg="boot"
+					bootext="1"
+					boot_unpack
+					${usesudo}rm -rf $romdir/bootimg
+				else
+					banner
+					echo "$redb$yellowt$t_error$normal"
+					echo "$redt$t_build_need_boot_img$normal"
+					echo ""
+					read -p "$t_enter_continue"
+					rm -rf permtype
+					permtype=""
+					update_project
+					return 1
 				fi
-			done
-			cp set_perm set_perm.orig
-		elif [[ $permtype = "set_metadata" ]]; then
-			if [[ ! -f $prfiles/file_contexts2 ]]; then
 				if [[ ! -f $prfiles/file_contexts ]]; then
-					if [[ -f $romdir/bootimg/ramdisk/file_contexts ]]; then
-						get_contexts
-					elif [[ -f $romdir/system/file_contexts.bin ]]; then
-						get_contexts
-					elif [[ -f $romdir/boot.img ]]; then
-						chosenimg="boot"
-						bootext="1"
-						boot_unpack
-						${usesudo}rm -rf $romdir/bootimg
-					else
-						banner
-						echo "$redb$yellowt$t_error$normal"
-						echo "$redt$t_build_need_boot_img$normal"
-						echo ""
-						read -p "$t_enter_continue"
-						rm -rf permtype
-						permtype=""
-						update_project
-						return 1
-					fi
-					if [[ ! -f $prfiles/file_contexts ]]; then
-						banner
-						echo "$redb$yellowt$t_error$normal"
-						echo -e "$t_build_selinux_error"
-						echo ""
-						read -p "$t_enter_continue"
-						rm -rf $prfiles/permtype
-						permtype=""
-						update_project
-						return 1
-					fi
+					banner
+					echo "$redb$yellowt$t_error$normal"
+					echo -e "$t_build_selinux_error"
+					echo ""
+					read -p "$t_enter_continue"
+					rm -rf $prfiles/permtype
+					permtype=""
+					update_project
+					return 1
 				fi
 			fi
-			cd $prfiles
-			sed 's/--//g' file_contexts | grep "^/system/" | sort > file_contexts2
-			if [[ -f $prfiles/vendorimg ]]; then
-				grep "^/vendor/" file_contexts >> file_contexts2
-			fi
-			sed 's/\\././g; s/(\/\.\*)?//g' file_contexts2 | gawk '{ print $1, $2 }' | sort > file_contexts3
-			mv file_contexts3 file_contexts2
-			if [[ -f $romdir/system/default.prop ]]; then
-				sed -i 's/^/\/system/g' file_contexts2
-			fi
-			line=""
-			for line in $(gawk '{ print $1 }' file_contexts2); do
-			        if [[ $(grep -m 1 "^$line$" all_files.txt) = "$line" ]]; then
-			                grep -m 1 "^$line " file_contexts2 >> pre_metadata
-			        elif [[ $(cat symlinks | cut -d'"' -f4 | grep -m 1 "^$line$" ) = "$line" ]]; then
-			                grep -m 1 "^$line " file_contexts2 >> pre_metadata
-			        fi
-			done
-			if [[ -f $romdir/system/default.prop ]]; then
-				metadata=$tools/updater/set_metadata-data2
-			else
-				metadata=$tools/updater/set_metadata-data
-			fi
-			line=""
-			cat $metadata | while read line; do
-			        line2=$(echo "$line" | gawk '{ print $1 }' | cut -d'"' -f2)
-			        if [[ $(gawk '{ print $1 }' pre_metadata | grep -m 1 "^$line2$") = "$line2" ]]; then
-			                context=$(grep -m 1 "^$line2 " pre_metadata | gawk '{ print $2 }')
-			                grep -m 1 "$line2" $metadata | sed "s/#CONTEXT/$context/" >> set_metadata
-			        elif [[ $(grep -m 1 "^$line2$" all_files.txt) = "$line2" && ! $(echo $line | grep "#CONTEXT") = "" ]]; then
-			                grep -m 1 "$line2" $metadata | sed "s/#CONTEXT/u:object_r:system_file:s0/" >> set_metadata
-			        elif [[ $(grep -m 1 "^$line2$" all_files.txt) = "$line2" && $(echo $line | grep "#CONTEXT") = "" ]]; then
-			                grep -m 1 "$line2" $metadata >> set_metadata
-			        fi
-			done
-			cat pre_metadata | while read line; do
-			        line2=$(echo "$line" | gawk '{ print $1 }')
-			        if [[ $(grep "$line2" set_metadata) = "" ]]; then
-			                xcontext=$(echo "$line" | gawk '{ print $2 }')
-			                echo "set_metadata(\"$line2\", \"selabel\", \"$xcontext\");" >> set_metadata
-			        fi
-			done
-			if [[ $(grep "ro.board.platform=" $sysdir/build.prop | cut -d"=" -f2) = "exynos5" ]]; then
-				sed -i "s/init\.sec\.boot\.sh\",\ \"uid\",\ 0,\ \"gid\",\ 2000, \"mode\",\ 0644/init\.sec\.boot\.sh\",\ \"uid\",\ 0,\ \"gid\",\ 2000, \"mode\",\ 0550/" set_metadata
-			fi
-			rm -rf pre_metadata
-			if [[ -s $prfiles/root_meta ]]; then
-				cat $prfiles/root_meta >> set_metadata
-			fi
+		fi
+		cd $prfiles
+		sed 's/--//g' file_contexts | grep "^/system/" | sort > file_contexts2
+		if [[ -f $prfiles/vendorimg ]]; then
+			grep "^/vendor/" file_contexts >> file_contexts2
+		fi
+		sed 's/\\././g; s/(\/\.\*)?//g' file_contexts2 | gawk '{ print $1, $2 }' | sort > file_contexts3
+		mv file_contexts3 file_contexts2
+		if [[ -f $romdir/system/default.prop ]]; then
+			sed -i 's/^/\/system/g' file_contexts2
+		fi
+		line=""
+		for line in $(gawk '{ print $1 }' file_contexts2); do
+		        if [[ $(grep -m 1 "^$line$" all_files.txt) = "$line" ]]; then
+		                grep -m 1 "^$line " file_contexts2 >> pre_metadata
+		        elif [[ $(cat symlinks | cut -d'"' -f4 | grep -m 1 "^$line$" ) = "$line" ]]; then
+		                grep -m 1 "^$line " file_contexts2 >> pre_metadata
+		        fi
+		done
+		if [[ -f $romdir/system/default.prop ]]; then
+			metadata=$tools/updater/set_metadata-data2
+		else
+			metadata=$tools/updater/set_metadata-data
+		fi
+		line=""
+		cat $metadata | while read line; do
+		        line2=$(echo "$line" | gawk '{ print $1 }' | cut -d'"' -f2)
+		        if [[ $(gawk '{ print $1 }' pre_metadata | grep -m 1 "^$line2$") = "$line2" ]]; then
+		                context=$(grep -m 1 "^$line2 " pre_metadata | gawk '{ print $2 }')
+		                grep -m 1 "$line2" $metadata | sed "s/#CONTEXT/$context/" >> set_metadata
+		        elif [[ $(grep -m 1 "^$line2$" all_files.txt) = "$line2" && ! $(echo $line | grep "#CONTEXT") = "" ]]; then
+		                grep -m 1 "$line2" $metadata | sed "s/#CONTEXT/u:object_r:system_file:s0/" >> set_metadata
+		        elif [[ $(grep -m 1 "^$line2$" all_files.txt) = "$line2" && $(echo $line | grep "#CONTEXT") = "" ]]; then
+		                grep -m 1 "$line2" $metadata >> set_metadata
+		        fi
+		done
+		cat pre_metadata | while read line; do
+		        line2=$(echo "$line" | gawk '{ print $1 }')
+		        if [[ $(grep "$line2" set_metadata) = "" ]]; then
+		                xcontext=$(echo "$line" | gawk '{ print $2 }')
+		                echo "set_metadata(\"$line2\", \"selabel\", \"$xcontext\");" >> set_metadata
+		        fi
+		done
+		if [[ $(grep "ro.board.platform=" $sysdir/build.prop | cut -d"=" -f2) = "exynos5" ]]; then
+			sed -i "s/init\.sec\.boot\.sh\",\ \"uid\",\ 0,\ \"gid\",\ 2000, \"mode\",\ 0644/init\.sec\.boot\.sh\",\ \"uid\",\ 0,\ \"gid\",\ 2000, \"mode\",\ 0550/" set_metadata
+		fi
+		rm -rf pre_metadata
+		if [[ -s $prfiles/root_meta ]]; then
+			cat $prfiles/root_meta >> set_metadata
 		fi
 	fi
 	cd $prfiles
@@ -7756,11 +7770,11 @@ if [[ ! $(uname -s | grep "CYGWIN\|cygwin\|Cygwin") = "" ]]; then
 elif [[ $(find /mnt/c -name Windows -maxdepth 1 2>/dev/null | grep -m 1 -o Windows) = "Windows" ]]; then
 	rm -rf $tools/dependencies2
 	cp $tools/dependencies $tools/dependencies2
-	sed -i '/sudo/d; 1iadb\n7z' $tools/dependencies2
+	sed -i '1iadb\n7z' $tools/dependencies2
 	dependencies="dependencies2"
 	cyg=""
 	bashwin="1"
-	usesudo2=""
+	usesudo2="sudo "
 	adb=adb
 	zipalign=$tools/zipalign
 	p7z=7z
@@ -7779,7 +7793,7 @@ else
 	p7z=$tools/7z
 	aapt="$tools/aapt"
 fi
-if [[ $cyg = "" && $bashwin = "" ]]; then
+if [[ $cyg = "" ]]; then
 	if [[ ! $(which id) = "" ]]; then
 		if [[ $(id -u) = "0" ]]; then
 			userid="root"
