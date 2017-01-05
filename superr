@@ -5303,7 +5303,8 @@ extract_new() {
 			deviceloc=$base/tools/devices/$devicename
 			rm -rf $prfiles/permtype
 			permtype=""
-			cp -r $tools/updater/META-INF $romdir
+			cp -r $tools/updater/META-INF $romdir/
+			cp -r $tools/updater/config $romdir/
 			cd $romdir
 			if [[ $cyg = "" ]]; then
 				link1=$(find system vendor -type l -printf "%l\n" 2>/dev/null | sed 's/^/symlink(\"/; s/$/\", /')
@@ -7430,7 +7431,7 @@ update_project() {
 				echo "1) $t_perm_set_metadata"
 			fi
 			echo "2) $t_perm_set_perm"
-			if [[ $api -ge "21" ]]; then
+			if [[ $api -ge "21" && ! -f $romdir/system/default.prop ]]; then
 				echo "3) $t_perm_sparse"
 			else
 				echo "${redt}3) $t_perm_sparse_red$normal"
@@ -7457,7 +7458,7 @@ update_project() {
 			echo "$permtype" > $prfiles/permtype
 		# Sparse dat chosen
 		elif [[ $choice = "3" ]]; then
-			if [[ $api -lt "21" ]]; then
+			if [[ $api -lt "21" || -f $romdir/system/default.prop ]]; then
 				banner
 				echo "$redt$t_perm_sparse_error$normal"
 				echo ""
