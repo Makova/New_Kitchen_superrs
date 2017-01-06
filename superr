@@ -756,7 +756,8 @@ boot_tools() {
 		if [[ -d $romdir/META-INF ]]; then
 			mv $romdir/META-INF $romdir/META-INF1
 		fi
-		cp -r $tools/updater/META-INF $romdir/META-INF
+		cp -R $tools/updater/META-INF $romdir/
+		cp -R $tools/updater/config $romdir/
 		rm -rf $usdir/updater-script
 		if [[ $chosenimg = "recovery" ]]; then
 			signature2=$(echo "$signature-recovery")
@@ -796,7 +797,7 @@ boot_tools() {
 			if [[ -f $signature2.zip ]]; then
 				mv $signature2.zip ${signature2}_$timestamp.zip
 			fi
-			$p7z a -tzip -mx5 $signature2.zip recovery.img META-INF 2>/dev/null >> $logs/zip.log
+			$p7z a -tzip -mx5 $signature2.zip config recovery.img META-INF 2>/dev/null >> $logs/zip.log
 		elif [[ $chosenimg = "boot" ]]; then
 			echo "$bluet$signature2.zip $t_general_build $romname ...$normal"
 			cd $romdir
@@ -804,9 +805,9 @@ boot_tools() {
 				mv $signature2.zip ${signature2}_$timestamp.zip
 			fi
 			if [[ -d $sysdir/etc/init.d ]]; then
-				$p7z a -tzip -mx5 $signature2.zip boot.img system/etc/init.d META-INF 2>/dev/null >> $logs/zip.log
+				$p7z a -tzip -mx5 $signature2.zip config boot.img system/etc/init.d META-INF 2>/dev/null >> $logs/zip.log
 			else
-				$p7z a -tzip -mx5 $signature2.zip boot.img META-INF 2>/dev/null >> $logs/zip.log
+				$p7z a -tzip -mx5 $signature2.zip config boot.img META-INF 2>/dev/null >> $logs/zip.log
 			fi
 		else
 			rm -rf $romdir/META-INF
@@ -1016,7 +1017,8 @@ build_custom_zip() {
 		if [[ -d $romdir/META-INF ]]; then
 			mv $romdir/META-INF $romdir/META-INF1
 		fi
-		cp -r $tools/updater/META-INF $romdir/META-INF
+		cp -R $tools/updater/META-INF $romdir/META-INF
+		cp -R $tools/updater/config $romdir/
 		rm -rf $usdir/updater-script
 		cp $tools/updater/custom/updater-script-system $usdir/updater-script
 		chosenimg="boot"
@@ -1106,7 +1108,7 @@ build_custom_zip() {
 				if [[ -f $signature2.zip ]]; then
 					mv $signature2.zip ${signature2}_$timestamp.zip
 				fi
-				$p7z a -tzip -mx5 $signature2.zip system/app system/framework system/priv-app META-INF 2>/dev/null >> $logs/zip.log
+				$p7z a -tzip -mx5 $signature2.zip config $sysdir/app $sysdir/framework $sysdir/priv-app META-INF 2>/dev/null >> $logs/zip.log
 				rm -rf $romdir/META-INF
 				if [[ -d $romdir/META-INF1 ]]; then
 					mv $romdir/META-INF1 $romdir/META-INF
@@ -1140,7 +1142,7 @@ build_custom_zip() {
 				if [[ -f $signature2.zip ]]; then
 					mv $signature2.zip ${signature2}_$timestamp.zip
 				fi
-				$p7z a -tzip -mx5 $signature2.zip system/app system/framework system/lib system/lib64 system/priv-app META-INF 2>/dev/null >> $logs/zip.log
+				$p7z a -tzip -mx5 $signature2.zip config $sysdir/app $sysdir/framework $sysdir/lib $sysdir/lib64 $sysdir/priv-app META-INF 2>/dev/null >> $logs/zip.log
 				rm -rf $romdir/META-INF
 				if [[ -d $romdir/META-INF1 ]]; then
 					mv $romdir/META-INF1 $romdir/META-INF
@@ -1170,7 +1172,7 @@ build_custom_zip() {
 				if [[ -f $signature2.zip ]]; then
 					mv $signature2.zip ${signature2}_$timestamp.zip
 				fi
-				$p7z a -tzip -mx5 $signature2.zip system/framework META-INF 2>/dev/null >> $logs/zip.log
+				$p7z a -tzip -mx5 $signature2.zip config $sysdir/framework META-INF 2>/dev/null >> $logs/zip.log
 				rm -rf $romdir/META-INF
 				if [[ -d $romdir/META-INF1 ]]; then
 					mv $romdir/META-INF1 $romdir/META-INF
@@ -1200,7 +1202,7 @@ build_custom_zip() {
 				if [[ -f $signature2.zip ]]; then
 					mv $signature2.zip ${signature2}_$timestamp.zip
 				fi
-				$p7z a -tzip -mx5 $signature2.zip system/app system/priv-app META-INF 2>/dev/null >> $logs/zip.log
+				$p7z a -tzip -mx5 $signature2.zip config $sysdir/app $sysdir/priv-app META-INF 2>/dev/null >> $logs/zip.log
 				rm -rf $romdir/META-INF
 				if [[ -d $romdir/META-INF1 ]]; then
 					mv $romdir/META-INF1 $romdir/META-INF
@@ -1234,7 +1236,7 @@ build_custom_zip() {
 				if [[ -f $signature2.zip ]]; then
 					mv $signature2.zip ${signature2}_$timestamp.zip
 				fi
-				$p7z a -tzip -mx5 $signature2.zip system/lib META-INF 2>/dev/null >> $logs/zip.log
+				$p7z a -tzip -mx5 $signature2.zip config $sysdir/lib META-INF 2>/dev/null >> $logs/zip.log
 				rm -rf $romdir/META-INF
 				if [[ -d $romdir/META-INF1 ]]; then
 					mv $romdir/META-INF1 $romdir/META-INF
@@ -1264,7 +1266,7 @@ build_custom_zip() {
 				if [[ -f $signature2.zip ]]; then
 					mv $signature2.zip ${signature2}_$timestamp.zip
 				fi
-				$p7z a -tzip -mx5 $signature2.zip system/media META-INF 2>/dev/null >> $logs/zip.log
+				$p7z a -tzip -mx5 $signature2.zip config $sysdir/media META-INF 2>/dev/null >> $logs/zip.log
 				rm -rf $romdir/META-INF
 				if [[ -d $romdir/META-INF1 ]]; then
 					mv $romdir/META-INF1 $romdir/META-INF
@@ -1765,7 +1767,8 @@ change_permtype() {
 		if [[ ! -d $romdir/META-INF ]]; then
 			permtype="set_metadata"
 			echo "set_metadata" > $prfiles/permtype
-			cp -r $tools/updater/META-INF $romdir/
+			cp -R $tools/updater/META-INF $romdir/
+			cp -R $tools/updater/config $romdir/
 		fi
 		if [[ -s $prfiles/$permtype ]]; then
 			cd $usdir
@@ -1777,10 +1780,11 @@ change_permtype() {
 		fi
 		if [[ $permtype = "sparse_dat" || $permtype = "raw_img" ]]; then
 			cd $romdir
-			rm -rf install META-INF
+			rm -rf install META-INF config
 			cd $prfiles
 			rm -rf permtype set_metadata set_perm
-			cp -r $tools/updater/META-INF $romdir
+			cp -R $tools/updater/META-INF $romdir
+			cp -R $tools/updater/config $romdir/
 		fi
 		permtype="set_metadata"
 		if [[ -f $prfiles/permtype ]]; then
@@ -1793,7 +1797,8 @@ change_permtype() {
 		if [[ ! -d $romdir/META-INF ]]; then
 			permtype="set_perm"
 			echo "set_perm" > $prfiles/permtype
-			cp -r $tools/updater/META-INF $romdir
+			cp -R $tools/updater/META-INF $romdir
+			cp -R $tools/updater/config $romdir/
 		fi
 		if [[ -s $prfiles/$permtype ]]; then
 			cd $usdir
@@ -1805,10 +1810,11 @@ change_permtype() {
 		fi
 		if [[ $permtype = "sparse_dat" || $permtype = "raw_img" ]]; then
 			cd $romdir
-			rm -rf install META-INF
+			rm -rf install META-INF config
 			cd $prfiles
 			rm -rf permtype set_metadata set_perm
-			cp -r $tools/updater/META-INF $romdir
+			cp -R $tools/updater/META-INF $romdir
+			cp -R $tools/updater/config $romdir/
 		fi
 		permtype="set_perm"
 		if [[ -f $prfiles/permtype ]]; then
@@ -1827,10 +1833,10 @@ change_permtype() {
 			return 1
 		fi
 		echo "$bluet$t_perm_changing_perm$normal"
-		rm -rf $romdir/META-INF
-		cp -r $tools/updater/META-INF-DAT/META-INF $romdir/
-		# cp $tools/updater/META-INF/com/google/android/update-binary $usdir/
-		cp -r $tools/updater/META-INF-DAT/install $romdir/
+		rm -rf $romdir/META-INF $romdir/config
+		cp -R $tools/updater/META-INF-DAT/META-INF $romdir/
+		cp -R $tools/updater/META-INF-DAT/install $romdir/
+		cp -R $tools/updater/config $romdir/
 		cd $prfiles
 		rm -rf permtype set_metadata set_perm
 		permtype="sparse_dat"
@@ -1841,8 +1847,9 @@ change_permtype() {
 	# raw_img chosen
 	elif [[ $choice = "4" ]]; then
 		echo "$bluet$t_perm_changing_perm$normal"
-		rm -rf $romdir/META-INF $romdir/install
-		cp -r $tools/updater/META-INF-IMG/META-INF $romdir/
+		rm -rf $romdir/META-INF $romdir/install $romdir/config
+		cp -R $tools/updater/META-INF-IMG/META-INF $romdir/
+		cp -R $tools/updater/config $romdir/
 		cp $tools/updater/META-INF/com/google/android/update-binary $usdir/
 		cd $prfiles
 		rm -rf permtype set_metadata set_perm
@@ -4934,7 +4941,8 @@ extract_new() {
 			cp $prfiles/symlinks $prfiles/symlinks.orig
 			rm -rf META-INF
 			romzip=""
-			cp -r $tools/updater/META-INF META-INF
+			cp -R $tools/updater/META-INF META-INF
+			cp -R $tools/updater/config $romdir/
 			get_devicename
 			if [[ ! -d $base/tools/devices/$devicename ]]; then
 				mkdir -p $base/tools/devices/$devicename
@@ -5303,8 +5311,8 @@ extract_new() {
 			deviceloc=$base/tools/devices/$devicename
 			rm -rf $prfiles/permtype
 			permtype=""
-			cp -r $tools/updater/META-INF $romdir/
-			cp -r $tools/updater/config $romdir/
+			cp -R $tools/updater/META-INF $romdir/
+			cp -R $tools/updater/config $romdir/
 			cd $romdir
 			if [[ $cyg = "" ]]; then
 				link1=$(find system vendor -type l -printf "%l\n" 2>/dev/null | sed 's/^/symlink(\"/; s/$/\", /')
@@ -7467,10 +7475,10 @@ update_project() {
 				return 1
 			fi
 			permtype="sparse_dat"
-			rm -rf $romdir/META-INF
-			cp -r $tools/updater/META-INF-DAT/META-INF $romdir/
-			# cp $tools/updater/META-INF/com/google/android/update-binary $usdir/
-			cp -r $tools/updater/META-INF-DAT/install $romdir/
+			rm -rf $romdir/META-INF $romdir/config $romdir/install
+			cp -R $tools/updater/META-INF-DAT/META-INF $romdir/
+			cp -R $tools/updater/META-INF-DAT/install $romdir/
+			cp -R $tools/updater/config $romdir/
 			cd $prfiles
 			rm -rf permtype set_metadata set_perm
 			echo "$permtype" > $prfiles/permtype
@@ -7478,9 +7486,10 @@ update_project() {
 			return 1
 		# raw_img chosen
 		elif [[ $choice = "4" ]]; then
-			rm -rf $romdir/META-INF $romdir/install
+			rm -rf $romdir/META-INF $romdir/install $romdir/config
 			cd $tools/updater
-			cp -r $tools/updater/META-INF-IMG/META-INF $romdir/
+			cp -R $tools/updater/META-INF-IMG/META-INF $romdir/
+			cp -R $tools/updater/config $romdir/
 			cp $tools/updater/META-INF/com/google/android/update-binary $usdir/
 			cd $prfiles
 			rm -rf permtype set_metadata set_perm
@@ -7978,7 +7987,7 @@ fi
 if [[ -f $romdir/build.prop ]]; then
 	api=$(grep "ro.build.version.sdk" $romdir/build.prop | cut -d"=" -f2)
 fi
-if [[ $api -ge "23" && $cyg = "" ]]; then
+if [[ $api -ge "23" && ! -f $romdir/system/default.prop && $cyg = "" ]]; then
 	export usesudo="sudo "
 else
 	export usesudo=""
