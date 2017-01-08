@@ -29,6 +29,6 @@ package_extract_file("boot.img", "#BYNAME/boot"); set_progress(0.800000);
 #ROOT
 ui_print(" ");
 #BUSYBOX
-unmount("/system");
+ifelse(is_mounted("/system"), unmount("/system"));
 set_progress(1.000000);
 ui_print("#SIGNATURE Installed");

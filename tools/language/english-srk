@@ -58,6 +58,7 @@ export t_build_check_ziplog="Something went wrong. Check the zip.log for errors.
 export t_build_prep_sys_img="Preparing files for system.img creation ..."
 export t_build_img_error="There was a problem creating the image."
 export t_build_no_zip="There is no zip to sign."
+export t_build_no_boot_q="Your ROM does not contain a boot.img.\nWould you like to continue anyway?  y/n"
 export t_build_cho_zip="Choose zip to sign:"
 export t_zipalign_q="Should we zipalign before building the zip?  y/n  "
 export t_zipalign="Zipaligning"

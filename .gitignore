@@ -46,6 +46,8 @@ tools/cygnotice
 !/tools/devices/D6503
 !/tools/devices/falcon_cdma
 !/tools/devices/flounder
+!/tools/devices/gts28vewifi
+!/tools/devices/gts210vewifi
 !/tools/devices/hammerhead
 !/tools/devices/hero2qltevzw
 !/tools/devices/herolte

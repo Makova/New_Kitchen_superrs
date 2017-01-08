@@ -5102,10 +5102,14 @@ extract_new() {
 	if [[ ! $romchunk = "" ]]; then
 		banner
 		echo "$bluet$t_extract_convert_chunk$normal"
-		$tools/simg2img${cyg} *chunk* system.img.raw
-		offset=$(LANG=C grep -aobP -m1 '\x53\xEF' system.img.raw | head -1 | gawk '{print $1 - 1080}')
-		( dd if=system.img.raw of=system.img ibs=$offset skip=1 2>&1 ) > $logs/main.log
-		rm -rf system.img.raw
+		if [[ $(echo "$romchunk" | grep "sparsechunk") != "" ]]; then
+			$tools/simg2img${cyg} *chunk* system.img.raw
+			offset=$(LANG=C grep -aobP -m1 '\x53\xEF' system.img.raw | head -1 | gawk '{print $1 - 1080}')
+			( dd if=system.img.raw of=system.img ibs=$offset skip=1 2>&1 ) > $logs/main.log
+			rm -rf system.img.raw
+		else
+			$tools/simg2img${cyg} *chunk* system.img
+		fi
 		rm -rf *chunk*
 		romimg="system.img"
 	fi
@@ -5738,7 +5742,7 @@ get_byname() {
 	fi
 }
 get_contexts() {
-	if [[ ! -f $prfiles/file_contexts ]] && [[ -f $romdir/${chosenimg}img/ramdisk/file_contexts || -f $romdir/${chosenimg}img/ramdisk/file_contexts.bin || -f $romdir/system/file_contexts.bin ]]; then
+	if [[ ! -f $prfiles/file_contexts ]] && [[ -f $romdir/${chosenimg}img/ramdisk/file_contexts || -f $romdir/${chosenimg}img/ramdisk/file_contexts.bin || -f $romdir/system/file_contexts.bin || -f $prfiles/file_contexts.bin ]]; then
 		if [[ -f $romdir/system/file_contexts.bin ]]; then
 			cp $romdir/system/file_contexts.bin $prfiles/
 		elif [[ -f $romdir/${chosenimg}img/ramdisk/file_contexts ]]; then
@@ -6143,10 +6147,24 @@ isfullrom() {
 	fullrom=""
 	fullrom1=""
 	if [[ -d $sysdir ]]; then
-		if [[ $(ls $sysdir | grep "lib") = "" || $(ls $sysdir | grep "etc") = "" || $(ls $sysdir | grep "bin") = "" || $(ls $sysdir | grep "xbin") = "" || $(ls $romdir | grep "META-INF") = "" || $(ls $romdir | grep "system") = "" || $(ls $romdir | grep "boot.img") = "" ]]; then
+		if [[ ! -d $sysdir/lib || ! -d $sysdir/etc || ! -d $sysdir/bin || ! -d $sysdir/xbin || ! -d $romdir/META-INF ]]; then
 			fullrom="No"
 			fullrom1=$(echo "$redt$t_no$normal")
 		else
+			if [[ ! -f $romdir/system/default.prop && ! -f $romdir/boot.img && ! -f $prfiles/noboot ]]; then
+				banner
+				echo -e "$t_build_no_boot_q"
+				read -n 1 -p "" reply
+				if [[ ! $reply = "y" ]]; then
+					fullrom="No"
+					fullrom1=$(echo "$redt$t_no$normal")
+					return 1
+				else
+					touch $prfiles/noboot
+					grep -v "boot.img\|boot\ image" $usdir/updater-script > $usdir/updater-script2
+					mv $usdir/updater-script2 $usdir/updater-script
+				fi
+			fi
 			fullrom="Yes"
 			fullrom1=$(echo "$greent$t_yes$normal")
 		fi
@@ -7992,7 +8010,6 @@ if [[ $api -ge "23" && ! -f $romdir/system/default.prop && $cyg = "" ]]; then
 else
 	export usesudo=""
 fi
-isfullrom
 choice=""
 while [[ ! ${choice} =~ ^[1-8]$ ]] && [[ ! $choice = "q" ]]; do
 	banner
