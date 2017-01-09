@@ -25,7 +25,7 @@ ui_print(" ");
 package_extract_file("system_new.img", "#BYNAME/system" + file_getprop("/tmp/slotsel", "slotnum"));
 set_progress(0.700000);
 ui_print(" "); ui_print("Extracting boot image..."); ui_print(" ");
-package_extract_file("boot.img", "#BYNAME/boot"); set_progress(0.800000);
+package_extract_file("boot.img", "#BYNAME/boot" + file_getprop("/tmp/slotsel", "slotnum")); set_progress(0.800000);
 #ROOT
 ui_print(" ");
 #BUSYBOX

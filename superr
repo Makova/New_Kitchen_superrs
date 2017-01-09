@@ -5344,7 +5344,7 @@ extract_new() {
 	return 1
 }
 findfstab() {
-	fstab=$(${usesudo}find ! -type l | grep -v "goldfish\|ranchu\|charger" | grep -m 1 fstab | sed 's/\.\///')
+	fstab=$(${usesudo}find ! -type l | grep -v "goldfish\|ranchu\|charger\|zram" | grep -m 1 fstab | sed 's/\.\///')
 }
 findimgsize() {
 	cd $romdir

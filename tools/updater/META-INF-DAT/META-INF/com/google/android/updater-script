@@ -33,7 +33,7 @@ mount("ext4", "EMMC", "#BYNAME/system" + file_getprop("/tmp/slotsel", "slotnum")
 run_program("/tmp/install/bin/backuptool.sh", "restore");
 unmount("/system");
 ui_print("Extracting boot image..."); ui_print(" "); show_progress(0.050000, 5);
-package_extract_file("boot.img", "#BYNAME/boot");
+package_extract_file("boot.img", "#BYNAME/boot" + file_getprop("/tmp/slotsel", "slotnum"));
 #ROOT
 ui_print(" ");
 #BUSYBOX
