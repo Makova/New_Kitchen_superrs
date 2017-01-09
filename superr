@@ -1309,8 +1309,6 @@ build_custom_zip() {
 }
 build_rom_zip() {
 	timestamp=$(date +%m-%d-%Y-%H:%M:%S)
-	fullrom=""
-	fullrom1=""
 	cd $romdir
 	isfullrom
 	if [[ ! $fullrom = "Yes" ]]; then
@@ -1750,7 +1748,6 @@ change_permtype() {
 		rom_tools
 		return 1
 	fi
-	cp -r $tools/updater/config $romdir/
 	banner
 	# set_metadata chosen
 	if [[ $choice = "1" ]]; then
@@ -6694,6 +6691,7 @@ partadd() {
 				sed -i "/#$partup/ r $tools/updater/extra-$permtype.txt" updater-script
 				sed -i "s/#PARTEXTRA/$partbyname/g" updater-script
 				sed -i "s/#PEXTRA/$whatimg/g" updater-script
+				touch $prfiles/${whatimg}img
 			elif [[ $whatimg = "data" ]]; then
 				if [[ $permtype = "sparse_dat" ]]; then
 					gawk 'a=/^block_image_update/{b=1}b&&!a{print "#DATA";b=0}1' updater-script > updater-script2
@@ -6747,6 +6745,7 @@ partadd() {
 				sed -i "/#$partup/ r $tools/updater/extra-set_metadata.txt" updater-script
 				sed -i "s/#PARTEXTRA/$partbyname/g" updater-script
 				sed -i "s/#PEXTRA/$whatimg/g" updater-script
+				touch $prfiles/${whatimg}img
 			elif [[ $whatimg = "data" ]]; then
 				gawk 'a=/\"system\"/{b=1}b&&!a{print "#DATA";b=0}1' updater-script > updater-script2
 				mv updater-script2 updater-script
